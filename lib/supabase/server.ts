@@ -9,10 +9,24 @@ export async function getSupabaseServerClient() {
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
-        setAll: (list) =>
-          list.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          ),
+        setAll: (list) => {
+          // Next.js only allows cookie writes from Server Actions and Route
+          // Handlers — a write during a Server Component render throws. That
+          // write happens here whenever @supabase/ssr silently refreshes an
+          // aged access token mid-render, which is not an error condition the
+          // page can do anything about. Swallowing it is the documented
+          // Supabase/Next.js pattern: `middleware.ts` at the repo root calls
+          // `auth.getUser()` on every matched request, so the refreshed session
+          // is persisted there (where cookie writes ARE allowed) before the
+          // render ever runs.
+          try {
+            list.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Intentionally ignored — see above.
+          }
+        },
       },
     }
   );
