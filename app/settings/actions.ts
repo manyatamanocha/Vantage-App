@@ -1,9 +1,17 @@
 "use server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
+// Defaults must match the DB column defaults in supabase/migrations/0001_init.sql
+// (practice_difficulty default 'medium', practice_frequency default 'daily'), since
+// no row is guaranteed to exist yet for a given user_id.
+const DEFAULT_SETTINGS = {
+  practiceDifficulty: "medium",
+  practiceFrequency: "daily",
+} as const;
+
 export async function getSettings(
   userId: string
-): Promise<{ practiceDifficulty?: string; practiceFrequency?: string }> {
+): Promise<{ practiceDifficulty: string; practiceFrequency: string }> {
   const supabase = await getSupabaseServerClient();
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user?.id) throw new Error("Not authenticated");
@@ -12,13 +20,13 @@ export async function getSettings(
     .from("user_settings")
     .select("practice_difficulty, practice_frequency")
     .eq("user_id", userId)
-    .single();
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
 
   return {
-    practiceDifficulty: data?.practice_difficulty,
-    practiceFrequency: data?.practice_frequency,
+    practiceDifficulty: data?.practice_difficulty ?? DEFAULT_SETTINGS.practiceDifficulty,
+    practiceFrequency: data?.practice_frequency ?? DEFAULT_SETTINGS.practiceFrequency,
   };
 }
 
@@ -30,9 +38,14 @@ export async function updateSettings(
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user?.id) throw new Error("Not authenticated");
 
-  const dbPatch: Record<string, string> = {};
+  // Upsert (rather than update) because no row is guaranteed to exist for this
+  // user yet (nothing creates a user_settings row at signup). Only the patched
+  // fields plus the conflict key (user_id) are sent, so: on first insert the DB
+  // column defaults fill in any field not being set, and on conflict only the
+  // provided columns are overwritten, preserving partial-patch semantics.
+  const dbPatch: Record<string, string> = { user_id: userId };
   if (patch.practiceDifficulty) dbPatch.practice_difficulty = patch.practiceDifficulty;
   if (patch.practiceFrequency) dbPatch.practice_frequency = patch.practiceFrequency;
-  const { error } = await supabase.from("user_settings").update(dbPatch).eq("user_id", userId);
+  const { error } = await supabase.from("user_settings").upsert(dbPatch);
   if (error) throw new Error(error.message);
 }
