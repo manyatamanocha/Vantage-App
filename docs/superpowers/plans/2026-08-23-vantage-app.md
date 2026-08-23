@@ -4,40 +4,41 @@
 
 **Goal:** Build Vantage as a real, working web app — a guess-then-reveal tool that turns a messy client problem into an AI-approach category recommendation, reused across a reactive loop (live problems) and a proactive loop (daily practice).
 
-**Architecture:** Next.js (App Router, TypeScript) full-stack app on Vercel. Supabase for Postgres + Auth + Storage. Claude API (Anthropic SDK) called server-side only, at three call sites (Structure, Reveal, Handback) that share one "understand → recommend" engine module.
+**Architecture:** Next.js (App Router, TypeScript) full-stack app on Vercel. Supabase for Postgres + Auth + Storage. Groq API (Groq SDK, free tier) called server-side only, at three call sites (Structure, Reveal, Handback) that share one "understand → recommend" engine module.
 
-**Tech Stack:** Next.js 15 (App Router), TypeScript, Tailwind + shadcn/ui, Supabase (Postgres/Auth/Storage), `@anthropic-ai/sdk`, Vitest (unit), Playwright or integration tests against local Supabase CLI.
+**Tech Stack:** Next.js 15 (App Router), TypeScript, Tailwind + shadcn/ui, Supabase (Postgres/Auth/Storage), `groq-sdk`, Vitest (unit), Playwright or integration tests against local Supabase CLI.
 
 **Spec:** `docs/superpowers/specs/2026-08-23-vantage-app-design.md`
 
 ## Global Constraints
 
-- Claude API calls happen **server-side only** (route handlers / server actions) — the API key must never reach the browser bundle.
+- Groq API calls happen **server-side only** (route handlers / server actions) — the API key must never reach the browser bundle.
 - Every AI output the user sees must be confirmable/correctable before it's treated as final (Structure step has an Edit affordance; nothing skips straight from AI output to persisted truth without the user seeing it).
 - Guess step (Feature 4) is pure client-side — no network dependency, no AI call.
 - One shared engine module powers both the reactive loop and the proactive (practice) loop — do not fork the logic.
 - Recommendations are category-level and tool-class-level only, never a named product (per Solution Overview — "never says 'use Tool X'").
-- Each Claude call site wraps with a single retry + timeout; on failure, no fallback content is invented, and any already-persisted input from earlier steps is preserved.
+- Each Groq call site wraps with a single retry + timeout; on failure, no fallback content is invented, and any already-persisted input from earlier steps is preserved.
 - Auth is work-email based (Feature 1).
+- Groq's free tier is rate-limited — the retry/timeout wrapper is the only rate-limit handling for the MVP; no queueing or backoff beyond one retry.
 
 ---
 
 ## Phase 0 — Project Scaffolding
 **Recommended coding-agent model: Haiku** (boilerplate/config, no novel logic — cheap and fast is the right trade here)
 
-### Task 1: Initialize Next.js project, Supabase client, Anthropic client
+### Task 1: Initialize Next.js project, Supabase client, Groq client
 
 **Files:**
 - Create: `package.json`, `tsconfig.json`, `next.config.ts`, `tailwind.config.ts`
 - Create: `lib/supabase/client.ts` (browser client)
 - Create: `lib/supabase/server.ts` (server client, cookie-based auth)
-- Create: `lib/anthropic.ts` (server-only Anthropic client singleton)
+- Create: `lib/groq.ts` (server-only Groq client singleton)
 - Create: `.env.local.example`
-- Test: `lib/__tests__/anthropic.test.ts`
+- Test: `lib/__tests__/groq.test.ts`
 
 **Interfaces:**
 - Produces: `getSupabaseServerClient(): SupabaseClient` from `lib/supabase/server.ts`, used by every server action in later tasks.
-- Produces: `getAnthropicClient(): Anthropic` from `lib/anthropic.ts`, used by all three Claude call sites (Phases 2, 3, 6).
+- Produces: `getGroqClient(): Groq` from `lib/groq.ts`, used by all three Groq call sites (Phases 2, 3, 6).
 
 - [ ] **Step 1: Scaffold the Next.js app**
 
@@ -45,7 +46,7 @@
 npx create-next-app@latest vantage-app --typescript --tailwind --app --src-dir=false --import-alias "@/*"
 cd vantage-app
 npx shadcn@latest init -d
-npm install @supabase/supabase-js @supabase/ssr @anthropic-ai/sdk
+npm install @supabase/supabase-js @supabase/ssr groq-sdk
 npm install -D vitest @vitejs/plugin-react
 ```
 
@@ -56,22 +57,22 @@ npm install -D vitest @vitejs/plugin-react
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-ANTHROPIC_API_KEY=
+GROQ_API_KEY=
 ```
 
-- [ ] **Step 3: Write `lib/anthropic.ts`**
+- [ ] **Step 3: Write `lib/groq.ts`**
 
 ```typescript
-import Anthropic from "@anthropic-ai/sdk";
+import Groq from "groq-sdk";
 
-let client: Anthropic | null = null;
+let client: Groq | null = null;
 
-export function getAnthropicClient(): Anthropic {
+export function getGroqClient(): Groq {
   if (typeof window !== "undefined") {
-    throw new Error("getAnthropicClient() must only be called server-side");
+    throw new Error("getGroqClient() must only be called server-side");
   }
   if (!client) {
-    client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    client = new Groq({ apiKey: process.env.GROQ_API_KEY });
   }
   return client;
 }
@@ -79,15 +80,15 @@ export function getAnthropicClient(): Anthropic {
 
 - [ ] **Step 4: Write the failing test for the server-only guard**
 
-`lib/__tests__/anthropic.test.ts`:
+`lib/__tests__/groq.test.ts`:
 ```typescript
 import { describe, it, expect, vi } from "vitest";
 
-describe("getAnthropicClient", () => {
+describe("getGroqClient", () => {
   it("throws when called in a browser-like environment", async () => {
     vi.stubGlobal("window", {});
-    const { getAnthropicClient } = await import("../anthropic");
-    expect(() => getAnthropicClient()).toThrow(/server-side/);
+    const { getGroqClient } = await import("../groq");
+    expect(() => getGroqClient()).toThrow(/server-side/);
     vi.unstubAllGlobals();
   });
 });
@@ -95,8 +96,8 @@ describe("getAnthropicClient", () => {
 
 - [ ] **Step 5: Run test to verify it fails, then passes**
 
-Run: `npx vitest run lib/__tests__/anthropic.test.ts`
-Expected: passes once `lib/anthropic.ts` exists as written above (write test after implementation here since this is a scaffolding guard, not new behavior — confirm it fails if you comment out the `typeof window` check, then restore it).
+Run: `npx vitest run lib/__tests__/groq.test.ts`
+Expected: passes once `lib/groq.ts` exists as written above (write test after implementation here since this is a scaffolding guard, not new behavior — confirm it fails if you comment out the `typeof window` check, then restore it).
 
 - [ ] **Step 6: Write `lib/supabase/client.ts` and `lib/supabase/server.ts`**
 
@@ -139,7 +140,7 @@ export async function getSupabaseServerClient() {
 
 ```bash
 git add -A
-git commit -m "chore: scaffold Next.js app with Supabase and Anthropic clients"
+git commit -m "chore: scaffold Next.js app with Supabase and Groq clients"
 ```
 
 ---
@@ -325,7 +326,7 @@ git commit -m "feat: work-email sign-up and login (Feature 1)"
 
 ---
 
-## Phase 2 — Intake & Structure (first Claude call site)
+## Phase 2 — Intake & Structure (first Groq call site)
 **Recommended coding-agent model: Opus** (this is the first prompt-engineering surface in the app — the parsing contract set here is reused by Phase 3, so it's worth the stronger model)
 
 ### Task 4: Intake form (Feature 2)
@@ -449,7 +450,7 @@ git add app/solve/new
 git commit -m "feat: problem intake, bucket-1 handler (Feature 2)"
 ```
 
-### Task 5: Structure step — first Claude call (Feature 3)
+### Task 5: Structure step — first Groq call (Feature 3)
 
 **Files:**
 - Create: `lib/engine/structure.ts`
@@ -458,21 +459,23 @@ git commit -m "feat: problem intake, bucket-1 handler (Feature 2)"
 - Test: `lib/engine/__tests__/structure.test.ts`
 
 **Interfaces:**
-- Consumes: `getAnthropicClient()` (Task 1), `getSupabaseServerClient()` (Task 1).
-- Produces: `structureProblem(rawInput: string, industry?: string): Promise<{ goal: string; problemType: string }>` from `lib/engine/structure.ts` — this is the shared parsing contract Task 7 (Reveal) also follows for its own Claude call.
+- Consumes: `getGroqClient()` (Task 1), `getSupabaseServerClient()` (Task 1).
+- Produces: `structureProblem(rawInput: string, industry?: string): Promise<{ goal: string; problemType: string }>` from `lib/engine/structure.ts` — this is the shared parsing contract Task 7 (Reveal) also follows for its own Groq call.
 
-- [ ] **Step 1: Write the failing test with a mocked Anthropic client**
+- [ ] **Step 1: Write the failing test with a mocked Groq client**
 
 ```typescript
 // lib/engine/__tests__/structure.test.ts
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("@/lib/anthropic", () => ({
-  getAnthropicClient: () => ({
-    messages: {
-      create: async () => ({
-        content: [{ type: "text", text: JSON.stringify({ goal: "Reduce churn", problemType: "Predict which customers will cancel" }) }],
-      }),
+vi.mock("@/lib/groq", () => ({
+  getGroqClient: () => ({
+    chat: {
+      completions: {
+        create: async () => ({
+          choices: [{ message: { content: JSON.stringify({ goal: "Reduce churn", problemType: "Predict which customers will cancel" }) } }],
+        }),
+      },
     },
   }),
 }));
@@ -487,9 +490,9 @@ describe("structureProblem", () => {
   });
 
   it("throws a clear error on unparseable response", async () => {
-    const { getAnthropicClient } = await import("@/lib/anthropic");
-    vi.mocked(getAnthropicClient).mockReturnValueOnce({
-      messages: { create: async () => ({ content: [{ type: "text", text: "not json" }] }) },
+    const { getGroqClient } = await import("@/lib/groq");
+    vi.mocked(getGroqClient).mockReturnValueOnce({
+      chat: { completions: { create: async () => ({ choices: [{ message: { content: "not json" } }] }) } },
     } as any);
     await expect(structureProblem("x")).rejects.toThrow(/parse/i);
   });
@@ -505,7 +508,7 @@ Expected: FAIL — `structureProblem` not defined.
 
 ```typescript
 // lib/engine/structure.ts
-import { getAnthropicClient } from "@/lib/anthropic";
+import { getGroqClient } from "@/lib/groq";
 
 const SYSTEM_PROMPT = `You turn a messy, informal client ask into two fields: a clear one-sentence "goal" and a one-sentence "problemType" description. Respond with ONLY a JSON object: {"goal": "...", "problemType": "..."}. No prose, no markdown fences.`;
 
@@ -513,19 +516,21 @@ export async function structureProblem(
   rawInput: string,
   industry?: string
 ): Promise<{ goal: string; problemType: string }> {
-  const client = getAnthropicClient();
+  const client = getGroqClient();
   const userContent = industry ? `Industry: ${industry}\nClient ask: ${rawInput}` : `Client ask: ${rawInput}`;
 
   const response = await withRetry(() =>
-    client.messages.create({
-      model: "claude-sonnet-5",
+    client.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       max_tokens: 300,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userContent }],
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ],
     })
   );
 
-  const text = response.content.find((b) => b.type === "text")?.text ?? "";
+  const text = response.choices[0]?.message?.content ?? "";
   try {
     const parsed = JSON.parse(text);
     if (typeof parsed.goal !== "string" || typeof parsed.problemType !== "string") {
@@ -593,7 +598,7 @@ The page calls `runStructureStep` on load, renders `goal`/`problemType` in edita
 
 ```bash
 git add lib/engine/structure.ts app/solve/\[id\]/structure
-git commit -m "feat: structure step, first Claude call site (Feature 3)"
+git commit -m "feat: structure step, first Groq call site (Feature 3)"
 ```
 
 ---
@@ -674,7 +679,7 @@ export async function saveGuess(solveId: string, guessedCategory: string): Promi
 }
 ```
 
-The guess page renders `CATEGORY_TAXONOMY` as tap targets, calls `saveGuess` client-side-triggered server action on selection (no Claude call, no network dependency beyond the Supabase write), then routes to `/solve/[id]/reveal`.
+The guess page renders `CATEGORY_TAXONOMY` as tap targets, calls `saveGuess` client-side-triggered server action on selection (no Groq call, no network dependency beyond the Supabase write), then routes to `/solve/[id]/reveal`.
 
 - [ ] **Step 6: Commit**
 
@@ -683,7 +688,7 @@ git add lib/engine/taxonomy.ts app/solve/\[id\]/guess
 git commit -m "feat: category taxonomy and guess-before-reveal UI (Feature 4)"
 ```
 
-### Task 7: Reveal step — second Claude call, comparative reasoning (Feature 5, Feature 6)
+### Task 7: Reveal step — second Groq call, comparative reasoning (Feature 5, Feature 6)
 
 **Files:**
 - Create: `lib/engine/reveal.ts`
@@ -692,7 +697,7 @@ git commit -m "feat: category taxonomy and guess-before-reveal UI (Feature 4)"
 - Test: `lib/engine/__tests__/reveal.test.ts`
 
 **Interfaces:**
-- Consumes: `getAnthropicClient()` (Task 1), `CATEGORY_TAXONOMY` (Task 6), `getSupabaseServerClient()` (Task 1).
+- Consumes: `getGroqClient()` (Task 1), `CATEGORY_TAXONOMY` (Task 6), `getSupabaseServerClient()` (Task 1).
 - Produces: `recommendCategory(input: { goal: string; problemType: string; guessedCategory: string }): Promise<RevealResult>` where
   ```typescript
   type RevealResult = {
@@ -719,9 +724,13 @@ const mockResponse = {
   toolClass: "specialized",
 };
 
-vi.mock("@/lib/anthropic", () => ({
-  getAnthropicClient: () => ({
-    messages: { create: async () => ({ content: [{ type: "text", text: JSON.stringify(mockResponse) }] }) },
+vi.mock("@/lib/groq", () => ({
+  getGroqClient: () => ({
+    chat: {
+      completions: {
+        create: async () => ({ choices: [{ message: { content: JSON.stringify(mockResponse) } }] }),
+      },
+    },
   }),
 }));
 
@@ -746,7 +755,7 @@ Expected: FAIL — `recommendCategory` not defined.
 
 ```typescript
 // lib/engine/reveal.ts
-import { getAnthropicClient } from "@/lib/anthropic";
+import { getGroqClient } from "@/lib/groq";
 import { CATEGORY_TAXONOMY } from "./taxonomy";
 
 export type RevealResult = {
@@ -771,19 +780,21 @@ export async function recommendCategory(input: {
   problemType: string;
   guessedCategory: string;
 }): Promise<RevealResult> {
-  const client = getAnthropicClient();
+  const client = getGroqClient();
   const userContent = `Goal: ${input.goal}\nProblem type: ${input.problemType}\nUser's guess: ${input.guessedCategory}`;
 
   const response = await withRetry(() =>
-    client.messages.create({
-      model: "claude-opus-5",
+    client.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       max_tokens: 800,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: userContent }],
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ],
     })
   );
 
-  const text = response.content.find((b) => b.type === "text")?.text ?? "";
+  const text = response.choices[0]?.message?.content ?? "";
   let parsed: RevealResult;
   try {
     parsed = JSON.parse(text);
@@ -936,7 +947,7 @@ Expected: PASS.
 
 - [ ] **Step 5: Build the practice page (screen 2i)**
 
-The page calls `getTodaysPracticeCase`, then `createDraftSolve({ rawInput, industry, source: "practice" })`, renders guess UI (reuse Task 6 component) and reveal (reuse Task 7's `recommendCategory` via a single combined action since guess and reveal happen on one screen here), and renders an inline "Learn & remember" panel (key takeaway + common pitfall) sourced from the same reveal response's `whyItFits`/`whyNotAlternatives` fields — no new Claude call needed beyond Task 7's.
+The page calls `getTodaysPracticeCase`, then `createDraftSolve({ rawInput, industry, source: "practice" })`, renders guess UI (reuse Task 6 component) and reveal (reuse Task 7's `recommendCategory` via a single combined action since guess and reveal happen on one screen here), and renders an inline "Learn & remember" panel (key takeaway + common pitfall) sourced from the same reveal response's `whyItFits`/`whyNotAlternatives` fields — no new Groq call needed beyond Task 7's.
 
 - [ ] **Step 6: Commit**
 
@@ -1208,8 +1219,8 @@ git commit -m "feat: settings screen with practice preferences (Feature 12)"
 
 ---
 
-## Phase 6 — Handback artifact (third Claude call site)
-**Recommended coding-agent model: Sonnet** (a new Claude call site, but a simpler generation task than Phase 3's comparative reasoning)
+## Phase 6 — Handback artifact (third Groq call site)
+**Recommended coding-agent model: Sonnet** (a new Groq call site, but a simpler generation task than Phase 3's comparative reasoning)
 
 ### Task 12: Handback generation (Feature 8)
 
@@ -1220,7 +1231,7 @@ git commit -m "feat: settings screen with practice preferences (Feature 12)"
 - Test: `lib/engine/__tests__/handback.test.ts`
 
 **Interfaces:**
-- Consumes: `getAnthropicClient()` (Task 1), `solves`/`takeaways` tables (Task 2).
+- Consumes: `getGroqClient()` (Task 1), `solves`/`takeaways` tables (Task 2).
 - Produces: `generateHandback(input: { goal: string; problemType: string; revealedCategory: string }): Promise<string>` (the draft text).
 
 - [ ] **Step 1: Write the failing test**
@@ -1229,9 +1240,13 @@ git commit -m "feat: settings screen with practice preferences (Feature 12)"
 // lib/engine/__tests__/handback.test.ts
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("@/lib/anthropic", () => ({
-  getAnthropicClient: () => ({
-    messages: { create: async () => ({ content: [{ type: "text", text: "Draft: here's how we'll address churn using a prediction model..." }] }) },
+vi.mock("@/lib/groq", () => ({
+  getGroqClient: () => ({
+    chat: {
+      completions: {
+        create: async () => ({ choices: [{ message: { content: "Draft: here's how we'll address churn using a prediction model..." } }] }),
+      },
+    },
   }),
 }));
 
@@ -1254,19 +1269,21 @@ Expected: FAIL — module not found.
 
 ```typescript
 // lib/engine/handback.ts
-import { getAnthropicClient } from "@/lib/anthropic";
+import { getGroqClient } from "@/lib/groq";
 
 const SYSTEM_PROMPT = `You write a short, client-facing takeaway draft (3-5 sentences) summarizing how AI will address the client's problem, given the confirmed problem and AI-approach category. Plain language, no jargon, no named products. Respond with only the draft text, no preamble.`;
 
 export async function generateHandback(input: { goal: string; problemType: string; revealedCategory: string }): Promise<string> {
-  const client = getAnthropicClient();
-  const response = await client.messages.create({
-    model: "claude-sonnet-5",
+  const client = getGroqClient();
+  const response = await client.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
     max_tokens: 400,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: `Goal: ${input.goal}\nProblem type: ${input.problemType}\nCategory: ${input.revealedCategory}` }],
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: `Goal: ${input.goal}\nProblem type: ${input.problemType}\nCategory: ${input.revealedCategory}` },
+    ],
   });
-  const text = response.content.find((b) => b.type === "text")?.text ?? "";
+  const text = response.choices[0]?.message?.content ?? "";
   if (!text.trim()) throw new Error("Handback generation returned empty text");
   return text;
 }
@@ -1357,16 +1374,16 @@ describe("guess-then-reveal round trip", () => {
 });
 ```
 
-Note: this test hits the real Claude API against a local Supabase instance (per the spec's integration-testing approach) — requires `ANTHROPIC_API_KEY` set in the test environment. If running this in CI without a budget for live API calls, gate it behind an `INTEGRATION=1` env check rather than mocking Anthropic here, since the point of this test is exercising the real parsing contract end-to-end.
+Note: this test hits the real Groq API against a local Supabase instance (per the spec's integration-testing approach) — requires `GROQ_API_KEY` set in the test environment. Groq's free tier is rate-limited, so if this test is run repeatedly in a short window it may hit a 429 — the retry wrapper in `structureProblem`/`recommendCategory` covers a single transient failure, but do not loop this test in a tight retry script. If running this in CI without a budget for live API calls, gate it behind an `INTEGRATION=1` env check rather than mocking Groq here, since the point of this test is exercising the real parsing contract end-to-end.
 
 - [ ] **Step 3: Run the integration test**
 
 Run: `INTEGRATION=1 npx vitest run tests/integration/guess-then-reveal.test.ts`
-Expected: PASS against local Supabase + live Claude API.
+Expected: PASS against local Supabase + live Groq API.
 
 - [ ] **Step 4: Add Vercel deployment config**
 
-Ensure `vercel.json` (if needed for custom build settings) and confirm environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`) are documented in `.env.local.example` (already done in Task 1) and set in the Vercel project dashboard — this is a manual dashboard step, not a code change.
+Ensure `vercel.json` (if needed for custom build settings) and confirm environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY`) are documented in `.env.local.example` (already done in Task 1) and set in the Vercel project dashboard — this is a manual dashboard step, not a code change.
 
 - [ ] **Step 5: Commit**
 
@@ -1383,14 +1400,14 @@ git commit -m "test: end-to-end guess-then-reveal integration test"
 |---|---|---|---|
 | 0 — Scaffolding | Task 1 | Haiku | Pure boilerplate/config |
 | 1 — Auth & Data Model | Tasks 2-3 | Sonnet | Schema + auth correctness, well-trodden patterns |
-| 2 — Intake & Structure | Tasks 4-5 | Opus | First Claude call site; parsing contract reused later |
+| 2 — Intake & Structure | Tasks 4-5 | Opus | First Groq call site; parsing contract reused later |
 | 3 — Guess & Reveal | Tasks 6-7 | **Opus 4.8** | Load-bearing comparative reasoning; the core of the product |
 | 4 — Proactive loop, summary, history | Tasks 8-9 | Sonnet | Reuses established engine, integration-heavy |
 | 5 — Progress & Settings | Tasks 10-11 | Haiku | Aggregation queries and preference CRUD |
-| 6 — Handback artifact | Task 12 | Sonnet | New but simpler Claude call site |
+| 6 — Handback artifact | Task 12 | Sonnet | New but simpler Groq call site |
 | 7 — Integration testing & deploy | Task 13 | Sonnet | Test-harness judgment, no new product logic |
 
 ## Open items carried from the spec (unblocked, but worth resolving before public copy ships)
 
-- Persona vs. wireframe conflict on "independent consultant" vs. firm-employed — affects only copy on the Settings screen (Task 11), not functionality.
 - `Problem Statement.md` staleness in the source vault — doesn't affect this plan's tasks, only external-facing PRD language.
+- Groq free-tier rate limits — fine for MVP build/demo; revisit if usage grows past free-tier limits (see spec's Architecture section).
