@@ -15,7 +15,7 @@ export async function createHandback(solveId: string): Promise<string> {
 
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")
-    .select("goal, problem_type, revealed_category")
+    .select("raw_input, goal, problem_type, revealed_category")
     .eq("id", solveId)
     .single();
   if (fetchErr) throw new Error(fetchErr.message);
@@ -24,9 +24,19 @@ export async function createHandback(solveId: string): Promise<string> {
     throw new Error("This solve hasn't been revealed yet");
   }
 
+  // `goal`/`problem_type` are always NULL on practice-sourced rows: the daily
+  // loop skips the structuring step entirely, so nothing ever writes them.
+  // Passing those NULLs into the prompt produced "Goal: null" in a
+  // *client-facing* artifact — the one output here that leaves the building.
+  // Falling back to the row's own `raw_input` is the same substitution
+  // `submitPracticeGuess` already makes when it calls the reveal engine, so the
+  // handback is written about exactly the problem the reveal reasoned about.
+  const goal = solve.goal ?? solve.raw_input;
+  const problemType = solve.problem_type ?? solve.raw_input;
+
   const draftText = await generateHandback({
-    goal: solve.goal,
-    problemType: solve.problem_type,
+    goal,
+    problemType,
     revealedCategory: solve.revealed_category,
   });
 

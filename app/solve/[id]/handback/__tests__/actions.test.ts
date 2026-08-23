@@ -55,6 +55,7 @@ import { generateHandback } from "@/lib/engine/handback";
 beforeEach(() => {
   state.user = { id: "u1" };
   state.solve = {
+    raw_input: "Our best customers keep quietly leaving and we find out too late.",
     goal: "Reduce churn",
     problem_type: "Predict cancellations",
     revealed_category: "Prediction",
@@ -83,6 +84,31 @@ describe("createHandback", () => {
     expect(state.upsertCalls[0].options).toEqual({ onConflict: "solve_id" });
   });
 
+  it("falls back to raw_input for a practice-sourced solve, whose goal/problem_type are always NULL", async () => {
+    // The daily practice loop skips the structuring step entirely, so nothing
+    // ever writes `goal`/`problem_type` on a `source: "practice"` row. Those
+    // NULLs used to go straight into the prompt as "Goal: null" — in the one
+    // output the consultant hands to a client.
+    const PRACTICE_RAW_INPUT =
+      "A payments processor wants unusual transaction patterns surfaced for human review.";
+    state.solve = {
+      raw_input: PRACTICE_RAW_INPUT,
+      goal: null,
+      problem_type: null,
+      revealed_category: "Anomaly Detection",
+    };
+
+    const text = await createHandback("practice-solve");
+
+    expect(generateHandback).toHaveBeenCalledWith({
+      goal: PRACTICE_RAW_INPUT,
+      problemType: PRACTICE_RAW_INPUT,
+      revealedCategory: "Anomaly Detection",
+    });
+    expect(text).toBe(DRAFT_TEXT);
+    expect(state.upsertCalls).toHaveLength(1);
+  });
+
   it("throws when there is no authenticated user, before reading or writing", async () => {
     state.user = null;
     await expect(createHandback("s1")).rejects.toThrow(/not authenticated/i);
@@ -92,6 +118,7 @@ describe("createHandback", () => {
 
   it("refuses to generate a handback before the solve has been revealed", async () => {
     state.solve = {
+      raw_input: "Our best customers keep quietly leaving and we find out too late.",
       goal: "Reduce churn",
       problem_type: "Predict cancellations",
       revealed_category: null,
