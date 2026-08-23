@@ -3,6 +3,7 @@
 import { use, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORY_TAXONOMY, type Category } from "@/lib/engine/taxonomy";
+import { CategorySelector } from "@/components/category-selector";
 import { saveGuess } from "./actions";
 
 // This screen is deliberately client-only. Picking a category is the active-recall
@@ -38,19 +39,11 @@ export default function GuessPage({
       <h1>What kind of AI problem is this?</h1>
       <p>Commit to an answer before you see the recommendation.</p>
 
-      <ul>
-        {CATEGORY_TAXONOMY.map((category) => (
-          <li key={category}>
-            <button
-              type="button"
-              aria-pressed={selected === category}
-              onClick={() => setSelected(category)}
-            >
-              {category}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <CategorySelector
+        taxonomy={CATEGORY_TAXONOMY}
+        selected={selected}
+        onSelect={setSelected}
+      />
 
       {error ? <p role="alert">{error}</p> : null}
 
