@@ -967,7 +967,7 @@ git commit -m "feat: daily practice loop reusing the guess-then-reveal engine (F
 
 **Interfaces:**
 - Consumes: `solves` table (Task 2).
-- Produces: `listSolves(userId: string): Promise<SolveHistoryRow[]>` where `SolveHistoryRow = { id: string; source: "live" | "practice"; revealedCategory: string; correct: boolean; createdAt: string }` — consumed by Task 12 (Progress screen) for its own separate aggregation queries, not by re-using this function.
+- Produces: `listSolves(userId: string): Promise<SolveHistoryRow[]>` where `SolveHistoryRow = { id: string; source: "live" | "practice"; revealedCategory: string; correct: boolean; createdAt: string }` — Task 10 (Progress screen) computes its own separate aggregation queries against the same `solves` table, not by re-using this function.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1276,17 +1276,34 @@ const SYSTEM_PROMPT = `You write a short, client-facing takeaway draft (3-5 sent
 
 export async function generateHandback(input: { goal: string; problemType: string; revealedCategory: string }): Promise<string> {
   const client = getGroqClient();
-  const response = await client.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    max_tokens: 400,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: `Goal: ${input.goal}\nProblem type: ${input.problemType}\nCategory: ${input.revealedCategory}` },
-    ],
-  });
+
+  const response = await withRetry(() =>
+    client.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 400,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `Goal: ${input.goal}\nProblem type: ${input.problemType}\nCategory: ${input.revealedCategory}` },
+      ],
+    })
+  );
+
   const text = response.choices[0]?.message?.content ?? "";
   if (!text.trim()) throw new Error("Handback generation returned empty text");
   return text;
+}
+
+async function withRetry<T>(fn: () => Promise<T>, timeoutMs = 15000): Promise<T> {
+  const attempt = () =>
+    Promise.race([
+      fn(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), timeoutMs)),
+    ]);
+  try {
+    return await attempt();
+  } catch {
+    return await attempt();
+  }
 }
 ```
 
