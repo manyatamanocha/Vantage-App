@@ -45,3 +45,6 @@ create policy "own takeaways" on takeaways for all using (
   auth.uid() = (select user_id from solves where solves.id = takeaways.solve_id)
 );
 create policy "own settings" on user_settings for all using (auth.uid() = user_id);
+
+alter table practice_cases enable row level security;
+create policy "read practice cases" on practice_cases for select to authenticated using (true);
