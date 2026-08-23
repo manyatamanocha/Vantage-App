@@ -106,6 +106,26 @@ describe("loginAction", () => {
     }
   );
 
+  // Browsers strip a leading backslash to a slash, and strip ASCII
+  // tab/CR/LF from a URL entirely, before resolving it. Both behaviours let
+  // a value that merely *starts* with a single "/" turn into a
+  // protocol-relative "//evil.example" once the browser resolves it, which
+  // a naive `startsWith("/") && !startsWith("//")` check would miss.
+  it.each([
+    "/\\evil.example/x",
+    "/\t/evil.example",
+    "/\r/evil.example",
+    "/\n/evil.example",
+  ])(
+    "ignores %j, a browser-normalization bypass for the leading-slash check",
+    async (hostile) => {
+      await expect(
+        loginAction(null, credentials({ next: hostile }))
+      ).rejects.toThrow("NEXT_REDIRECT");
+      expect(state.redirectedTo).toEqual(["/"]);
+    }
+  );
+
   it("returns the error and does not redirect when sign-in fails", async () => {
     state.signInError = { message: "Invalid login credentials" };
     const result = await loginAction(null, credentials());

@@ -45,8 +45,24 @@ export async function signInWithEmail(formData: FormData): Promise<AuthResult> {
  */
 function safeNext(value: FormDataEntryValue | null): string {
   const raw = typeof value === "string" ? value : "";
-  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
-  return "/";
+  const fallback = "/";
+  if (!raw) return fallback;
+  // Resolve against a fixed dummy origin rather than pattern-matching the raw
+  // string: browsers strip leading tabs/CR/LF and treat a leading backslash
+  // as a slash before resolving a URL, so naive prefix checks (`//`, etc.)
+  // miss bypasses like `/\evil.example` or `/\tevil.example`. Only accept the
+  // value if it resolves same-origin *and* reconstructs to a single-slash
+  // relative path.
+  const base = "http://localhost";
+  try {
+    const resolved = new URL(raw, base);
+    if (resolved.origin !== base) return fallback;
+    const rebuilt = resolved.pathname + resolved.search + resolved.hash;
+    if (!rebuilt.startsWith("/") || rebuilt.startsWith("//")) return fallback;
+    return rebuilt;
+  } catch {
+    return fallback;
+  }
 }
 
 /**
