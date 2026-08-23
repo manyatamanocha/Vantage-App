@@ -20,7 +20,7 @@ export async function generateHandback(input: {
   const response = await withRetry((signal) =>
     client.chat.completions.create(
       {
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         max_tokens: 400,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },

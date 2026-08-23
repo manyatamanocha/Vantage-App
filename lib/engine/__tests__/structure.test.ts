@@ -75,7 +75,7 @@ describe("structureProblem", () => {
 
     const [body, options] = create.mock.calls[0];
     expect(body.response_format).toEqual({ type: "json_object" });
-    expect(body.model).toBe("llama-3.3-70b-versatile");
+    expect(body.model).toBe("openai/gpt-oss-120b");
     // Groq's JSON mode requires the word "JSON" somewhere in the messages.
     expect(
       body.messages.some((m: { content: string }) => /json/i.test(m.content))
