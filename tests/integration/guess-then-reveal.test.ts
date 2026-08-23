@@ -83,11 +83,12 @@ describe.skipIf(!RUN)(
     beforeAll(async () => {
       if (
         !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
         !process.env.SUPABASE_SERVICE_ROLE_KEY ||
         !process.env.GROQ_API_KEY
       ) {
         throw new Error(
-          "NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and GROQ_API_KEY are all required to run this integration test"
+          "NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY and GROQ_API_KEY are all required to run this integration test"
         );
       }
 

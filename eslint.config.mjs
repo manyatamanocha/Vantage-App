@@ -14,10 +14,17 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   {
+    // Scoped to test files: the underscore-prefixed-unused convention this
+    // enables (e.g. an intentionally-unused mock argument) is a test-file
+    // pattern, not a repo-wide one. Scoping here — rather than overriding
+    // `@typescript-eslint/no-unused-vars` for every file — avoids silently
+    // replacing whatever options Next's config (or a future repo-wide
+    // change) sets for that rule elsewhere.
+    files: ["**/*.test.{ts,tsx}", "**/__tests__/**/*.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { argsIgnorePattern: "^_" },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
     },
   },

@@ -1,5 +1,6 @@
 import { getGroqClient } from "@/lib/groq";
 import { withRetry } from "./with-retry";
+import { checkFinishReason } from "./check-finish-reason";
 
 /**
  * The third Groq call site: a short, client-facing draft the consultant can
@@ -21,7 +22,13 @@ export async function generateHandback(input: {
     client.chat.completions.create(
       {
         model: "openai/gpt-oss-120b",
-        max_tokens: 400,
+        // openai/gpt-oss-120b is a reasoning model: its reasoning tokens draw
+        // from this same completion-token budget. "low" keeps reasoning
+        // bounded for a short prose draft, and max_tokens is sized
+        // generously above that — these are cheap free-tier calls, not a
+        // cost concern for an MVP.
+        reasoning_effort: "low",
+        max_tokens: 1000,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userContent },
@@ -32,6 +39,8 @@ export async function generateHandback(input: {
       { maxRetries: 0, signal }
     )
   );
+
+  checkFinishReason(response.choices[0]?.finish_reason, "handback");
 
   const text = response.choices[0]?.message?.content ?? "";
   if (!text.trim()) throw new Error("Handback generation returned empty text");

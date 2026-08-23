@@ -1,6 +1,7 @@
 import { getGroqClient } from "@/lib/groq";
 import { withRetry } from "./with-retry";
 import { parseJsonResponse } from "./parse-json-response";
+import { checkFinishReason } from "./check-finish-reason";
 
 // Groq's JSON mode requires the word "JSON" to appear in the messages — it is in
 // this system prompt, which is sent on every call.
@@ -30,7 +31,13 @@ export async function structureProblem(
     client.chat.completions.create(
       {
         model: "openai/gpt-oss-120b",
-        max_tokens: 300,
+        // openai/gpt-oss-120b is a reasoning model: its reasoning tokens draw
+        // from this same completion-token budget. "low" keeps reasoning
+        // short for a two-field extraction task, and max_tokens is sized
+        // generously above that so a legitimately longer answer still fits
+        // — these are cheap free-tier calls, not a cost concern for an MVP.
+        reasoning_effort: "low",
+        max_tokens: 1000,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -42,6 +49,8 @@ export async function structureProblem(
       { maxRetries: 0, signal }
     )
   );
+
+  checkFinishReason(response.choices[0]?.finish_reason, "structure");
 
   const text = response.choices[0]?.message?.content ?? "";
   const { goal, problemType } = parseJsonResponse(

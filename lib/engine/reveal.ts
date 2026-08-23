@@ -1,6 +1,7 @@
 import { getGroqClient } from "@/lib/groq";
 import { withRetry } from "./with-retry";
 import { parseJsonResponse } from "./parse-json-response";
+import { checkFinishReason } from "./check-finish-reason";
 import { CATEGORY_TAXONOMY, isCategory, type Category } from "./taxonomy";
 
 /**
@@ -74,7 +75,14 @@ export async function recommendCategory(input: {
     client.chat.completions.create(
       {
         model: "openai/gpt-oss-120b",
-        max_tokens: 800,
+        // openai/gpt-oss-120b is a reasoning model: its reasoning tokens draw
+        // from this same completion-token budget. "low" keeps reasoning
+        // bounded for this task, and max_tokens is sized generously above
+        // that — this is the most output-heavy of the three call sites
+        // (multiple alternatives plus prose reasons) — since these are cheap
+        // free-tier calls, not a cost concern for an MVP.
+        reasoning_effort: "low",
+        max_tokens: 2000,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -86,6 +94,8 @@ export async function recommendCategory(input: {
       { maxRetries: 0, signal }
     )
   );
+
+  checkFinishReason(response.choices[0]?.finish_reason, "reveal");
 
   const text = response.choices[0]?.message?.content ?? "";
   const parsed = parseJsonResponse(text, isRawReveal, "reveal");
