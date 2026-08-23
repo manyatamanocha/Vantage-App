@@ -30,10 +30,20 @@ export async function createHandback(solveId: string): Promise<string> {
     revealedCategory: solve.revealed_category,
   });
 
-  const { error: insertErr } = await supabase
+  // Upsert on `solve_id` (unique per supabase/migrations/0003_takeaways_unique_solve.sql)
+  // rather than insert: a duplicate invocation (double-click, two open tabs, a
+  // repeated POST) must update the existing row instead of erroring on the
+  // unique constraint or creating a second row. A re-generation is meant to
+  // replace the prior draft, so both `draft_text` and `generated_at` are sent —
+  // keeping the stale `generated_at` would misrepresent when the fresh draft
+  // was actually produced.
+  const { error: upsertErr } = await supabase
     .from("takeaways")
-    .insert({ solve_id: solveId, draft_text: draftText });
-  if (insertErr) throw new Error(insertErr.message);
+    .upsert(
+      { solve_id: solveId, draft_text: draftText, generated_at: new Date().toISOString() },
+      { onConflict: "solve_id" }
+    );
+  if (upsertErr) throw new Error(upsertErr.message);
 
   return draftText;
 }

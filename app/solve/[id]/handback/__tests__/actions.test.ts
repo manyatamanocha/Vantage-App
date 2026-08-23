@@ -4,7 +4,12 @@ const state = vi.hoisted(() => ({
   user: null as { id: string } | null,
   solve: null as Record<string, unknown> | null,
   existingTakeaway: null as Record<string, unknown> | null,
-  inserted: [] as unknown[],
+  // Simulates the real `takeaways` table's unique constraint on `solve_id`
+  // (supabase/migrations/0003_takeaways_unique_solve.sql): keyed by solve_id
+  // so an upsert with onConflict: "solve_id" replaces the existing entry
+  // instead of appending a second row.
+  takeawaysBySolve: new Map<string, Record<string, unknown>>(),
+  upsertCalls: [] as { values: Record<string, unknown>; options: unknown }[],
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -27,8 +32,9 @@ vi.mock("@/lib/supabase/server", () => ({
             maybeSingle: async () => ({ data: state.existingTakeaway, error: null }),
           }),
         }),
-        insert: (values: unknown) => {
-          state.inserted.push(values);
+        upsert: (values: Record<string, unknown>, options: unknown) => {
+          state.upsertCalls.push({ values, options });
+          state.takeawaysBySolve.set(values.solve_id as string, values);
           return Promise.resolve({ error: null });
         },
       };
@@ -54,7 +60,8 @@ beforeEach(() => {
     revealed_category: "Prediction",
   };
   state.existingTakeaway = null;
-  state.inserted = [];
+  state.takeawaysBySolve = new Map();
+  state.upsertCalls = [];
   vi.clearAllMocks();
 });
 
@@ -68,16 +75,19 @@ describe("createHandback", () => {
       revealedCategory: "Prediction",
     });
     expect(text).toBe(DRAFT_TEXT);
-    expect(state.inserted).toEqual([
-      { solve_id: "s1", draft_text: DRAFT_TEXT },
-    ]);
+    expect(state.upsertCalls).toHaveLength(1);
+    expect(state.upsertCalls[0].values).toMatchObject({
+      solve_id: "s1",
+      draft_text: DRAFT_TEXT,
+    });
+    expect(state.upsertCalls[0].options).toEqual({ onConflict: "solve_id" });
   });
 
   it("throws when there is no authenticated user, before reading or writing", async () => {
     state.user = null;
     await expect(createHandback("s1")).rejects.toThrow(/not authenticated/i);
     expect(generateHandback).not.toHaveBeenCalled();
-    expect(state.inserted).toEqual([]);
+    expect(state.upsertCalls).toEqual([]);
   });
 
   it("refuses to generate a handback before the solve has been revealed", async () => {
@@ -88,12 +98,46 @@ describe("createHandback", () => {
     };
     await expect(createHandback("s1")).rejects.toThrow(/reveal/i);
     expect(generateHandback).not.toHaveBeenCalled();
-    expect(state.inserted).toEqual([]);
+    expect(state.upsertCalls).toEqual([]);
   });
 
   it("does not write anything when generation fails", async () => {
     vi.mocked(generateHandback).mockRejectedValueOnce(new Error("groq is down"));
     await expect(createHandback("s1")).rejects.toThrow(/groq is down/);
-    expect(state.inserted).toEqual([]);
+    expect(state.upsertCalls).toEqual([]);
+  });
+
+  it("upserts on solve_id: a second call for the same solve results in exactly one row, and its draft text replaces the first's", async () => {
+    const SECOND_DRAFT = "A revised draft: the retrieval system now surfaces the right accounts first.";
+
+    await createHandback("s1");
+    vi.mocked(generateHandback).mockResolvedValueOnce(SECOND_DRAFT);
+    const secondText = await createHandback("s1");
+
+    expect(secondText).toBe(SECOND_DRAFT);
+    // Both calls upserted on the same conflict target, so the simulated table
+    // (keyed by solve_id) ends up with exactly one row for this solve.
+    expect(state.upsertCalls).toHaveLength(2);
+    for (const call of state.upsertCalls) {
+      expect(call.options).toEqual({ onConflict: "solve_id" });
+    }
+    expect(state.takeawaysBySolve.size).toBe(1);
+    expect(state.takeawaysBySolve.get("s1")).toMatchObject({
+      solve_id: "s1",
+      draft_text: SECOND_DRAFT,
+    });
+  });
+
+  it("sends a fresh generated_at on each call rather than preserving a stale timestamp", async () => {
+    await createHandback("s1");
+    const firstGeneratedAt = state.upsertCalls[0].values.generated_at;
+
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await createHandback("s1");
+    const secondGeneratedAt = state.upsertCalls[1].values.generated_at;
+
+    expect(typeof firstGeneratedAt).toBe("string");
+    expect(typeof secondGeneratedAt).toBe("string");
+    expect(secondGeneratedAt).not.toBe(firstGeneratedAt);
   });
 });

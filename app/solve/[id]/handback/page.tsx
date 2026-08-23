@@ -28,11 +28,16 @@ export default async function HandbackPage({
   // been revealed — enforced here too, not only by the server action.
   if (!solve?.revealed_category) redirect(`/solve/${id}/reveal`);
 
-  const { data: takeaway } = await supabase
+  // `solve_id` is unique on `takeaways` (supabase/migrations/0003_takeaways_unique_solve.sql),
+  // so `maybeSingle` can only ever return zero or one row now — a real error
+  // (network failure, RLS denial, etc.) must still be surfaced rather than
+  // silently treated as "no takeaway yet."
+  const { data: takeaway, error: takeawayErr } = await supabase
     .from("takeaways")
     .select("draft_text")
     .eq("solve_id", id)
     .maybeSingle();
+  if (takeawayErr) throw new Error(takeawayErr.message);
 
   const draftText = takeaway?.draft_text ?? (await createHandback(id));
 

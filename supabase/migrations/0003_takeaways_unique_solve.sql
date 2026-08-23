@@ -1,0 +1,16 @@
+-- supabase/migrations/0003_takeaways_unique_solve.sql
+-- Additive: `createHandback` (Task 12) always wrote via `insert`, so a duplicate
+-- invocation (double-click, two open tabs, a repeated server-action POST) created
+-- a second `takeaways` row for the same `solve_id`. With 2+ rows present, both
+-- read sites' `.maybeSingle()` calls fail with a "multiple rows" error, which
+-- neither site inspected — they treated it as "no takeaway yet" and offered to
+-- regenerate on every visit, compounding the duplicate-row count indefinitely.
+--
+-- A unique constraint on `solve_id` makes a second row for the same solve
+-- impossible, and `createHandback` now upserts on this constraint instead of
+-- inserting unconditionally (see app/solve/[id]/handback/actions.ts). This is
+-- an MVP schema with no existing multi-row-per-solve data, so the constraint
+-- applies cleanly against the current table. It also doesn't interact with the
+-- "own takeaways" RLS policy from 0001_init.sql — a unique constraint is a
+-- storage-level invariant checked independently of row-level security.
+alter table takeaways add constraint takeaways_solve_id_key unique (solve_id);
