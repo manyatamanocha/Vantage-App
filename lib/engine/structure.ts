@@ -1,57 +1,53 @@
 import { getGroqClient } from "@/lib/groq";
+import { withRetry } from "./with-retry";
+import { parseJsonResponse } from "./parse-json-response";
 
+// Groq's JSON mode requires the word "JSON" to appear in the messages — it is in
+// this system prompt, which is sent on every call.
 const SYSTEM_PROMPT = `You turn a messy, informal client ask into two fields: a clear one-sentence "goal" and a one-sentence "problemType" description. Respond with ONLY a JSON object: {"goal": "...", "problemType": "..."}. No prose, no markdown fences.`;
+
+export type ProblemStructure = { goal: string; problemType: string };
+
+function isProblemStructure(parsed: unknown): parsed is ProblemStructure {
+  if (typeof parsed !== "object" || parsed === null) return false;
+  const candidate = parsed as Partial<ProblemStructure>;
+  return (
+    typeof candidate.goal === "string" &&
+    typeof candidate.problemType === "string"
+  );
+}
 
 export async function structureProblem(
   rawInput: string,
   industry?: string
-): Promise<{ goal: string; problemType: string }> {
+): Promise<ProblemStructure> {
   const client = getGroqClient();
   const userContent = industry
     ? `Industry: ${industry}\nClient ask: ${rawInput}`
     : `Client ask: ${rawInput}`;
 
-  const response = await withRetry(() =>
-    client.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      max_tokens: 300,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userContent },
-      ],
-    })
+  const response = await withRetry((signal) =>
+    client.chat.completions.create(
+      {
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 300,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userContent },
+        ],
+      },
+      // withRetry is the single retry + timeout layer: disable the SDK's own
+      // retries and let the outer timeout abort the in-flight request.
+      { maxRetries: 0, signal }
+    )
   );
 
   const text = response.choices[0]?.message?.content ?? "";
-  try {
-    const parsed = JSON.parse(text);
-    if (
-      typeof parsed.goal !== "string" ||
-      typeof parsed.problemType !== "string"
-    ) {
-      throw new Error("missing fields");
-    }
-    return { goal: parsed.goal, problemType: parsed.problemType };
-  } catch {
-    throw new Error("Failed to parse structure response");
-  }
-}
-
-async function withRetry<T>(fn: () => Promise<T>, timeoutMs = 15000): Promise<T> {
-  const attempt = () => {
-    let timer: ReturnType<typeof setTimeout>;
-    return Promise.race([
-      fn(),
-      new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error("timeout")), timeoutMs);
-      }),
-    ]).finally(() => clearTimeout(timer));
-  };
-  try {
-    return await attempt();
-  } catch {
-    // Exactly one retry. If the second attempt fails its error propagates —
-    // no fallback content is ever invented.
-    return await attempt();
-  }
+  const { goal, problemType } = parseJsonResponse(
+    text,
+    isProblemStructure,
+    "structure"
+  );
+  return { goal, problemType };
 }

@@ -1,23 +1,25 @@
 import { describe, it, expect, vi } from "vitest";
 
+const VALID_RESPONSE = {
+  choices: [
+    {
+      message: {
+        content: JSON.stringify({
+          goal: "Reduce churn",
+          problemType: "Predict which customers will cancel",
+        }),
+      },
+    },
+  ],
+};
+
 vi.mock("@/lib/groq", () => ({
   // vi.fn() (not a bare arrow) so individual tests can override it with
   // mockReturnValueOnce — vi.mocked() is a type-level cast only at runtime.
   getGroqClient: vi.fn(() => ({
     chat: {
       completions: {
-        create: async () => ({
-          choices: [
-            {
-              message: {
-                content: JSON.stringify({
-                  goal: "Reduce churn",
-                  problemType: "Predict which customers will cancel",
-                }),
-              },
-            },
-          ],
-        }),
+        create: async () => VALID_RESPONSE,
       },
     },
   })),
@@ -48,23 +50,47 @@ describe("structureProblem", () => {
     await expect(structureProblem("x")).rejects.toThrow(/parse/i);
   });
 
+  it("throws a clear error when the JSON is missing the required fields", async () => {
+    const { getGroqClient } = await import("@/lib/groq");
+    vi.mocked(getGroqClient).mockReturnValueOnce({
+      chat: {
+        completions: {
+          create: async () => ({
+            choices: [{ message: { content: JSON.stringify({ goal: 1 }) } }],
+          }),
+        },
+      },
+    } as never);
+    await expect(structureProblem("x")).rejects.toThrow(/parse/i);
+  });
+
+  it("asks for JSON mode, disables the SDK's own retries, and passes an abort signal", async () => {
+    const { getGroqClient } = await import("@/lib/groq");
+    const create = vi.fn().mockResolvedValue(VALID_RESPONSE);
+    vi.mocked(getGroqClient).mockReturnValueOnce({
+      chat: { completions: { create } },
+    } as never);
+
+    await structureProblem("x", "SaaS");
+
+    const [body, options] = create.mock.calls[0];
+    expect(body.response_format).toEqual({ type: "json_object" });
+    expect(body.model).toBe("llama-3.3-70b-versatile");
+    // Groq's JSON mode requires the word "JSON" somewhere in the messages.
+    expect(
+      body.messages.some((m: { content: string }) => /json/i.test(m.content))
+    ).toBe(true);
+    expect(options.maxRetries).toBe(0);
+    expect(options.signal).toBeInstanceOf(AbortSignal);
+    expect(options.signal.aborted).toBe(false);
+  });
+
   it("retries the model call exactly once when the first attempt fails", async () => {
     const { getGroqClient } = await import("@/lib/groq");
     const create = vi
       .fn()
       .mockRejectedValueOnce(new Error("transient network failure"))
-      .mockResolvedValueOnce({
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({
-                goal: "Reduce churn",
-                problemType: "Predict which customers will cancel",
-              }),
-            },
-          },
-        ],
-      });
+      .mockResolvedValueOnce(VALID_RESPONSE);
     vi.mocked(getGroqClient).mockReturnValueOnce({
       chat: { completions: { create } },
     } as never);

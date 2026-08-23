@@ -6,6 +6,9 @@ export async function runStructureStep(
   solveId: string
 ): Promise<{ goal: string; problemType: string }> {
   const supabase = await getSupabaseServerClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user?.id) throw new Error("Not authenticated");
+
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")
     .select("raw_input, industry")
@@ -33,6 +36,9 @@ export async function editStructure(
   problemType: string
 ): Promise<void> {
   const supabase = await getSupabaseServerClient();
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user?.id) throw new Error("Not authenticated");
+
   const { error } = await supabase
     .from("solves")
     .update({ goal, problem_type: problemType })
