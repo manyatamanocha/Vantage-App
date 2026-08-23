@@ -48,7 +48,7 @@ export async function submitPracticeGuess(
 
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")
-    .select("raw_input, industry")
+    .select("raw_input")
     .eq("id", solveId)
     .single();
   if (fetchErr) throw new Error(fetchErr.message);
