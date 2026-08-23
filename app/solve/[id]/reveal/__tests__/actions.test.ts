@@ -61,8 +61,30 @@ describe("runRevealStep", () => {
       guessedCategory: "Classification",
     });
     expect(result).toEqual(REVEAL);
+    // The comparative reasoning is persisted alongside the verdict, so a reload
+    // can re-render the whole screen without a second Groq call.
     expect(state.updated).toEqual([
-      { revealed_category: "RAG", tool_class: "specialized", correct: false },
+      {
+        revealed_category: "RAG",
+        tool_class: "specialized",
+        correct: false,
+        why_it_fits: REVEAL.whyItFits,
+        why_not_alternatives: REVEAL.whyNotAlternatives,
+      },
+    ]);
+  });
+
+  it("hands the alternatives to jsonb as a plain array, not a pre-encoded string", async () => {
+    await runRevealStep("s1");
+
+    const [written] = state.updated as {
+      why_not_alternatives: unknown;
+    }[];
+    // supabase-js serialises objects and arrays into jsonb transparently; passing
+    // JSON.stringify output here would store a quoted string instead.
+    expect(Array.isArray(written.why_not_alternatives)).toBe(true);
+    expect(written.why_not_alternatives).toEqual([
+      { category: "Classification", reason: "There is no fixed label set here." },
     ]);
   });
 

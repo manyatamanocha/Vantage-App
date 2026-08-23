@@ -36,6 +36,10 @@ export async function runRevealStep(solveId: string): Promise<RevealResult> {
       revealed_category: result.revealedCategory,
       tool_class: result.toolClass,
       correct: result.match,
+      // Persisted so a reload re-renders the comparison instead of re-running the
+      // model. supabase-js serialises the array straight into the jsonb column.
+      why_it_fits: result.whyItFits,
+      why_not_alternatives: result.whyNotAlternatives,
     })
     .eq("id", solveId);
   if (updateErr) throw new Error(updateErr.message);

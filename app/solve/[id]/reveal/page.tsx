@@ -11,6 +11,23 @@ const TOOL_CLASS_GLOSS: Record<RevealResult["toolClass"], string> = {
     "This needs a purpose-built system of its own — its own data, retrieval, or trained model.",
 };
 
+type Alternative = { category: string; reason: string };
+
+/**
+ * `why_not_alternatives` is jsonb, so it arrives as unvalidated JSON. Anything
+ * that isn't the shape this screen renders is dropped rather than trusted.
+ */
+function toAlternatives(value: unknown): Alternative[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (entry): entry is Alternative =>
+      typeof entry === "object" &&
+      entry !== null &&
+      typeof (entry as Alternative).category === "string" &&
+      typeof (entry as Alternative).reason === "string"
+  );
+}
+
 export default async function RevealPage({
   params,
 }: {
@@ -21,7 +38,9 @@ export default async function RevealPage({
   const supabase = await getSupabaseServerClient();
   const { data: solve } = await supabase
     .from("solves")
-    .select("guessed_category, revealed_category, tool_class, correct")
+    .select(
+      "guessed_category, revealed_category, tool_class, correct, why_it_fits, why_not_alternatives"
+    )
     .eq("id", id)
     .single();
 
@@ -30,7 +49,8 @@ export default async function RevealPage({
 
   // The model runs once. A reload must not spend a second Groq call or rewrite
   // the recorded verdict — `correct` is the user's progress record, and a
-  // re-generated answer could silently flip it.
+  // re-generated answer could silently flip it. Everything this screen shows is
+  // persisted by `runRevealStep`, so a revealed solve re-renders from the row.
   const reveal: RevealResult | null = solve.revealed_category
     ? null
     : await runRevealStep(id);
@@ -41,6 +61,9 @@ export default async function RevealPage({
   const toolClass = (reveal?.toolClass ??
     solve.tool_class) as RevealResult["toolClass"];
   const match = reveal?.match ?? (solve.correct as boolean);
+  const whyItFits = reveal?.whyItFits ?? (solve.why_it_fits as string | null);
+  const whyNotAlternatives: Alternative[] =
+    reveal?.whyNotAlternatives ?? toAlternatives(solve.why_not_alternatives);
 
   return (
     <main>
@@ -50,17 +73,17 @@ export default async function RevealPage({
         <strong>{revealedCategory}</strong> problem.
       </p>
 
-      {reveal ? (
+      {whyItFits && whyNotAlternatives.length > 0 ? (
         <>
           <section>
             <h2>Why {revealedCategory} fits</h2>
-            <p>{reveal.whyItFits}</p>
+            <p>{whyItFits}</p>
           </section>
 
           <section>
             <h2>Why not the alternatives</h2>
             <dl>
-              {reveal.whyNotAlternatives.map((alternative) => (
+              {whyNotAlternatives.map((alternative) => (
                 <div key={alternative.category}>
                   <dt>{alternative.category}</dt>
                   <dd>{alternative.reason}</dd>
@@ -70,8 +93,9 @@ export default async function RevealPage({
           </section>
         </>
       ) : (
-        // Only the verdict is stored; the comparison was shown when this solve
-        // was first revealed. Nothing is invented to fill the gap.
+        // Solves revealed before the reasoning columns existed have only the
+        // verdict stored. Nothing is invented to fill the gap, and the model is
+        // not re-run to regenerate it.
         <p>You worked through this one already — here&apos;s what you landed on.</p>
       )}
 
