@@ -4,6 +4,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 export async function getProgressStats(userId: string): Promise<{
   firstGuessAccuracy: number;
   byCategory: Record<string, number>;
+  completedCount: number;
 }> {
   const supabase = await getSupabaseServerClient();
   const { data: userData } = await supabase.auth.getUser();
@@ -33,7 +34,7 @@ export async function getProgressStats(userId: string): Promise<{
     byCategory[category] = results.filter(Boolean).length / results.length;
   }
 
-  return { firstGuessAccuracy, byCategory };
+  return { firstGuessAccuracy, byCategory, completedCount: rows.length };
 }
 
 export type ProgressSolveRow = {

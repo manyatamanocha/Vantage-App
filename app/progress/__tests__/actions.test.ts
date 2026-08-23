@@ -74,5 +74,25 @@ describe("getProgressStats", () => {
     const result = await getProgressStats("u1");
     expect(result.firstGuessAccuracy).toBe(0);
     expect(Object.keys(result.byCategory).length).toBe(0);
+    expect(result.completedCount).toBe(0);
+  });
+
+  it("distinguishes between zero completed solves and zero accuracy on completed solves", async () => {
+    // Multiple completed solves, all incorrect
+    state.data = [
+      { revealed_category: "Classification", correct: false },
+      { revealed_category: "RAG", correct: false },
+      { revealed_category: "Chemistry", correct: false },
+    ];
+
+    const result = await getProgressStats("u1");
+    // All three solves were incorrect, so accuracy should be 0
+    expect(result.firstGuessAccuracy).toBe(0);
+    // But completedCount should be 3, not 0
+    expect(result.completedCount).toBe(3);
+    // Each category should have 0% accuracy
+    expect(result.byCategory["Classification"]).toBe(0);
+    expect(result.byCategory["RAG"]).toBe(0);
+    expect(result.byCategory["Chemistry"]).toBe(0);
   });
 });

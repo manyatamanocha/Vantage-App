@@ -22,7 +22,7 @@ export default async function ProgressPage() {
         <div className="accuracy-display">
           <div className="large-number">{overallPercentage}%</div>
           <p>
-            {stats.firstGuessAccuracy === 0
+            {stats.completedCount === 0
               ? "No completed solves yet"
               : `Correct on first guess`}
           </p>
