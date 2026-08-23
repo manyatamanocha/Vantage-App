@@ -43,12 +43,13 @@
 - [ ] **Step 1: Scaffold the Next.js app**
 
 ```bash
-npx create-next-app@latest vantage-app --typescript --tailwind --app --src-dir=false --import-alias "@/*"
-cd vantage-app
+npx create-next-app@latest . --typescript --tailwind --app --src-dir=false --import-alias "@/*"
 npx shadcn@latest init -d
 npm install @supabase/supabase-js @supabase/ssr groq-sdk
 npm install -D vitest @vitejs/plugin-react
 ```
+
+Note: run this from the repo root (`vantage-app/`), which already contains `docs/`, `.gitignore`, and `.env.local` — using `.` as the target (not `vantage-app`) scaffolds into the current directory instead of creating a nested `vantage-app/vantage-app` folder.
 
 - [ ] **Step 2: Add environment variable template**
 
