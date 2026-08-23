@@ -6,7 +6,7 @@ const state = vi.hoisted(() => ({
 }));
 
 const upsertMock = vi.fn(
-  async (_patch: any): Promise<{ error: { message: string } | null }> => ({ error: null })
+  async (_patch: Record<string, string>): Promise<{ error: { message: string } | null }> => ({ error: null })
 );
 const maybeSingleMock = vi.fn(async () => ({ data: state.settingsRow, error: null }));
 
