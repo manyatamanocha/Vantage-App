@@ -1,8 +1,8 @@
-# Prism App — Design
+# Vantage App — Design
 
 Date: 2026-08-23
 Status: Approved (via superpowers:brainstorming)
-Source: `Downloads\Obsidian sync projects\Scribble World\My Scribbles - Prism` (Persona, Problem Statement, Solution Overview, Features, Wireframes)
+Source: `Downloads\Obsidian sync projects\Scribble World\My Scribbles - Vantage` (Persona, Problem Statement, Solution Overview, Features, Wireframes)
 
 ## Deliverable
 

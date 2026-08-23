@@ -1,14 +1,14 @@
-# Prism App Implementation Plan
+# Vantage App Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build Prism as a real, working web app — a guess-then-reveal tool that turns a messy client problem into an AI-approach category recommendation, reused across a reactive loop (live problems) and a proactive loop (daily practice).
+**Goal:** Build Vantage as a real, working web app — a guess-then-reveal tool that turns a messy client problem into an AI-approach category recommendation, reused across a reactive loop (live problems) and a proactive loop (daily practice).
 
 **Architecture:** Next.js (App Router, TypeScript) full-stack app on Vercel. Supabase for Postgres + Auth + Storage. Claude API (Anthropic SDK) called server-side only, at three call sites (Structure, Reveal, Handback) that share one "understand → recommend" engine module.
 
 **Tech Stack:** Next.js 15 (App Router), TypeScript, Tailwind + shadcn/ui, Supabase (Postgres/Auth/Storage), `@anthropic-ai/sdk`, Vitest (unit), Playwright or integration tests against local Supabase CLI.
 
-**Spec:** `docs/superpowers/specs/2026-08-23-prism-app-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-23-vantage-app-design.md`
 
 ## Global Constraints
 
@@ -42,8 +42,8 @@
 - [ ] **Step 1: Scaffold the Next.js app**
 
 ```bash
-npx create-next-app@latest prism-app --typescript --tailwind --app --src-dir=false --import-alias "@/*"
-cd prism-app
+npx create-next-app@latest vantage-app --typescript --tailwind --app --src-dir=false --import-alias "@/*"
+cd vantage-app
 npx shadcn@latest init -d
 npm install @supabase/supabase-js @supabase/ssr @anthropic-ai/sdk
 npm install -D vitest @vitejs/plugin-react
@@ -757,7 +757,7 @@ export type RevealResult = {
   toolClass: "general-purpose" | "specialized";
 };
 
-const SYSTEM_PROMPT = `You are Prism's recommendation engine. Given a structured client problem and the user's guessed AI-approach category, decide the correct category from this fixed list only: ${CATEGORY_TAXONOMY.join(", ")}.
+const SYSTEM_PROMPT = `You are Vantage's recommendation engine. Given a structured client problem and the user's guessed AI-approach category, decide the correct category from this fixed list only: ${CATEGORY_TAXONOMY.join(", ")}.
 
 Never recommend a named product or tool — only a category from the list, plus a tool-class of "general-purpose" or "specialized".
 
