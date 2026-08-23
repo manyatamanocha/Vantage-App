@@ -97,8 +97,15 @@ export default async function SolveSummaryPage({
         <section aria-label="Takeaway">
           <h2>Your takeaway</h2>
           <p>{takeaway.draft_text}</p>
+          <Link href={`/solve/${id}/handback`}>View takeaway artifact</Link>
         </section>
-      ) : null}
+      ) : (
+        // The Handback artifact is generated on demand (Task 12) — nothing
+        // upstream of this screen ever triggers it automatically.
+        <section aria-label="Takeaway">
+          <Link href={`/solve/${id}/handback`}>Generate a client takeaway</Link>
+        </section>
+      )}
 
       <nav aria-label="What's next">
         <Link href="/solve/new">Solve another</Link>
