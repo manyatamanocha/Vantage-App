@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { CATEGORY_TAXONOMY, type Category } from "@/lib/engine/taxonomy";
 import { CategorySelector } from "@/components/category-selector";
@@ -18,15 +19,21 @@ const TOOL_CLASS_GLOSS: Record<RevealResult["toolClass"], string> = {
 // call. The only request this component makes is the combined lock-in +
 // reveal write.
 export function PracticeSession({
-  solveId,
+  practiceCaseId,
   rawInput,
+  difficulty,
+  matchedPreferredDifficulty,
 }: {
-  solveId: string;
+  practiceCaseId: string;
   rawInput: string;
+  difficulty: string;
+  matchedPreferredDifficulty: boolean;
 }) {
   const [selected, setSelected] = useState<Category | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reveal, setReveal] = useState<RevealResult | null>(null);
+  const [reveal, setReveal] = useState<
+    (RevealResult & { solveId: string }) | null
+  >(null);
   const [isSubmitting, startSubmitting] = useTransition();
 
   function lockIn() {
@@ -34,7 +41,7 @@ export function PracticeSession({
     setError(null);
     startSubmitting(async () => {
       try {
-        const result = await submitPracticeGuess(solveId, selected);
+        const result = await submitPracticeGuess(practiceCaseId, selected);
         setReveal(result);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Could not reveal this one.");
@@ -77,7 +84,7 @@ export function PracticeSession({
         </section>
 
         <section aria-label="Learn and remember">
-          <h2>Learn & remember</h2>
+          <h2>Learn &amp; remember</h2>
           <p>
             <strong>Key takeaway:</strong> {reveal.whyItFits}
           </p>
@@ -88,6 +95,24 @@ export function PracticeSession({
             </p>
           ) : null}
         </section>
+
+        {/*
+          Previously the reveal was a dead end — the practice loop ended here
+          with no way forward. These mirror the live loop's own post-reveal
+          routing: the reveal screen there links to the summary, which is where
+          the takeaway artifact is offered.
+        */}
+        <nav aria-label="What's next" className="flex flex-wrap gap-4 pt-4 text-sm">
+          <Link href={`/solve/${reveal.solveId}/summary`} className="underline">
+            See the summary
+          </Link>
+          <Link href="/practice/history" className="underline">
+            Practice history
+          </Link>
+          <Link href="/" className="underline">
+            Done for today
+          </Link>
+        </nav>
       </>
     );
   }
@@ -95,6 +120,11 @@ export function PracticeSession({
   return (
     <>
       <h1>Today&apos;s practice case</h1>
+      <p className="text-sm opacity-70">
+        {matchedPreferredDifficulty
+          ? `Difficulty: ${difficulty}`
+          : `Nothing seeded at your preferred difficulty yet — here's a ${difficulty} case instead.`}
+      </p>
       <p>{rawInput}</p>
       <p>What kind of AI problem is this?</p>
 
