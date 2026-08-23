@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { listSolves } from "./actions";
@@ -41,15 +42,25 @@ export default async function PracticeHistoryPage() {
 
             return (
               <li key={solve.id}>
-                <span>{SOURCE_LABEL[solve.source] ?? solve.source}</span>
-                {" — "}
-                <span>{solve.revealedCategory ?? "Not revealed yet"}</span>
-                {" — "}
-                <strong>{status}</strong>
-                {" — "}
-                <time dateTime={solve.createdAt}>
-                  {new Date(solve.createdAt).toLocaleDateString()}
-                </time>
+                {/*
+                  The summary screen is keyed only on the `solveId` route param
+                  — it re-renders whatever `runRevealStep`/`submitPracticeGuess`
+                  already persisted and never re-runs the model, so it is a
+                  valid destination for a solve completed days ago. It also has
+                  its own guard for a row that never reached reveal, which is
+                  exactly the "In progress" case below.
+                */}
+                <Link href={`/solve/${solve.id}/summary`}>
+                  <span>{SOURCE_LABEL[solve.source] ?? solve.source}</span>
+                  {" — "}
+                  <span>{solve.revealedCategory ?? "Not revealed yet"}</span>
+                  {" — "}
+                  <strong>{status}</strong>
+                  {" — "}
+                  <time dateTime={solve.createdAt}>
+                    {new Date(solve.createdAt).toLocaleDateString()}
+                  </time>
+                </Link>
               </li>
             );
           })}

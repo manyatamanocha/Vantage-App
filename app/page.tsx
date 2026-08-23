@@ -1,69 +1,75 @@
-import Image from "next/image";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getProgressStats } from "@/app/progress/actions";
 
-export default function Home() {
+/**
+ * The dashboard (screen 2b): the entry point to both loops. `/` is deliberately
+ * NOT in the middleware's protected-prefix list — it is the app's root, and a
+ * signed-out visitor landing here should be sent to log in by this page rather
+ * than bounced through a `?next=/` round trip.
+ */
+export default async function Home() {
+  const supabase = await getSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const stats = await getProgressStats(user.id);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 p-6">
+      <section>
+        <h1 className="text-2xl font-semibold">Vantage</h1>
+        <p className="text-sm opacity-70">
+          Commit to a guess before the recommendation — that&apos;s the part that
+          makes it stick.
+        </p>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/solve/new"
+          className="rounded-lg border border-black/15 p-4 hover:bg-black/[.03] dark:border-white/20 dark:hover:bg-white/[.06]"
+        >
+          <h2 className="font-medium">Solve a problem</h2>
+          <p className="text-sm opacity-70">
+            Paste a real client ask and work it through end to end.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        </Link>
+
+        <Link
+          href="/practice/today"
+          className="rounded-lg border border-black/15 p-4 hover:bg-black/[.03] dark:border-white/20 dark:hover:bg-white/[.06]"
+        >
+          <h2 className="font-medium">Today&apos;s practice</h2>
+          <p className="text-sm opacity-70">
+            One curated case, matched to your difficulty setting.
+          </p>
+        </Link>
+      </section>
+
+      <section>
+        <h2 className="font-medium">Where you&apos;re at</h2>
+        <p className="text-sm opacity-70">
+          {stats.completedCount === 0
+            ? "No completed solves yet — your first one starts the record."
+            : `${Math.round(stats.firstGuessAccuracy * 100)}% correct on first guess across ${stats.completedCount} completed solve${stats.completedCount === 1 ? "" : "s"}.`}
+        </p>
+      </section>
+
+      <nav aria-label="Elsewhere" className="flex flex-wrap gap-4 text-sm">
+        <Link href="/progress" className="underline">
+          Progress
+        </Link>
+        <Link href="/practice/history" className="underline">
+          History
+        </Link>
+        <Link href="/settings" className="underline">
+          Settings
+        </Link>
+      </nav>
+    </main>
   );
 }
