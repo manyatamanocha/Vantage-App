@@ -21,12 +21,20 @@ function isDifficulty(value: string): value is Difficulty {
 
 // Groq's JSON mode requires the word "JSON" to appear in the messages — it is
 // in this system prompt, which is sent on every call.
-const SYSTEM_PROMPT = `You write short, realistic client-problem scenarios for a daily practice quiz, one for each AI-approach category in this fixed list: ${CATEGORY_TAXONOMY.join(", ")}.
+//
+// Persona framing (non-technical, client-facing professional hearing this in
+// a live client meeting, not reading a written case study) matches
+// Persona.md / Problem Statement.md in the product vault: she is comfortable
+// using AI tools day to day but has never been taught the category-of-approach
+// map, so a new client ask gives her nothing to sort it into. Practice
+// scenarios exist to build exactly that judgment — see reveal.ts's own
+// "consultant" framing for the matching vocabulary at reveal time.
+const SYSTEM_PROMPT = `You write short daily-practice scenarios for a client-facing, non-technical consultant who is comfortable using AI tools but has never been taught how to tell which AI-approach category fits a given problem. Each scenario is a moment from one of her actual client meetings — a client just described a problem to her, in their own words, and she now has to figure out which kind of AI approach it needs. Write one scenario per AI-approach category in this fixed list: ${CATEGORY_TAXONOMY.join(", ")}.
 
 Write exactly one scenario per category, in the order given above.
 
 Rules:
-1. Each scenario is one or two sentences, phrased the way a real client would describe their problem — never as a definition of the category, and never naming a specific commercial product, vendor, or model.
+1. Each scenario is one or two sentences, phrased the way a client would actually describe their problem out loud in a meeting — concrete, specific to their situation, never a textbook definition of the category, and never naming a specific commercial product, vendor, or model.
 2. Vary the industry across scenarios (e.g. retail, legal, healthcare, logistics, marketing, financial services, manufacturing, energy) — do not repeat an industry.
 3. Assign a "difficulty": "easy" when there's one dominant reading and little to argue with, "medium" when a plausible wrong answer sits next to the right one, "hard" when the obvious first instinct is usually the wrong one.
 4. "intendedCategory" must be copied verbatim from the fixed list above — the exact category this scenario was written for.
