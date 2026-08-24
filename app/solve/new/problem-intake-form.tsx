@@ -12,6 +12,9 @@ interface SpeechRecognitionEventLike {
   resultIndex: number;
   results: { length: number; [index: number]: SpeechRecognitionResultLike };
 }
+interface SpeechRecognitionErrorEventLike {
+  error: string;
+}
 interface SpeechRecognitionLike extends EventTarget {
   lang: string;
   continuous: boolean;
@@ -19,7 +22,7 @@ interface SpeechRecognitionLike extends EventTarget {
   start(): void;
   stop(): void;
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onerror: (() => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
   onend: (() => void) | null;
 }
 type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
@@ -31,6 +34,8 @@ declare global {
   }
 }
 
+const MAX_ASK_LENGTH = 10000;
+
 export function ProblemIntakeForm() {
   const router = useRouter();
   const [rawInput, setRawInput] = useState("");
@@ -41,9 +46,19 @@ export function ProblemIntakeForm() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseTextRef = useRef("");
 
-  const speechSupported =
-    typeof window !== "undefined" &&
-    !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  // Server-safe: starts false on both server and the client's first render
+  // (matching what the server rendered), then flips true after mount if the
+  // browser actually supports it. Gating the mic button's very presence on a
+  // `typeof window !== "undefined"` check computed inline caused it to
+  // render on the client but not the server — a real hydration mismatch that
+  // made React discard and rebuild the whole form right as someone might be
+  // interacting with it, which is what made the mic look like it "broke" on
+  // click.
+  const [speechSupported, setSpeechSupported] = useState(false);
+
+  useEffect(() => {
+    setSpeechSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
+  }, []);
 
   useEffect(() => {
     return () => recognitionRef.current?.stop();
@@ -58,6 +73,7 @@ export function ProblemIntakeForm() {
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Ctor) return;
 
+    setError(null);
     const recognition = new Ctor();
     recognition.lang = "en-IN";
     recognition.continuous = true;
@@ -70,9 +86,18 @@ export function ProblemIntakeForm() {
         transcript += event.results[i][0].transcript;
       }
       const separator = baseTextRef.current && !baseTextRef.current.endsWith(" ") ? " " : "";
-      setRawInput(baseTextRef.current + separator + transcript);
+      setRawInput((baseTextRef.current + separator + transcript).slice(0, MAX_ASK_LENGTH));
     };
-    recognition.onerror = () => setIsListening(false);
+    recognition.onerror = (event) => {
+      setIsListening(false);
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        setError("Microphone access was blocked — allow it in your browser's site settings to dictate.");
+      } else if (event.error === "no-speech") {
+        setError(null);
+      } else {
+        setError("Voice input stopped unexpectedly. You can try again or type instead.");
+      }
+    };
     recognition.onend = () => setIsListening(false);
 
     recognitionRef.current = recognition;
@@ -105,20 +130,20 @@ export function ProblemIntakeForm() {
       </div>
       <header>
         <h1 className="display">What are you solving today?</h1>
-        <p className="lede">Start with what your client actually said. We&apos;ll turn the messy ask into a clear problem.</p>
+        <p className="lede">Input what you want to discuss</p>
       </header>
       <form onSubmit={handleSubmit} className="stack">
         <label className="field" htmlFor="rawInput">
-          <span>1. Ask</span>
+          <span>Ask Awayyyy</span>
           <div className="input-row">
           <textarea
             id="rawInput"
             name="rawInput"
             required
             rows={4}
+            maxLength={MAX_ASK_LENGTH}
             value={rawInput}
             onChange={(e) => setRawInput(e.target.value)}
-            placeholder="Paste what your client actually said."
             className="input min-h-32 flex-1"
           />
           {speechSupported && (
@@ -133,7 +158,9 @@ export function ProblemIntakeForm() {
             </button>
           )}
           </div>
-          <span className="hint">Use the microphone to dictate your client&apos;s ask.</span>
+          <span className="hint">
+            Use the microphone to dictate your client&apos;s ask. {rawInput.length.toLocaleString()} / {MAX_ASK_LENGTH.toLocaleString()} characters
+          </span>
       </label>
 
         <label className="field" htmlFor="industry">
@@ -154,9 +181,9 @@ export function ProblemIntakeForm() {
         </p>
       ) : null}
 
-        <div className="actions">
+        <div className="actions" style={{ justifyContent: "center" }}>
           <button className="btn btn-primary" type="submit" disabled={isPending || !rawInput.trim()}>
-        {isPending ? "Understanding…" : "Understand my problem"}
+        {isPending ? "Submitting…" : "Submit"}
           </button>
         </div>
       </form>
