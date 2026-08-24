@@ -30,9 +30,13 @@ New module `lib/content-pipeline/`, extending the existing `lib/engine/` pattern
 4. Survivors are inserted into `practice_cases` (`raw_input`, `industry`, `difficulty` only) via the admin client.
 5. `run-pipeline.ts` returns `{ generated, rejectedDuplicate, rejectedValidation, inserted }`.
 
-## Trigger (deferred)
+## Trigger — decided 2026-08-24 (amendment)
 
-Design and build the pipeline now; defer wiring an actual schedule until the app is deployed and a hosting platform is chosen (Vercel Cron vs. Supabase `pg_cron` vs. something else — an open decision, not blocking this work). `run-pipeline.ts` is written so that whichever mechanism is chosen later only needs to call it.
+Vercel Cron, running daily, calling a new route `app/api/cron/generate-practice-cases/route.ts` that invokes `run-pipeline.ts`. Target batch size: ~100 candidates/day, spread ~33/33/34 across Easy/Medium/Hard (in addition to the existing spread across taxonomy category). If a day's run produces fewer usable candidates than expected (heavy dedupe/validation rejection), the daily-practice loop simply has a smaller-than-usual pool to draw from that day — no special handling needed, since `practice_cases` accumulates across days rather than being replaced daily.
+
+## Human review layer (amendment)
+
+Reuses the shared `/admin/quiz-review` page (see the sibling jargon-pipeline spec) to list each day's newly inserted `practice_cases` rows alongside the jargon pool. A `flagged` boolean column is added to `practice_cases`; flagging a row excludes it from being served by the daily-practice loop (`app/practice/today/actions.ts` query adds `.eq('flagged', false)`) without deleting it, and excludes its `raw_input` from `dedupe.ts`'s "existing rows" comparison going forward (a flagged case shouldn't seed close paraphrases either). No pipeline change needed beyond the new column and the query filter — flagging is a manual, asynchronous action, never blocking on it before serving.
 
 ## Error handling
 
