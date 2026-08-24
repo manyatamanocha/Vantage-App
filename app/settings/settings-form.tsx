@@ -37,51 +37,57 @@ export function SettingsForm({
     }
   };
 
+  const DIFFICULTIES = ["easy", "medium", "hard"] as const;
+  const FREQUENCIES = ["daily", "weekly", "monthly"] as const;
+  const isError = message.startsWith("Error");
+
   return (
     <form onSubmit={handleSubmit} className="stack">
       <div className="field">
-        <label htmlFor="difficulty">
-          Practice Difficulty
-        </label>
-        <select
-          id="difficulty"
-          value={difficulty}
-          onChange={(e) => setDifficulty(e.target.value)}
-          disabled={isSubmitting}
-          className="input disabled:opacity-50"
-        >
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
+        <span>Practice difficulty</span>
+        <div className="segmented" role="group" aria-label="Practice difficulty">
+          {DIFFICULTIES.map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={difficulty === value}
+              disabled={isSubmitting}
+              onClick={() => setDifficulty(value)}
+            >
+              {value[0].toUpperCase() + value.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="field">
-        <label htmlFor="frequency">
-          Practice Frequency
-        </label>
-        <select
-          id="frequency"
-          value={frequency}
-          onChange={(e) => setFrequency(e.target.value)}
-          disabled={isSubmitting}
-          className="input disabled:opacity-50"
-        >
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-        </select>
+        <span>Practice frequency</span>
+        <div className="segmented" role="group" aria-label="Practice frequency">
+          {FREQUENCIES.map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={frequency === value}
+              disabled={isSubmitting}
+              onClick={() => setFrequency(value)}
+            >
+              {value[0].toUpperCase() + value.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {message && (
-        <div className={`text-sm ${message.startsWith("Error") ? "text-red-600" : "text-green-600"}`}>
+      {message ? (
+        <p role={isError ? "alert" : "status"} className={isError ? "text-sm text-destructive" : "text-sm text-success"}>
           {message}
-        </div>
-      )}
+        </p>
+      ) : null}
 
-      <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Saving..." : "Save Settings"}
-      </button>
+      <div className="actions">
+        <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Saving…" : "Save settings"}
+        </button>
+      </div>
     </form>
   );
 }

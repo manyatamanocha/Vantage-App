@@ -162,6 +162,7 @@
     @apply text-foreground;
     background-color: var(--canvas);
     background-image: var(--starfield);
+    position: relative;
   }
   html {
     @apply font-sans;
@@ -169,6 +170,42 @@
   h1, h2, h3 {
     @apply font-heading;
   }
+}
+
+/*
+ * Watermark illustration, ported from the locked mockup's `.frame::before`
+ * (a glowing brain/orbit image centered at low opacity behind every screen).
+ * `.frame` itself was deliberately not ported (mockup browsing chrome, see
+ * below) but the watermark is real product visual identity, so it's applied
+ * to `body` instead — the real app's equivalent of "every screen's frame."
+ * Blend mode adapts per theme, same as the mockup: plain opacity on light,
+ * `mix-blend-mode: screen` on dark, so it stays visible in both.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 960px;
+  height: 960px;
+  max-width: 90vw;
+  max-height: 90vw;
+  background-image: url("/watermark.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.14;
+  pointer-events: none;
+  z-index: 0;
+}
+.dark body::before {
+  opacity: 0.2;
+  mix-blend-mode: screen;
+}
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 /*
