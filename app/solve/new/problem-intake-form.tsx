@@ -93,8 +93,14 @@ export function ProblemIntakeForm() {
     baseTextRef.current = rawInputRef.current;
 
     recognition.onresult = (event) => {
+      // event.results is cumulative for the whole session (every result
+      // since this recognition object started, finalized or not) —
+      // event.resultIndex only marks which entry most recently changed, not
+      // where the transcript starts. Summing from resultIndex instead of 0
+      // was silently dropping every earlier phrase the moment a new one
+      // began, which is what made spoken text disappear mid-dictation.
       let transcript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
       const separator = baseTextRef.current && !baseTextRef.current.endsWith(" ") ? " " : "";

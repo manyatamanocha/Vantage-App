@@ -297,6 +297,9 @@ h1.display, .display {
 .btn-ghost:hover { text-decoration: underline; }
 .btn-icon { width: 46px; height: 46px; padding: 0; flex-shrink: 0; background: var(--secondary); color: var(--foreground); border-color: var(--border); }
 .btn-icon:hover { background: color-mix(in oklch, var(--secondary) 75%, var(--foreground) 6%); }
+.btn-icon[aria-pressed="true"] { background: var(--destructive); color: var(--destructive-foreground, #fff); border-color: var(--destructive); animation: btn-icon-pulse 1.6s ease-in-out infinite; }
+.btn-icon[aria-pressed="true"]:hover { background: var(--destructive); }
+@keyframes btn-icon-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--destructive) 45%, transparent); } 50% { box-shadow: 0 0 0 8px color-mix(in oklch, var(--destructive) 0%, transparent); } }
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
 .actions.between { justify-content: space-between; }
