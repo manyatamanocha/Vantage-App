@@ -9,6 +9,9 @@ interface SettingsFormProps {
   userId: string;
 }
 
+const DIFFICULTIES = ["easy", "medium", "hard"] as const;
+const FREQUENCIES = ["daily", "weekly", "off"] as const;
+
 export function SettingsForm({
   initialDifficulty,
   initialFrequency,
@@ -37,15 +40,19 @@ export function SettingsForm({
     }
   };
 
-  const DIFFICULTIES = ["easy", "medium", "hard"] as const;
-  const FREQUENCIES = ["daily", "weekly", "monthly"] as const;
   const isError = message.startsWith("Error");
 
   return (
-    <form onSubmit={handleSubmit} className="stack">
-      <div className="field">
-        <span>Practice difficulty</span>
-        <div className="segmented" role="group" aria-label="Practice difficulty">
+    <form onSubmit={handleSubmit}>
+      <div className="card">
+      <span className="card-label" style={{ marginBottom: 14 }}>Practice preferences</span>
+
+      <div className="toggle-row">
+        <div>
+          <div className="label">Challenge difficulty</div>
+          <div className="desc">How hard the daily case should be</div>
+        </div>
+        <div className="segmented" role="group" aria-label="Challenge difficulty">
           {DIFFICULTIES.map((value) => (
             <button
               key={value}
@@ -60,8 +67,11 @@ export function SettingsForm({
         </div>
       </div>
 
-      <div className="field">
-        <span>Practice frequency</span>
+      <div className="toggle-row">
+        <div>
+          <div className="label">Practice frequency</div>
+          <div className="desc">How often a new case appears</div>
+        </div>
         <div className="segmented" role="group" aria-label="Practice frequency">
           {FREQUENCIES.map((value) => (
             <button
@@ -82,8 +92,9 @@ export function SettingsForm({
           {message}
         </p>
       ) : null}
+      </div>
 
-      <div className="actions">
+      <div className="actions" style={{ marginTop: 26 }}>
         <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
           {isSubmitting ? "Saving…" : "Save settings"}
         </button>
