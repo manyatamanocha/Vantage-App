@@ -126,7 +126,6 @@ export function ProblemIntakeForm() {
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <div className="topline" aria-label="Solve progress">
         <div className="stepdots" aria-label="Step 1 of 5"><span className="on" /><span /><span /><span /><span /></div>
-        <span className="datechip">Client ask</span>
       </div>
       <header>
         <h1 className="display">What are you solving today?</h1>
@@ -158,8 +157,8 @@ export function ProblemIntakeForm() {
             </button>
           )}
           </div>
-          <span className="hint">
-            Use the microphone to dictate your client&apos;s ask. {rawInput.length.toLocaleString()} / {MAX_ASK_LENGTH.toLocaleString()} characters
+          <span className="hint" style={{ display: "block", textAlign: "right", fontSize: 11.5 }}>
+            Type or speak. {rawInput.length.toLocaleString()} / {MAX_ASK_LENGTH.toLocaleString()} characters
           </span>
       </label>
 
