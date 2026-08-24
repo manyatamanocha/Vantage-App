@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, MicOff } from "lucide-react";
+import { Mic } from "lucide-react";
 import { createDraftSolve } from "./actions";
 
 interface SpeechRecognitionResultLike {
@@ -241,7 +241,7 @@ export function ProblemIntakeForm() {
               aria-pressed={isListening}
               onClick={toggleListening}
             >
-              {isListening ? <MicOff aria-hidden="true" /> : <Mic aria-hidden="true" />}
+              <Mic aria-hidden="true" />
             </button>
           )}
           </div>
