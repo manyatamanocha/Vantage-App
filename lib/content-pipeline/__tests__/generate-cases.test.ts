@@ -57,7 +57,7 @@ describe("generatePracticeCaseCandidates", () => {
     await mockCompletionOnce(JSON.stringify({ candidates: withBadCategory }));
     const result = await generatePracticeCaseCandidates();
     expect(result).toHaveLength(7);
-    expect(result.every((c) => c.intendedCategory !== "Vector Search")).toBe(true);
+    expect(result.every((c) => (c.intendedCategory as string) !== "Vector Search")).toBe(true);
   });
 
   it("drops a candidate with an invalid difficulty rather than throwing", async () => {

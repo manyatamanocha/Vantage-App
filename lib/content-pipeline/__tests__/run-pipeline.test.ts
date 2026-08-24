@@ -15,7 +15,7 @@ vi.mock("../generate-cases", () => ({
 }));
 
 vi.mock("../dedupe", () => ({
-  dedupeCandidates: vi.fn((candidates: typeof CANDIDATES, existing: string[]) =>
+  dedupeCandidates: vi.fn((candidates: { rawInput: string }[], existing: string[]) =>
     candidates.filter((c) => !existing.includes(c.rawInput))
   ),
 }));
@@ -55,7 +55,7 @@ beforeEach(() => {
   state.existingRawInputs = [];
   state.inserted = [];
   vi.clearAllMocks();
-  vi.mocked(dedupeCandidates).mockImplementation((candidates: typeof CANDIDATES, existing: string[]) =>
+  vi.mocked(dedupeCandidates).mockImplementation((candidates: { rawInput: string }[], existing: string[]) =>
     candidates.filter((c) => !existing.includes(c.rawInput))
   );
   vi.mocked(validateCandidate).mockResolvedValue({ valid: true });

@@ -5,7 +5,7 @@ vi.mock("@/lib/engine/reveal", () => ({
 }));
 
 import { validateCandidate } from "../validate-candidate";
-import { recommendCategory } from "@/lib/engine/reveal";
+import { recommendCategory, type RevealResult } from "@/lib/engine/reveal";
 import type { PracticeCaseCandidate } from "../generate-cases";
 
 const CANDIDATE: PracticeCaseCandidate = {
@@ -15,7 +15,7 @@ const CANDIDATE: PracticeCaseCandidate = {
   difficulty: "easy",
 };
 
-const REVEAL_MATCH = {
+const REVEAL_MATCH: RevealResult = {
   match: true,
   revealedCategory: "Classification",
   whyItFits: "Each review is sorted into genuine or fake.",
