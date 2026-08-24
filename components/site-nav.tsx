@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { signOutAction } from "@/app/(auth)/actions";
 import { NavLinks } from "./nav-links";
+import { ThemeToggle } from "./theme-toggle";
 
 /**
  * The app's only shell. Every screen in this build is otherwise reachable
@@ -28,14 +29,17 @@ export async function SiteNav() {
           Vantage
         </Link>
         <NavLinks />
-        <form action={signOutAction} className="ml-auto">
-          <button
-            type="submit"
-            className="flex items-center gap-1.5 border-0 bg-transparent p-0 font-sans text-[13px] text-foreground opacity-60 hover:opacity-100"
-          >
-            Sign out
-          </button>
-        </form>
+        <div className="ml-auto flex flex-col items-end gap-1.5">
+          <form action={signOutAction}>
+            <button
+              type="submit"
+              className="flex items-center gap-1.5 border-0 bg-transparent p-0 font-sans text-[13px] text-foreground opacity-60 hover:opacity-100"
+            >
+              Sign out
+            </button>
+          </form>
+          <ThemeToggle />
+        </div>
       </nav>
     </header>
   );

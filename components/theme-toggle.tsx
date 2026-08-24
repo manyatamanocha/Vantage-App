@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Moon, Sun } from "lucide-react";
 
 const STORAGE_KEY = "vantage-theme";
 
@@ -14,11 +15,9 @@ function applyTheme(dark: boolean) {
   }
 }
 
-/**
- * Mirrors the mockup's Home screen Theme card — a real Light/Dark toggle,
- * not a design-review affordance. The `dark` class it sets is what
- * app/globals.css's `.dark` block already targets.
- */
+// Two small circle buttons (light / dark) in the nav, below Sign out — a
+// compact swap for the old full-width "Theme" card, which took up a whole
+// row on Home for something this small.
 export function ThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
@@ -26,33 +25,45 @@ export function ThemeToggle() {
     setIsDark(document.documentElement.classList.contains("dark"));
   }, []);
 
+  const circle = (dark: boolean) => ({
+    width: 24,
+    height: 24,
+    borderRadius: 999,
+    border: "1px solid var(--border)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    background: (dark ? isDark : !isDark) ? "var(--accent2)" : "var(--card)",
+    color: (dark ? isDark : !isDark) ? "var(--accent2-foreground)" : "var(--muted-foreground)",
+  } as const);
+
   return (
-    <div className="card mt-[18px]">
-      <span className="card-label">Theme</span>
-      <div className="segmented w-full">
-        <button
-          type="button"
-          aria-pressed={!isDark}
-          className="flex-1"
-          onClick={() => {
-            setIsDark(false);
-            applyTheme(false);
-          }}
-        >
-          Light
-        </button>
-        <button
-          type="button"
-          aria-pressed={isDark}
-          className="flex-1"
-          onClick={() => {
-            setIsDark(true);
-            applyTheme(true);
-          }}
-        >
-          Dark
-        </button>
-      </div>
+    <div style={{ display: "flex", gap: 6 }}>
+      <button
+        type="button"
+        aria-label="Light theme"
+        aria-pressed={!isDark}
+        style={circle(false)}
+        onClick={() => {
+          setIsDark(false);
+          applyTheme(false);
+        }}
+      >
+        <Sun size={13} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        aria-label="Dark theme"
+        aria-pressed={isDark}
+        style={circle(true)}
+        onClick={() => {
+          setIsDark(true);
+          applyTheme(true);
+        }}
+      >
+        <Moon size={13} aria-hidden="true" />
+      </button>
     </div>
   );
 }

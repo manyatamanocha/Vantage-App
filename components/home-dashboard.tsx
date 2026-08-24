@@ -1,28 +1,30 @@
 import Link from "next/link";
-import { ArrowRight, BrainCircuit, BriefcaseBusiness } from "lucide-react";
+import { Bot, BriefcaseBusiness } from "lucide-react";
 import { LiveClock } from "@/components/live-clock";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { Greeting } from "@/components/greeting";
 
-export function HomeDashboard({ firstName }: { firstName: string }) {
+export function HomeDashboard() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <section className="topline">
-        <div><h1 className="display">Welcome, {firstName}</h1><p className="lede">Build sharper instincts for matching client problems to the right AI approach.</p></div>
+        <div>
+          <h1 className="font-heading text-[22px] font-bold tracking-tight">
+            <Greeting />
+          </h1>
+          <p className="lede">Build sharper instincts for matching client problems to the right AI approach.</p>
+        </div>
         <LiveClock />
       </section>
       <section className="grid-2">
         <Link href="/solve/new" className="panel-link outline group">
           <BriefcaseBusiness className="icon size-7" aria-hidden="true" />
-          <h2>Solve a client problem</h2>
-          <span className="panel-cta">Solve a problem <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
+          <h2>What are we solving today?</h2>
         </Link>
         <Link href="/practice/jargon" className="panel-link outline group">
-          <BrainCircuit className="icon size-7" aria-hidden="true" />
-          <h2>Practice your AI judgment</h2>
-          <span className="panel-cta">Start today&apos;s practice <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></span>
+          <Bot className="icon size-7" aria-hidden="true" />
+          <h2>Quiz time</h2>
         </Link>
       </section>
-      <ThemeToggle />
     </main>
   );
 }

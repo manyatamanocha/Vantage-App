@@ -6,7 +6,5 @@ export default async function Home() {
   const { user } = await getVerifiedUser();
   if (!user) redirect("/login");
 
-  const firstName =
-    user.user_metadata.full_name?.split(" ")[0] ?? user.email?.split("@")[0] ?? "there";
-  return <HomeDashboard firstName={firstName} />;
+  return <HomeDashboard />;
 }

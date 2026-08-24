@@ -251,7 +251,7 @@ h1.display, .display {
 .card-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--primary); display: block; margin-bottom: 8px; }
 .card-text { font-size: 14.5px; line-height: 1.6; }
 
-.panel-link { display: block; text-decoration: none; border-radius: var(--radius-2xl); padding: 30px; position: relative; transition: transform .15s ease; }
+.panel-link { display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; border-radius: var(--radius-2xl); padding: 30px; position: relative; transition: transform .15s ease; }
 .panel-link:hover { transform: translateY(-2px); }
 .panel-link.primary { background: var(--primary); color: var(--primary-foreground); border: 1px solid color-mix(in oklch, var(--primary) 80%, black 6%); }
 .panel-link.primary .panel-lede { color: color-mix(in oklch, var(--primary-foreground) 82%, transparent); }
