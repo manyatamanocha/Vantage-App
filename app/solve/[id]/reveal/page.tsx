@@ -42,7 +42,7 @@ export default async function RevealPage({
   const { data: solve } = await supabase
     .from("solves")
     .select(
-      "guessed_category, revealed_category, tool_class, correct, why_it_fits, why_not_alternatives, solution"
+      "guessed_category, revealed_category, tool_class, correct, why_it_fits, why_not_alternatives"
     )
     .eq("id", id)
     .single();
@@ -54,7 +54,7 @@ export default async function RevealPage({
   // the recorded verdict — `correct` is the user's progress record, and a
   // re-generated answer could silently flip it. Everything this screen shows is
   // persisted by `runRevealStep`, so a revealed solve re-renders from the row.
-  const reveal: (RevealResult & { solution: string }) | null = solve.revealed_category
+  const reveal: RevealResult | null = solve.revealed_category
     ? null
     : await runRevealStep(id);
 
@@ -67,7 +67,6 @@ export default async function RevealPage({
   const whyItFits = reveal?.whyItFits ?? (solve.why_it_fits as string | null);
   const whyNotAlternatives: Alternative[] =
     reveal?.whyNotAlternatives ?? toAlternatives(solve.why_not_alternatives);
-  const solution = reveal?.solution ?? (solve.solution as string | null);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-5 py-8 sm:px-8 sm:py-12">
@@ -77,15 +76,6 @@ export default async function RevealPage({
         </h1>
         <p className="mt-2 text-muted-foreground">Let&apos;s discuss the takeaway.</p>
       </header>
-
-      {solution ? (
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Solution
-          </span>
-          <p className="mt-2 whitespace-pre-line text-base leading-6">{solution}</p>
-        </section>
-      ) : null}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">

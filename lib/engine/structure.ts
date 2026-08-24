@@ -5,7 +5,7 @@ import { checkFinishReason } from "./check-finish-reason";
 
 // Groq's JSON mode requires the word "JSON" to appear in the messages — it is in
 // this system prompt, which is sent on every call.
-const SYSTEM_PROMPT = `You turn a messy, informal client ask into two fields: a clear one-sentence "goal" and a one-sentence "problemType" description. Respond with ONLY a JSON object: {"goal": "...", "problemType": "..."}. No prose, no markdown fences.`;
+const SYSTEM_PROMPT = `You turn a messy, informal client ask — often containing spelling mistakes, typos, or grammar errors, since it may be typed quickly or dictated — into two fields: a clear one-sentence "goal" and a one-sentence "problemType" description. Correct all spelling, grammar, and typos; write the goal as a properly-worded sentence a professional would write, not a copy of the original phrasing. Preserve the actual meaning and intent — do not change what they're asking for. Respond with ONLY a JSON object: {"goal": "...", "problemType": "..."}. No prose, no markdown fences.`;
 
 export type ProblemStructure = { goal: string; problemType: string };
 

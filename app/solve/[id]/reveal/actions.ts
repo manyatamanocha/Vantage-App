@@ -1,17 +1,14 @@
 "use server";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { recommendCategory, type RevealResult } from "@/lib/engine/reveal";
-import { generateSolution } from "@/lib/engine/solution";
 
-export async function runRevealStep(
-  solveId: string
-): Promise<RevealResult & { solution: string }> {
+export async function runRevealStep(solveId: string): Promise<RevealResult> {
   const { supabase, user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
 
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")
-    .select("raw_input, goal, problem_type, guessed_category")
+    .select("goal, problem_type, guessed_category")
     .eq("id", solveId)
     .single();
   if (fetchErr) throw new Error(fetchErr.message);
@@ -26,18 +23,11 @@ export async function runRevealStep(
     throw new Error("No guess has been recorded for this solve yet");
   }
 
-  // Independent of each other — one teaches the AI-approach category
-  // (recommendCategory, never names a product), the other directly answers
-  // the consultant's actual question (generateSolution, may name products
-  // freely). Run together since both are needed for this one screen.
-  const [result, solution] = await Promise.all([
-    recommendCategory({
-      goal: solve.goal,
-      problemType: solve.problem_type,
-      guessedCategory: solve.guessed_category,
-    }),
-    generateSolution(solve.raw_input),
-  ]);
+  const result = await recommendCategory({
+    goal: solve.goal,
+    problemType: solve.problem_type,
+    guessedCategory: solve.guessed_category,
+  });
 
   const { error: updateErr } = await supabase
     .from("solves")
@@ -49,10 +39,9 @@ export async function runRevealStep(
       // model. supabase-js serialises the array straight into the jsonb column.
       why_it_fits: result.whyItFits,
       why_not_alternatives: result.whyNotAlternatives,
-      solution,
     })
     .eq("id", solveId);
   if (updateErr) throw new Error(updateErr.message);
 
-  return { ...result, solution };
+  return result;
 }

@@ -225,7 +225,7 @@ export function ProblemIntakeForm() {
           goal: editedGoal.trim(),
           problemType,
         });
-        router.push(`/solve/${solveId}/guess`);
+        router.push(`/solve/${solveId}/solution`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       }
