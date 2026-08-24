@@ -1,4 +1,4 @@
-﻿import { getGroqClient } from "@/lib/groq";
+import { getGroqClient } from "@/lib/groq";
 import { withRetry } from "@/lib/engine/with-retry";
 import { parseJsonResponse } from "@/lib/engine/parse-json-response";
 import { checkFinishReason } from "@/lib/engine/check-finish-reason";

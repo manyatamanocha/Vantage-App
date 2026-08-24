@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 const mockCandidates = [
   { rawInput: "A retailer wants fake reviews flagged before they go live.", industry: "Retail", intendedCategory: "Classification", difficulty: "easy" },
