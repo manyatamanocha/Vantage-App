@@ -1,16 +1,7 @@
 import Link from "next/link";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { signOutAction } from "@/app/(auth)/actions";
-
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/solve/new", label: "Solve" },
-  { href: "/practice/today", label: "Practice" },
-  { href: "/practice/jargon", label: "Daily quiz" },
-  { href: "/practice/history", label: "History" },
-  { href: "/progress", label: "Progress" },
-  { href: "/settings", label: "Settings" },
-] as const;
+import { NavLinks } from "./nav-links";
 
 /**
  * The app's only shell. Every screen in this build is otherwise reachable
@@ -36,11 +27,7 @@ export async function SiteNav() {
         <Link href="/" className="font-heading font-bold tracking-tight text-foreground">
           Vantage
         </Link>
-        {NAV_LINKS.map((link) => (
-          <Link key={link.href} href={link.href} className="text-foreground opacity-70 hover:opacity-100">
-            {link.label}
-          </Link>
-        ))}
+        <NavLinks />
         <form action={signOutAction} className="ml-auto">
           <button
             type="submit"

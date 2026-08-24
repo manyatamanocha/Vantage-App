@@ -23,5 +23,5 @@ export function LiveClock() {
     return () => clearInterval(id);
   }, []);
 
-  return <span className="datechip">{now ?? " "}</span>;
+  return <span className="datechip" style={{ fontSize: 14, padding: "8px 14px" }}>{now ?? " "}</span>;
 }
