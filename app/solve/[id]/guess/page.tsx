@@ -28,10 +28,6 @@ export default function GuessPage({ params }: { params: Promise<{ id: string }> 
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
-      <div className="topline" aria-label="Solve progress">
-        <div className="stepdots" aria-label="Step 3 of 5"><span className="on" /><span className="on" /><span className="on" /><span /><span /></div>
-        <span className="datechip">Your turn</span>
-      </div>
       <header>
         <h1 className="display">Which term best describes it?</h1>
       </header>

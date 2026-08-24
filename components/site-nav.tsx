@@ -30,20 +30,18 @@ export async function SiteNav() {
           Vantage
         </Link>
         <NavLinks />
-        <div className="ml-auto flex flex-col items-end gap-1.5">
-          <form action={signOutAction}>
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 border-0 bg-transparent p-0 font-sans text-[13px] text-foreground opacity-60 hover:opacity-100"
-            >
-              Sign out
-            </button>
-          </form>
-          <ThemeToggle />
-        </div>
+        <form action={signOutAction} className="ml-auto">
+          <button
+            type="submit"
+            className="flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 font-sans text-[13px] text-foreground opacity-60 transition-opacity hover:opacity-100 active:opacity-50"
+          >
+            Sign out
+          </button>
+        </form>
       </nav>
-      <div className="mx-auto w-full max-w-3xl px-[22px] pb-[13px]">
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-[22px] pb-[13px]">
         <BackButton />
+        <ThemeToggle />
       </div>
     </header>
   );

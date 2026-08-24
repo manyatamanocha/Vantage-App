@@ -41,12 +41,20 @@ vi.mock("@/lib/engine/reveal", () => ({
   recommendCategory: vi.fn(async () => REVEAL),
 }));
 
+const SOLUTION = "Set up a scheduled script that pulls the report data and refreshes it automatically.";
+
+vi.mock("@/lib/engine/solution", () => ({
+  generateSolution: vi.fn(async () => SOLUTION),
+}));
+
 import { runRevealStep } from "../actions";
 import { recommendCategory } from "@/lib/engine/reveal";
+import { generateSolution } from "@/lib/engine/solution";
 
 beforeEach(() => {
   state.user = { id: "u1" };
   state.solve = {
+    raw_input: "How do I automate my weekly report?",
     goal: "Answer questions from internal contracts",
     problem_type: "Doc Q&A",
     guessed_category: "Classification",
@@ -64,7 +72,8 @@ describe("runRevealStep", () => {
       problemType: "Doc Q&A",
       guessedCategory: "Classification",
     });
-    expect(result).toEqual(REVEAL);
+    expect(generateSolution).toHaveBeenCalledWith("How do I automate my weekly report?");
+    expect(result).toEqual({ ...REVEAL, solution: SOLUTION });
     // The comparative reasoning is persisted alongside the verdict, so a reload
     // can re-render the whole screen without a second Groq call.
     expect(state.updated).toEqual([
@@ -74,6 +83,7 @@ describe("runRevealStep", () => {
         correct: false,
         why_it_fits: REVEAL.whyItFits,
         why_not_alternatives: REVEAL.whyNotAlternatives,
+        solution: SOLUTION,
       },
     ]);
   });

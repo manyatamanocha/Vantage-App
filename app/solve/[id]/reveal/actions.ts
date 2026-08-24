@@ -1,14 +1,17 @@
 "use server";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { recommendCategory, type RevealResult } from "@/lib/engine/reveal";
+import { generateSolution } from "@/lib/engine/solution";
 
-export async function runRevealStep(solveId: string): Promise<RevealResult> {
+export async function runRevealStep(
+  solveId: string
+): Promise<RevealResult & { solution: string }> {
   const { supabase, user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
 
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")
-    .select("goal, problem_type, guessed_category")
+    .select("raw_input, goal, problem_type, guessed_category")
     .eq("id", solveId)
     .single();
   if (fetchErr) throw new Error(fetchErr.message);
@@ -23,11 +26,18 @@ export async function runRevealStep(solveId: string): Promise<RevealResult> {
     throw new Error("No guess has been recorded for this solve yet");
   }
 
-  const result = await recommendCategory({
-    goal: solve.goal,
-    problemType: solve.problem_type,
-    guessedCategory: solve.guessed_category,
-  });
+  // Independent of each other — one teaches the AI-approach category
+  // (recommendCategory, never names a product), the other directly answers
+  // the consultant's actual question (generateSolution, may name products
+  // freely). Run together since both are needed for this one screen.
+  const [result, solution] = await Promise.all([
+    recommendCategory({
+      goal: solve.goal,
+      problemType: solve.problem_type,
+      guessedCategory: solve.guessed_category,
+    }),
+    generateSolution(solve.raw_input),
+  ]);
 
   const { error: updateErr } = await supabase
     .from("solves")
@@ -39,9 +49,10 @@ export async function runRevealStep(solveId: string): Promise<RevealResult> {
       // model. supabase-js serialises the array straight into the jsonb column.
       why_it_fits: result.whyItFits,
       why_not_alternatives: result.whyNotAlternatives,
+      solution,
     })
     .eq("id", solveId);
   if (updateErr) throw new Error(updateErr.message);
 
-  return result;
+  return { ...result, solution };
 }

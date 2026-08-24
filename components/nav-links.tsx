@@ -7,8 +7,6 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/solve/new", label: "Solve" },
   { href: "/practice", label: "Practice" },
-  { href: "/practice/jargon", label: "Daily quiz" },
-  { href: "/practice/history", label: "History" },
   { href: "/progress", label: "Progress" },
   { href: "/settings", label: "Settings" },
 ] as const;
