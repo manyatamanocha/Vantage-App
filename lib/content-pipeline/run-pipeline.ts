@@ -2,6 +2,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { generatePracticeCaseCandidates, type PracticeCaseCandidate } from "./generate-cases";
 import { dedupeCandidates } from "./dedupe";
 import { validateCandidate } from "./validate-candidate";
+import { CATEGORY_TAXONOMY } from "@/lib/engine/taxonomy";
 
 export type PipelineSummary = {
   generated: number;
@@ -13,12 +14,19 @@ export type PipelineSummary = {
 export async function runContentPipeline(): Promise<PipelineSummary> {
   const supabase = getSupabaseAdminClient();
 
-  const candidates = await generatePracticeCaseCandidates();
+  // generatePracticeCaseCandidates() is documented to return one candidate per
+  // taxonomy category, but nothing in its own contract enforces that — cap
+  // here so a model that returns more than expected can't blow through the
+  // sequential-validation loop below and the Groq rate limit it protects.
+  const candidates = (await generatePracticeCaseCandidates()).slice(0, CATEGORY_TAXONOMY.length);
 
+  // Deliberately not filtered to `active: true` — a deactivated (retired)
+  // case is still real prior content. Comparing only against active rows
+  // would let the pipeline regenerate a near-duplicate of something a human
+  // just retired.
   const { data: existingRows, error: fetchErr } = await supabase
     .from("practice_cases")
-    .select("raw_input")
-    .eq("active", true);
+    .select("raw_input");
   if (fetchErr) throw new Error(fetchErr.message);
   const existingRawInputs = (existingRows as { raw_input: string }[]).map((r) => r.raw_input);
 
@@ -36,6 +44,12 @@ export async function runContentPipeline(): Promise<PipelineSummary> {
       toInsert.push(candidate);
     } else {
       rejectedValidation += 1;
+      // Rejection reasons are otherwise invisible once this runs unattended
+      // on a schedule — this is the only signal for tuning generation
+      // prompts or the validation threshold from real acceptance rates.
+      console.warn(
+        `[content-pipeline] rejected candidate (${candidate.intendedCategory}): ${result.reason} — "${candidate.rawInput.slice(0, 80)}"`
+      );
     }
   }
 

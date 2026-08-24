@@ -29,14 +29,15 @@ vi.mock("@/lib/supabase/admin", () => ({
     from: (table: string) => {
       if (table !== "practice_cases") throw new Error(`unexpected table: ${table}`);
       return {
+        // No longer filters on `active` — run-pipeline.ts deliberately
+        // compares candidates against every existing row, active or not, so
+        // a retired case still counts as a duplicate to avoid.
         select: () => ({
-          eq: () => ({
-            then: (resolve: (v: { data: { raw_input: string }[]; error: null }) => unknown) =>
-              Promise.resolve({
-                data: state.existingRawInputs.map((raw_input) => ({ raw_input })),
-                error: null,
-              }).then(resolve),
-          }),
+          then: (resolve: (v: { data: { raw_input: string }[]; error: null }) => unknown) =>
+            Promise.resolve({
+              data: state.existingRawInputs.map((raw_input) => ({ raw_input })),
+              error: null,
+            }).then(resolve),
         }),
         insert: (rows: Record<string, unknown>[]) => {
           state.inserted.push(...rows);
@@ -50,6 +51,8 @@ vi.mock("@/lib/supabase/admin", () => ({
 import { runContentPipeline } from "../run-pipeline";
 import { validateCandidate } from "../validate-candidate";
 import { dedupeCandidates } from "../dedupe";
+import { generatePracticeCaseCandidates } from "../generate-cases";
+import { CATEGORY_TAXONOMY } from "@/lib/engine/taxonomy";
 
 beforeEach(() => {
   state.existingRawInputs = [];
@@ -109,5 +112,21 @@ describe("runContentPipeline", () => {
     });
     await runContentPipeline();
     expect(callOrder).toEqual([0, 1]);
+  });
+
+  it("caps generated candidates at the taxonomy size, ignoring any extras", async () => {
+    const extra = {
+      rawInput: "An extra candidate beyond the taxonomy size.",
+      industry: "Other",
+      intendedCategory: "Classification" as const,
+      difficulty: "easy" as const,
+    };
+    const oversizedBatch = [...CANDIDATES, ...Array(CATEGORY_TAXONOMY.length).fill(extra)];
+    vi.mocked(generatePracticeCaseCandidates).mockResolvedValueOnce(oversizedBatch);
+
+    const summary = await runContentPipeline();
+
+    expect(summary.generated).toBe(CATEGORY_TAXONOMY.length);
+    expect(validateCandidate).toHaveBeenCalledTimes(CATEGORY_TAXONOMY.length);
   });
 });
