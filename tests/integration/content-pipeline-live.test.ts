@@ -37,15 +37,22 @@ describe.skipIf(!RUN)("content pipeline (real Groq + real Supabase)", () => {
       process.env.SUPABASE_SERVICE_ROLE_KEY,
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
-    const { data } = await admin.from("practice_cases").select("id");
+    // Fail loudly rather than silently treating an error as "table is
+    // empty" — an empty existingIdsBefore would make afterAll's cleanup
+    // below delete every row in the table, including the seeded pool.
+    const { data, error } = await admin.from("practice_cases").select("id");
+    if (error) throw new Error(`Failed to snapshot existing practice_cases ids: ${error.message}`);
     existingIdsBefore = new Set((data ?? []).map((r) => r.id as string));
   });
 
   afterAll(async () => {
     // Best-effort cleanup: delete only the rows this run actually inserted,
     // identified by not having existed beforehand — never touch the
-    // pre-existing seeded pool.
-    const { data } = await admin.from("practice_cases").select("id");
+    // pre-existing seeded pool. Same fail-loudly reasoning as beforeAll: a
+    // swallowed error here would again make newIds "everything", not
+    // "nothing".
+    const { data, error } = await admin.from("practice_cases").select("id");
+    if (error) throw new Error(`Failed to fetch practice_cases ids for cleanup: ${error.message}`);
     const newIds = (data ?? [])
       .map((r) => r.id as string)
       .filter((id) => !existingIdsBefore.has(id));
@@ -61,23 +68,18 @@ describe.skipIf(!RUN)("content pipeline (real Groq + real Supabase)", () => {
     expect(summary.inserted).toBeGreaterThan(0);
     expect(summary.inserted).toBeLessThanOrEqual(summary.generated);
 
-    const { data: rows, error } = await admin
-      .from("practice_cases")
-      .select("id")
-      .order("id", { ascending: false })
-      .limit(summary.inserted);
-    expect(error).toBeNull();
-    expect(rows?.length).toBe(summary.inserted);
+    // Identify the rows this run actually inserted the same way afterAll's
+    // cleanup does — by set difference against the pre-run snapshot, not by
+    // ordering on `id` (a random UUID, not an insertion-ordered column).
+    const { data: allRows, error: fetchErr } = await admin.from("practice_cases").select("*");
+    expect(fetchErr).toBeNull();
+    const insertedRows = (allRows ?? []).filter((r) => !existingIdsBefore.has(r.id as string));
+    expect(insertedRows.length).toBe(summary.inserted);
 
     // Confirm no category ever landed in the table — practice_cases has no
     // such column at all, so this is really confirming the insert didn't
     // error trying to write one.
-    const { data: fullRows, error: fullErr } = await admin
-      .from("practice_cases")
-      .select("*")
-      .in("id", (rows ?? []).map((r) => r.id));
-    expect(fullErr).toBeNull();
-    for (const row of fullRows ?? []) {
+    for (const row of insertedRows) {
       expect(Object.keys(row)).not.toContain("category");
       expect(Object.keys(row)).not.toContain("intended_category");
     }
