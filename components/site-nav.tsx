@@ -3,6 +3,7 @@ import { getVerifiedUser } from "@/lib/supabase/server";
 import { signOutAction } from "@/app/(auth)/actions";
 import { NavLinks } from "./nav-links";
 import { ThemeToggle } from "./theme-toggle";
+import { BackButton } from "./back-button";
 
 /**
  * The app's only shell. Every screen in this build is otherwise reachable
@@ -41,6 +42,9 @@ export async function SiteNav() {
           <ThemeToggle />
         </div>
       </nav>
+      <div className="mx-auto w-full max-w-3xl px-[22px] pb-[13px]">
+        <BackButton />
+      </div>
     </header>
   );
 }

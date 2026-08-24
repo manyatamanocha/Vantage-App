@@ -1,13 +1,47 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Clock3, Star } from "lucide-react";
+import { Brain, Clock3, FileText, Leaf, Star, Zap } from "lucide-react";
 import type { JargonQuestion } from "./actions";
 import { getJargonQuestions, rateJargonAttempt, recordJargonAttempt } from "./actions";
 import { EndingCard } from "@/components/ending-card";
 
 const RING = 2 * Math.PI * 54;
 const TIERS = ["easy", "medium", "hard"] as const;
+
+const TIER_META: Record<(typeof TIERS)[number], {
+  label: string;
+  color: string;
+  icon: typeof Leaf;
+  description: string;
+  whatYouGet: string;
+  time: string;
+}> = {
+  easy: {
+    label: "Easy",
+    color: "var(--success)",
+    icon: Leaf,
+    description: "Covers basic AI terms and ideas in simple situations.",
+    whatYouGet: "Clear explanations of fundamental concepts.",
+    time: "~3 min",
+  },
+  medium: {
+    label: "Medium",
+    color: "var(--primary)",
+    icon: Zap,
+    description: "Includes real-world scenarios and practical applications.",
+    whatYouGet: "Context-based questions to test your understanding.",
+    time: "~5 min",
+  },
+  hard: {
+    label: "Hard",
+    color: "#F59E0B",
+    icon: Brain,
+    description: "Focuses on advanced concepts and tricky real-world problems.",
+    whatYouGet: "Complex questions that challenge your AI thinking.",
+    time: "~7 min",
+  },
+};
 
 export function JargonSession() {
   const [difficulty, setDifficulty] = useState<(typeof TIERS)[number]>("medium");
@@ -83,36 +117,83 @@ export function JargonSession() {
   // pool is served, not cosmetic.
   if (!questions) {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
         <div className="topline">
           <span className="datechip">Daily quiz</span>
         </div>
         <header>
           <h1 className="display">Quiz of the day</h1>
-          <p className="lede">Pick a difficulty, then match each term to its plain-language meaning.</p>
+          <p className="lede">Pick a difficulty level and test your understanding of AI concepts.</p>
         </header>
+
         <section className="stack">
-          <div className="field">
-            <span>Difficulty</span>
-            <div className="segmented" role="group" aria-label="Quiz difficulty">
-              {TIERS.map((tier) => (
+          <span className="card-label">Choose your difficulty</span>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {TIERS.map((tier) => {
+              const meta = TIER_META[tier];
+              const Icon = meta.icon;
+              const selected = difficulty === tier;
+              return (
                 <button
                   key={tier}
                   type="button"
-                  aria-pressed={difficulty === tier}
                   onClick={() => setDifficulty(tier)}
+                  aria-pressed={selected}
+                  className="card"
+                  style={{
+                    textAlign: "left",
+                    cursor: "pointer",
+                    borderColor: selected ? meta.color : undefined,
+                    boxShadow: selected ? `0 0 0 1px ${meta.color}` : undefined,
+                  }}
                 >
-                  {tier[0].toUpperCase() + tier.slice(1)}
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 999,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: `color-mix(in oklch, ${meta.color} 18%, transparent)`,
+                      color: meta.color,
+                      marginBottom: 14,
+                    }}
+                  >
+                    <Icon size={19} aria-hidden="true" />
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 17, color: meta.color, marginBottom: 6 }}>
+                    {meta.label}
+                  </div>
+                  <p className="card-text" style={{ color: "var(--muted-foreground)" }}>
+                    {meta.description}
+                  </p>
+                  <div style={{ borderTop: "1px solid var(--border)", margin: "14px 0" }} />
+                  <div style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 10 }}>
+                    <FileText size={14} style={{ marginTop: 2, flexShrink: 0, color: meta.color }} aria-hidden="true" />
+                    <div>
+                      <div style={{ fontWeight: 650, fontSize: 13 }}>What you&apos;ll get:</div>
+                      <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{meta.whatYouGet}</p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--muted-foreground)" }}>
+                    <Clock3 size={13} aria-hidden="true" /> {meta.time}
+                  </div>
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </section>
+
         {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-        <div className="actions">
+
+        <div className="actions" style={{ justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
           <button type="button" className="btn btn-primary" onClick={startQuiz} disabled={isPending}>
-            {isPending ? "Loading…" : "Get started"}
+            {isPending ? "Loading…" : "Start quiz →"}
           </button>
+          <p className="card-text" style={{ marginTop: 8, color: "var(--muted-foreground)", fontSize: 13 }}>
+            You can change the difficulty anytime.
+          </p>
         </div>
       </main>
     );

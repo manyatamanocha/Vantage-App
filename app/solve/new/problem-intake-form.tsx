@@ -45,6 +45,12 @@ export function ProblemIntakeForm() {
   const [isPending, startTransition] = useTransition();
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseTextRef = useRef("");
+  const micStreamRef = useRef<MediaStream | null>(null);
+
+  function releaseMicStream() {
+    micStreamRef.current?.getTracks().forEach((track) => track.stop());
+    micStreamRef.current = null;
+  }
 
   // Server-safe: starts false on both server and the client's first render
   // (matching what the server rendered), then flips true after mount if the
@@ -61,10 +67,13 @@ export function ProblemIntakeForm() {
   }, []);
 
   useEffect(() => {
-    return () => recognitionRef.current?.stop();
+    return () => {
+      recognitionRef.current?.stop();
+      releaseMicStream();
+    };
   }, []);
 
-  function toggleListening() {
+  async function toggleListening() {
     if (isListening) {
       recognitionRef.current?.stop();
       return;
@@ -74,6 +83,36 @@ export function ProblemIntakeForm() {
     if (!Ctor) return;
 
     setError(null);
+
+    // SpeechRecognition.start() is supposed to trigger the browser's own
+    // microphone permission prompt on first use, but that's inconsistent
+    // across browsers — some silently fail instead of prompting if the
+    // permission state is anything other than a clean "not yet asked".
+    // Requesting getUserMedia directly first is the standard, reliable way
+    // to force that native prompt (or get a clear denial we can act on)
+    // before handing off to SpeechRecognition.
+    //
+    // Deliberately NOT stopping this stream right away: releasing it and
+    // immediately having SpeechRecognition try to open its own capture
+    // session raced with the OS/browser still tearing down the previous one
+    // — the device briefly looked busy, and SpeechRecognition failed right
+    // after starting. Kept alive until recognition actually ends instead.
+    try {
+      micStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      const name = err instanceof DOMException ? err.name : "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        setError(
+          "Microphone access is blocked for this site. Check your browser's site settings (and your OS's microphone privacy settings) and allow access, then try again."
+        );
+      } else if (name === "NotFoundError") {
+        setError("No microphone was found on this device.");
+      } else {
+        setError("Couldn't access the microphone. You can type instead.");
+      }
+      return;
+    }
+
     const recognition = new Ctor();
     recognition.lang = "en-IN";
     recognition.continuous = true;
@@ -90,19 +129,30 @@ export function ProblemIntakeForm() {
     };
     recognition.onerror = (event) => {
       setIsListening(false);
+      releaseMicStream();
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         setError("Microphone access was blocked — allow it in your browser's site settings to dictate.");
       } else if (event.error === "no-speech") {
         setError(null);
+      } else if (event.error === "aborted") {
+        // Fires from our own recognition.stop() call — not a real failure.
       } else {
-        setError("Voice input stopped unexpectedly. You can try again or type instead.");
+        setError(`Voice input stopped unexpectedly (${event.error}). You can try again or type instead.`);
       }
     };
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      releaseMicStream();
+    };
 
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
+    try {
+      recognitionRef.current = recognition;
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      setError("Couldn't start voice input. You can type instead.");
+      releaseMicStream();
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
