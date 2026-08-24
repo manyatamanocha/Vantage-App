@@ -6,8 +6,8 @@ const state = vi.hoisted(() => ({
   updated: [] as unknown[],
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({
+vi.mock("@/lib/supabase/server", () => {
+  const buildClient = () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
     from: () => ({
       select: () => ({
@@ -20,8 +20,12 @@ vi.mock("@/lib/supabase/server", () => ({
         return { eq: async () => ({ error: null }) };
       },
     }),
-  }),
-}));
+  });
+  return {
+    getSupabaseServerClient: async () => buildClient(),
+    getVerifiedUser: async () => ({ supabase: buildClient(), user: state.user }),
+  };
+});
 
 const REVEAL = {
   match: false,

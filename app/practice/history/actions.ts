@@ -1,5 +1,5 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 
 export type SolveHistoryRow = {
   id: string;
@@ -10,9 +10,8 @@ export type SolveHistoryRow = {
 };
 
 export async function listSolves(userId: string): Promise<SolveHistoryRow[]> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   const { data, error } = await supabase
     .from("solves")

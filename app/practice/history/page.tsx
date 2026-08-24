@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 import { listSolves } from "./actions";
 
 const SOURCE_LABEL: Record<"live" | "practice", string> = {
@@ -18,11 +18,10 @@ const SOURCE_LABEL: Record<"live" | "practice", string> = {
  * printing "null"/"undefined".
  */
 export default async function PracticeHistoryPage() {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) redirect("/login");
+  const { user } = await getVerifiedUser();
+  if (!user?.id) redirect("/login");
 
-  const solves = await listSolves(userData.user.id);
+  const solves = await listSolves(user.id);
 
   return (
     <main>

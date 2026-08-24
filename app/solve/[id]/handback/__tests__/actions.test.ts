@@ -12,8 +12,8 @@ const state = vi.hoisted(() => ({
   upsertCalls: [] as { values: Record<string, unknown>; options: unknown }[],
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({
+vi.mock("@/lib/supabase/server", () => {
+  const buildClient = () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
     from: (table: string) => {
       if (table === "solves") {
@@ -39,8 +39,12 @@ vi.mock("@/lib/supabase/server", () => ({
         },
       };
     },
-  }),
-}));
+  });
+  return {
+    getSupabaseServerClient: async () => buildClient(),
+    getVerifiedUser: async () => ({ supabase: buildClient(), user: state.user }),
+  };
+});
 
 const DRAFT_TEXT =
   "Here's how we'll tackle churn: a prediction model flags at-risk accounts early so the team can step in before they cancel.";

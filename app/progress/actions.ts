@@ -1,14 +1,13 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 
 export async function getProgressStats(userId: string): Promise<{
   firstGuessAccuracy: number;
   byCategory: Record<string, number>;
   completedCount: number;
 }> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   const { data, error } = await supabase
     .from("solves")
@@ -43,9 +42,8 @@ export type ProgressSolveRow = {
 };
 
 export async function getProgressSolves(userId: string): Promise<ProgressSolveRow[]> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   const { data, error } = await supabase
     .from("solves")

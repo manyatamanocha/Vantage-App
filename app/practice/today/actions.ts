@@ -1,5 +1,5 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser, getSupabaseServerClient } from "@/lib/supabase/server";
 import { recommendCategory, type RevealResult } from "@/lib/engine/reveal";
 import { isCategory } from "@/lib/engine/taxonomy";
 import { dailySeed, pickDailyIndex, utcDayKey } from "@/lib/practice/daily-pick";
@@ -30,9 +30,8 @@ const DEFAULT_DIFFICULTY = "medium";
  * handling the same user on the same day agree.
  */
 export async function getTodaysPracticeCase(): Promise<TodaysPracticeCase> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const { supabase, user } = await getVerifiedUser();
+  const userId = user?.id;
   if (!userId) throw new Error("Not authenticated");
 
   const { data: settings, error: settingsErr } = await supabase
@@ -130,9 +129,8 @@ export async function submitPracticeGuess(
     throw new Error(`Unknown category: ${guessedCategory}`);
   }
 
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const { supabase, user } = await getVerifiedUser();
+  const userId = user?.id;
   if (!userId) throw new Error("Not authenticated");
 
   const { data: practiceCase, error: fetchErr } = await supabase

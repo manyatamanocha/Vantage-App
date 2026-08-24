@@ -1,15 +1,14 @@
 import { redirect } from "next/navigation";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 import { getProgressStats, getProgressSolves } from "./actions";
 import { ProgressTrend } from "./progress-trend";
 
 export default async function ProgressPage() {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) redirect("/login");
+  const { user } = await getVerifiedUser();
+  if (!user?.id) redirect("/login");
 
-  const stats = await getProgressStats(userData.user.id);
-  const solves = await getProgressSolves(userData.user.id);
+  const stats = await getProgressStats(user.id);
+  const solves = await getProgressSolves(user.id);
 
   const overallPercentage = Math.round(stats.firstGuessAccuracy * 100);
 

@@ -93,12 +93,9 @@ describe("middleware route protection", () => {
 describe("middleware matcher", () => {
   const matcher = new RegExp(`^${config.matcher[0]}$`);
 
-  it.each(["/", "/login", "/progress", "/solve/abc/reveal"])(
-    "runs on %s",
-    (path) => {
-      expect(matcher.test(path)).toBe(true);
-    }
-  );
+  it.each(["/", "/progress", "/solve/abc/reveal"])("runs on %s", (path) => {
+    expect(matcher.test(path)).toBe(true);
+  });
 
   it.each([
     "/_next/static/chunks/main.js",
@@ -106,6 +103,11 @@ describe("middleware matcher", () => {
     "/favicon.ico",
     "/next.svg",
     "/fonts/inter.woff2",
+    // A visitor here either has no session yet or is establishing one via
+    // app/(auth)/actions.ts's own Supabase client — the middleware's refresh
+    // is redundant work on the one path where latency is most visible.
+    "/login",
+    "/signup",
   ])("skips %s, which carries no session worth refreshing", (path) => {
     expect(matcher.test(path)).toBe(false);
   });

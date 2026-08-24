@@ -208,6 +208,25 @@ describe("recommendCategory", () => {
     expect(result.revealedCategory).toBe("RAG");
   });
 
+  it("throws when whyItFits names a specific product", async () => {
+    await mockCompletionOnce(
+      JSON.stringify({ ...mockResponse, whyItFits: "ChatGPT would handle this well." })
+    );
+    await expect(recommendCategory(INPUT)).rejects.toThrow(/named a specific product/i);
+  });
+
+  it("throws when a whyNotAlternatives reason names a specific product", async () => {
+    await mockCompletionOnce(
+      JSON.stringify({
+        ...mockResponse,
+        whyNotAlternatives: [
+          { category: "Classification", reason: "Better suited to a tool like Claude." },
+        ],
+      })
+    );
+    await expect(recommendCategory(INPUT)).rejects.toThrow(/named a specific product/i);
+  });
+
   it("gives up after a single retry without inventing a recommendation", async () => {
     const { getGroqClient } = await import("@/lib/groq");
     const create = vi.fn().mockRejectedValue(new Error("groq is down"));

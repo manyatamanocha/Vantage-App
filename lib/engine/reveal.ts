@@ -2,6 +2,7 @@ import { getGroqClient } from "@/lib/groq";
 import { withRetry } from "./with-retry";
 import { parseJsonResponse } from "./parse-json-response";
 import { checkFinishReason } from "./check-finish-reason";
+import { assertNoNamedProducts } from "./guardrails";
 import { CATEGORY_TAXONOMY, isCategory, type Category } from "./taxonomy";
 
 /**
@@ -125,6 +126,14 @@ export async function recommendCategory(input: {
     throw new Error(
       "Model returned no usable alternative categories to compare against"
     );
+  }
+
+  // Taxonomy filtering above catches an off-list category; it does not catch
+  // a product name slipped into otherwise-valid prose, which the rule in the
+  // system prompt forbids but cannot enforce by itself.
+  assertNoNamedProducts(parsed.whyItFits, "reveal.whyItFits");
+  for (const alternative of whyNotAlternatives) {
+    assertNoNamedProducts(alternative.reason, "reveal.whyNotAlternatives.reason");
   }
 
   return {

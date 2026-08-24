@@ -5,8 +5,8 @@ const state = vi.hoisted(() => ({
   data: [] as unknown[],
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({
+vi.mock("@/lib/supabase/server", () => {
+  const buildClient = () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
     from: () => ({
       select: () => ({
@@ -16,8 +16,12 @@ vi.mock("@/lib/supabase/server", () => ({
         }),
       }),
     }),
-  }),
-}));
+  });
+  return {
+    getSupabaseServerClient: async () => buildClient(),
+    getVerifiedUser: async () => ({ supabase: buildClient(), user: state.user }),
+  };
+});
 
 import { getProgressStats } from "../actions";
 

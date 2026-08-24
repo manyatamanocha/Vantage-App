@@ -1,11 +1,10 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 import { recommendCategory, type RevealResult } from "@/lib/engine/reveal";
 
 export async function runRevealStep(solveId: string): Promise<RevealResult> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")

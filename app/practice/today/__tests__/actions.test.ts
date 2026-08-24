@@ -44,8 +44,8 @@ function makeBuilder(rows: Row[]) {
   return builder;
 }
 
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({
+vi.mock("@/lib/supabase/server", () => {
+  const buildClient = () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
     from: (table: string) => {
       if (table === "user_settings") return makeBuilder(state.settings);
@@ -62,8 +62,12 @@ vi.mock("@/lib/supabase/server", () => ({
         },
       };
     },
-  }),
-}));
+  });
+  return {
+    getSupabaseServerClient: async () => buildClient(),
+    getVerifiedUser: async () => ({ supabase: buildClient(), user: state.user }),
+  };
+});
 
 const REVEAL = {
   match: true,

@@ -1,13 +1,12 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 import { structureProblem } from "@/lib/engine/structure";
 
 export async function runStructureStep(
   solveId: string
 ): Promise<{ goal: string; problemType: string }> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")
@@ -35,9 +34,8 @@ export async function editStructure(
   goal: string,
   problemType: string
 ): Promise<void> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   const { error } = await supabase
     .from("solves")

@@ -73,6 +73,23 @@ describe("generateHandback", () => {
     await expect(generateHandback(INPUT)).rejects.toThrow(/truncated/i);
   });
 
+  it("throws when the draft names a specific product", async () => {
+    const { getGroqClient } = await import("@/lib/groq");
+    vi.mocked(getGroqClient).mockReturnValueOnce({
+      chat: {
+        completions: {
+          create: async () => ({
+            choices: [
+              { message: { content: "Draft: use ChatGPT to handle this." } },
+            ],
+          }),
+        },
+      },
+    } as never);
+
+    await expect(generateHandback(INPUT)).rejects.toThrow(/named a specific product/i);
+  });
+
   it("throws when the model returns empty text", async () => {
     const { getGroqClient } = await import("@/lib/groq");
     vi.mocked(getGroqClient).mockReturnValueOnce({
