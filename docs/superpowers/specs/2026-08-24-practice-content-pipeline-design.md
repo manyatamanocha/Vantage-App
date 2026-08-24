@@ -30,9 +30,9 @@ New module `lib/content-pipeline/`, extending the existing `lib/engine/` pattern
 4. Survivors are inserted into `practice_cases` (`raw_input`, `industry`, `difficulty` only) via the admin client.
 5. `run-pipeline.ts` returns `{ generated, rejectedDuplicate, rejectedValidation, inserted }`.
 
-## Trigger — decided 2026-08-24 (amendment)
+## Trigger — decided 2026-08-24 (amendment, revised 2026-08-24)
 
-Vercel Cron, running daily, calling a new route `app/api/cron/generate-practice-cases/route.ts` that invokes `run-pipeline.ts`. Target batch size: ~100 candidates/day, spread ~33/33/34 across Easy/Medium/Hard (in addition to the existing spread across taxonomy category). If a day's run produces fewer usable candidates than expected (heavy dedupe/validation rejection), the daily-practice loop simply has a smaller-than-usual pool to draw from that day — no special handling needed, since `practice_cases` accumulates across days rather than being replaced daily.
+Vercel Cron, running daily, calling a new route `app/api/cron/generate-practice-cases/route.ts` that invokes `run-pipeline.ts`. Target batch size: ~120 candidates/day, spread ~40/40/40 across Easy/Medium/Hard (in addition to the existing spread across taxonomy category). Revised up from the original ~100/day figure as part of a combined ~240/day target split evenly between this pipeline and the sibling jargon-quiz pipeline (see that spec's own Trigger section). If a day's run produces fewer usable candidates than expected (heavy dedupe/validation rejection), the daily-practice loop simply has a smaller-than-usual pool to draw from that day — no special handling needed, since `practice_cases` accumulates across days rather than being replaced daily.
 
 ## Human review layer (amendment)
 

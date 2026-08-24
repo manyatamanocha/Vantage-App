@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { runRevealStep } from "./actions";
 import type { RevealResult } from "@/lib/engine/reveal";
+import type { Category } from "@/lib/engine/taxonomy";
+import { CATEGORY_GLOSS } from "@/lib/engine/category-gloss";
+import { EndingCard } from "@/components/ending-card";
 
 const TOOL_CLASS_GLOSS: Record<RevealResult["toolClass"], string> = {
   "general-purpose":
@@ -66,27 +69,58 @@ export default async function RevealPage({
     reveal?.whyNotAlternatives ?? toAlternatives(solve.why_not_alternatives);
 
   return (
-    <main>
-      <h1>{match ? "You had it." : "Not quite."}</h1>
-      <p>
-        You guessed <strong>{guessedCategory}</strong>. This is a{" "}
-        <strong>{revealedCategory}</strong> problem.
-      </p>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-5 py-8 sm:px-8 sm:py-12">
+      <header>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {match ? "You had it." : "Not quite."}
+        </h1>
+        <p className="mt-2 text-muted-foreground">Let&apos;s discuss the takeaway.</p>
+      </header>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Your guess
+          </span>
+          <p className="mt-1 text-lg font-semibold">{guessedCategory}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Correct answer
+          </span>
+          <p className="mt-1 text-lg font-semibold">{revealedCategory}</p>
+        </div>
+      </div>
+
+      <span
+        className={
+          "inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold " +
+          (match
+            ? "bg-primary/10 text-primary"
+            : "bg-destructive/10 text-destructive")
+        }
+      >
+        {match ? "Matched" : "Missed"}
+      </span>
 
       {whyItFits && whyNotAlternatives.length > 0 ? (
         <>
-          <section>
-            <h2>Why {revealedCategory} fits</h2>
-            <p>{whyItFits}</p>
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Why it fits
+            </span>
+            <p className="mt-2 text-base leading-6">{whyItFits}</p>
           </section>
 
-          <section>
-            <h2>Why not the alternatives</h2>
-            <dl>
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Why not the others
+            </span>
+            <dl className="mt-3 flex flex-col gap-3">
               {whyNotAlternatives.map((alternative) => (
                 <div key={alternative.category}>
-                  <dt>{alternative.category}</dt>
-                  <dd>{alternative.reason}</dd>
+                  <dt className="text-sm font-semibold">{alternative.category}</dt>
+                  <dd className="mt-0.5 text-sm text-muted-foreground">{alternative.reason}</dd>
                 </div>
               ))}
             </dl>
@@ -96,18 +130,35 @@ export default async function RevealPage({
         // Solves revealed before the reasoning columns existed have only the
         // verdict stored. Nothing is invented to fill the gap, and the model is
         // not re-run to regenerate it.
-        <p>You worked through this one already — here&apos;s what you landed on.</p>
+        <p className="text-muted-foreground">
+          You worked through this one already — here&apos;s what you landed on.
+        </p>
       )}
 
-      <section>
-        <h2>Tool class</h2>
-        <p>
-          <strong>{toolClass}</strong>
-          {toolClass ? ` — ${TOOL_CLASS_GLOSS[toolClass]}` : null}
-        </p>
-      </section>
+      {toolClass ? (
+        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Recommended tool class
+          </span>
+          <p className="mt-2 text-base font-semibold">{toolClass}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{TOOL_CLASS_GLOSS[toolClass]}</p>
+        </section>
+      ) : null}
 
-      <Link href={`/solve/${id}/summary`}>Continue</Link>
+      {CATEGORY_GLOSS[revealedCategory as Category] ? (
+        <EndingCard
+          explainMore={CATEGORY_GLOSS[revealedCategory as Category].explainMore}
+          example={CATEGORY_GLOSS[revealedCategory as Category].example}
+          followupPlaceholder="e.g. What if a request doesn't fit any category cleanly?"
+        />
+      ) : null}
+
+      <Link
+        href={`/solve/${id}/summary`}
+        className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
+      >
+        Continue to summary →
+      </Link>
     </main>
   );
 }

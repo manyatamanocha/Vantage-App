@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { updateSettings } from "./actions";
 
 interface SettingsFormProps {
@@ -39,9 +38,9 @@ export function SettingsForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="form-group">
-        <label htmlFor="difficulty" className="block text-sm font-medium mb-2">
+    <form onSubmit={handleSubmit} className="stack">
+      <div className="field">
+        <label htmlFor="difficulty">
           Practice Difficulty
         </label>
         <select
@@ -49,7 +48,7 @@ export function SettingsForm({
           value={difficulty}
           onChange={(e) => setDifficulty(e.target.value)}
           disabled={isSubmitting}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50"
+          className="input disabled:opacity-50"
         >
           <option value="easy">Easy</option>
           <option value="medium">Medium</option>
@@ -57,8 +56,8 @@ export function SettingsForm({
         </select>
       </div>
 
-      <div className="form-group">
-        <label htmlFor="frequency" className="block text-sm font-medium mb-2">
+      <div className="field">
+        <label htmlFor="frequency">
           Practice Frequency
         </label>
         <select
@@ -66,7 +65,7 @@ export function SettingsForm({
           value={frequency}
           onChange={(e) => setFrequency(e.target.value)}
           disabled={isSubmitting}
-          className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground disabled:opacity-50"
+          className="input disabled:opacity-50"
         >
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
@@ -80,9 +79,9 @@ export function SettingsForm({
         </div>
       )}
 
-      <Button type="submit" disabled={isSubmitting} variant="default">
+      <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Saving..." : "Save Settings"}
-      </Button>
+      </button>
     </form>
   );
 }

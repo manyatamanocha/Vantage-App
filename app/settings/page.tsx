@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient, getVerifiedUser } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { getSettings } from "./actions";
 import { getProgressStats } from "@/app/progress/actions";
 import { SettingsForm } from "./settings-form";
@@ -21,11 +20,12 @@ export default async function SettingsPage() {
   };
 
   return (
-    <main className="max-w-2xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">Settings</h1>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+      <div className="topline"><span className="datechip">Account</span></div>
+      <header><h1 className="display">Settings</h1><p className="lede">Set the practice rhythm that works for you.</p></header>
 
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Practice Preferences</h2>
+      <section className="card stack">
+        <h2 className="text-lg font-semibold">Practice preferences</h2>
         <SettingsForm
           userId={userId}
           initialDifficulty={settings.practiceDifficulty}
@@ -33,20 +33,20 @@ export default async function SettingsPage() {
         />
       </section>
 
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Your Strength by Category</h2>
+      <section className="stack">
+        <h2 className="text-lg font-semibold">Your strength by category</h2>
         {Object.keys(stats.byCategory).length === 0 ? (
           <p className="text-muted-foreground">
             No data yet. Start practicing to see your strength by category.
           </p>
         ) : (
-          <div className="grid gap-2">
+          <div className="card">
             {Object.entries(stats.byCategory)
               .sort(([catA], [catB]) => catA.localeCompare(catB))
               .map(([category, accuracy]) => (
                 <div
                   key={category}
-                  className="flex items-center justify-between p-3 border border-border rounded-lg"
+                  className="bar-row"
                 >
                   <span className="font-medium">{category}</span>
                   <span className="text-sm">
@@ -58,12 +58,12 @@ export default async function SettingsPage() {
         )}
       </section>
 
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Account</h2>
+      <section className="stack">
+        <h2 className="text-lg font-semibold">Account</h2>
         <form action={handleSignOut}>
-          <Button type="submit" variant="destructive">
+          <button className="btn btn-secondary" type="submit">
             Sign Out
-          </Button>
+          </button>
         </form>
       </section>
     </main>

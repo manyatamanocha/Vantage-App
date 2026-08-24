@@ -26,20 +26,19 @@ export function RetryPanel({
   backLabel: string;
 }) {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-6">
-      <h1 className="text-xl font-semibold">{title}</h1>
-      <p className="text-sm opacity-70">
-        Nothing you&apos;ve entered was lost. Try that step again.
-      </p>
-      <div className="flex flex-wrap items-center gap-4 text-sm">
-        <button
-          type="button"
-          onClick={reset}
-          className="rounded bg-foreground px-4 py-2 text-background"
-        >
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+      <div className="topline">
+        <span className="datechip">Something went wrong</span>
+      </div>
+      <header>
+        <h1 className="display">{title}</h1>
+        <p className="lede">Nothing you&apos;ve entered was lost. Try that step again.</p>
+      </header>
+      <div className="actions">
+        <button type="button" onClick={reset} className="btn btn-primary">
           Try again
         </button>
-        <Link href={backHref} className="underline">
+        <Link href={backHref} className="btn btn-secondary">
           {backLabel}
         </Link>
       </div>

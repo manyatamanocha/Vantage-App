@@ -40,9 +40,9 @@ New table `daily_quiz_questions`:
 | `flagged` | boolean | default `false` |
 | `created_at` | timestamptz | default `now()` |
 
-## Trigger
+## Trigger — revised 2026-08-24
 
-Vercel Cron, daily, calling `app/api/cron/generate-quiz-questions/route.ts` → `run-pipeline.ts`. Target: 100 questions/day, ~33/33/34 split across Easy/Medium/Hard.
+Vercel Cron, daily, calling `app/api/cron/generate-quiz-questions/route.ts` → `run-pipeline.ts`. Target: ~120 questions/day, ~40/40/40 split across Easy/Medium/Hard. Revised up from the original 100/day figure as part of a combined ~240/day target split evenly with the sibling scenario pipeline (see that spec's own Trigger section).
 
 **Fallback on a bad day:** the quiz-serving query (see below) always selects from the most recent `pool_date` that has at least one unflagged row per requested difficulty, not strictly "today." A failed or thin cron run means the app quietly keeps serving the last good day's pool instead of showing a broken or empty quiz.
 
@@ -79,4 +79,4 @@ Mirrors `lib/content-pipeline/__tests__/*`:
 
 - Migration file for `daily_quiz_questions` (schema above) and the `flagged` column added to `practice_cases` (per the sibling spec's amendment) — needed before implementation, not written as part of this design doc.
 - Exact wording/visual polish of the circular timer's encouragement copy (only "Nice and quick!" seen in the reference mockup) — can vary by response time bucket, left to implementation/impeccable-skill polish rather than fixed here.
-- No retention/cleanup policy yet for old `daily_quiz_questions` rows (the table grows by ~100/day indefinitely) — not blocking for v1, worth revisiting once real usage data exists.
+- No retention/cleanup policy yet for old `daily_quiz_questions` rows (the table grows by ~120/day indefinitely) — not blocking for v1, worth revisiting once real usage data exists.

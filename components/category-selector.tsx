@@ -18,13 +18,14 @@ export function CategorySelector({
   onSelect: (category: Category) => void;
 }) {
   return (
-    <ul>
+    <ul className="cat-grid" aria-label="AI approach categories">
       {taxonomy.map((category) => (
         <li key={category}>
           <button
             type="button"
             aria-pressed={selected === category}
             onClick={() => onSelect(category)}
+            className="cat-btn w-full"
           >
             {category}
           </button>

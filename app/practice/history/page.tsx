@@ -24,13 +24,14 @@ export default async function PracticeHistoryPage() {
   const solves = await listSolves(user.id);
 
   return (
-    <main>
-      <h1>Practice history</h1>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+      <div className="topline"><span className="datechip">Your record</span></div>
+      <header><h1 className="display">Practice history</h1><p className="lede">Your problem solving and daily practice, in one place.</p></header>
 
       {solves.length === 0 ? (
         <p>Nothing here yet — solve a problem or try today&apos;s practice case.</p>
       ) : (
-        <ul>
+        <ul className="card stack">
           {solves.map((solve) => {
             const status =
               solve.correct === true
@@ -40,7 +41,7 @@ export default async function PracticeHistoryPage() {
                   : "In progress";
 
             return (
-              <li key={solve.id}>
+              <li key={solve.id} className="history-row">
                 {/*
                   The summary screen is keyed only on the `solveId` route param
                   — it re-renders whatever `runRevealStep`/`submitPracticeGuess`

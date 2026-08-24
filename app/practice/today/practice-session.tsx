@@ -6,6 +6,8 @@ import { CATEGORY_TAXONOMY, type Category } from "@/lib/engine/taxonomy";
 import { CategorySelector } from "@/components/category-selector";
 import { submitPracticeGuess } from "./actions";
 import type { RevealResult } from "@/lib/engine/reveal";
+import { CATEGORY_GLOSS } from "@/lib/engine/category-gloss";
+import { EndingCard } from "@/components/ending-card";
 
 const TOOL_CLASS_GLOSS: Record<RevealResult["toolClass"], string> = {
   "general-purpose":
@@ -51,21 +53,24 @@ export function PracticeSession({
 
   if (reveal) {
     return (
-      <>
-        <h1>{reveal.match ? "You had it." : "Not quite."}</h1>
-        <p>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+        <div className="topline"><span className="datechip">Daily practice</span></div>
+        <header>
+          <h1 className="display">{reveal.match ? "You had it." : "Not quite."}</h1>
+          <p className="lede">
           You guessed <strong>{selected}</strong>. This is a{" "}
           <strong>{reveal.revealedCategory}</strong> problem.
-        </p>
+          </p>
+        </header>
 
-        <section>
-          <h2>Why {reveal.revealedCategory} fits</h2>
-          <p>{reveal.whyItFits}</p>
+        <section className="card stack">
+          <span className="card-label">Why it fits</span>
+          <p className="card-text">{reveal.whyItFits}</p>
         </section>
 
-        <section>
-          <h2>Why not the alternatives</h2>
-          <dl>
+        <section className="card stack">
+          <span className="card-label">Why not the alternatives</span>
+          <dl className="stack">
             {reveal.whyNotAlternatives.map((alternative) => (
               <div key={alternative.category}>
                 <dt>{alternative.category}</dt>
@@ -75,17 +80,17 @@ export function PracticeSession({
           </dl>
         </section>
 
-        <section>
-          <h2>Tool class</h2>
-          <p>
+        <section className="card stack">
+          <span className="card-label">Recommended tool class</span>
+          <p className="card-text">
             <strong>{reveal.toolClass}</strong> —{" "}
             {TOOL_CLASS_GLOSS[reveal.toolClass]}
           </p>
         </section>
 
-        <section aria-label="Learn and remember">
-          <h2>Learn &amp; remember</h2>
-          <p>
+        <section aria-label="Learn and remember" className="quote-card">
+          <span className="card-label">Learn &amp; remember</span>
+          <p className="card-text">
             <strong>Key takeaway:</strong> {reveal.whyItFits}
           </p>
           {reveal.whyNotAlternatives[0] ? (
@@ -96,49 +101,60 @@ export function PracticeSession({
           ) : null}
         </section>
 
+        {CATEGORY_GLOSS[reveal.revealedCategory as Category] ? (
+          <EndingCard
+            explainMore={CATEGORY_GLOSS[reveal.revealedCategory as Category].explainMore}
+            example={CATEGORY_GLOSS[reveal.revealedCategory as Category].example}
+            followupPlaceholder="e.g. What if a request doesn't fit any category cleanly?"
+          />
+        ) : null}
+
         {/*
           Previously the reveal was a dead end — the practice loop ended here
           with no way forward. These mirror the live loop's own post-reveal
           routing: the reveal screen there links to the summary, which is where
           the takeaway artifact is offered.
         */}
-        <nav aria-label="What's next" className="flex flex-wrap gap-4 pt-4 text-sm">
-          <Link href={`/solve/${reveal.solveId}/summary`} className="underline">
+        <nav aria-label="What's next" className="actions">
+          <Link href={`/solve/${reveal.solveId}/summary`} className="btn btn-primary">
             See the summary
           </Link>
-          <Link href="/practice/history" className="underline">
+          <Link href="/practice/history" className="btn btn-secondary">
             Practice history
           </Link>
-          <Link href="/" className="underline">
+          <Link href="/" className="btn btn-ghost">
             Done for today
           </Link>
         </nav>
-      </>
+      </main>
     );
   }
 
   return (
-    <>
-      <h1>Today&apos;s practice case</h1>
-      <p className="text-sm opacity-70">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+      <div className="topline"><span className="datechip">Daily practice</span></div>
+      <header>
+      <h1 className="display">Today&apos;s practice case</h1>
+      <p className="lede">
         {matchedPreferredDifficulty
           ? `Difficulty: ${difficulty}`
           : `Nothing seeded at your preferred difficulty yet — here's a ${difficulty} case instead.`}
       </p>
-      <p>{rawInput}</p>
-      <p>What kind of AI problem is this?</p>
+      </header>
+      <section className="quote-card stack"><span className="card-label">Today&apos;s challenge</span><p className="card-text">{rawInput}</p></section>
+      <section className="stack"><p className="card-label">Which approach fits best?</p>
 
       <CategorySelector
         taxonomy={CATEGORY_TAXONOMY}
         selected={selected}
         onSelect={setSelected}
-      />
+      /></section>
 
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
 
-      <button type="button" onClick={lockIn} disabled={!selected || isSubmitting}>
+      <div className="actions"><button className="btn btn-primary" type="button" onClick={lockIn} disabled={!selected || isSubmitting}>
         {isSubmitting ? "Revealing…" : "Lock in guess"}
-      </button>
-    </>
+      </button></div>
+    </main>
   );
 }

@@ -26,9 +26,11 @@ export async function runContentPipeline(): Promise<PipelineSummary> {
   // just retired.
   const { data: existingRows, error: fetchErr } = await supabase
     .from("practice_cases")
-    .select("raw_input");
+    .select("raw_input, flagged");
   if (fetchErr) throw new Error(fetchErr.message);
-  const existingRawInputs = (existingRows as { raw_input: string }[]).map((r) => r.raw_input);
+  const existingRawInputs = (existingRows as { raw_input: string; flagged?: boolean }[])
+    .filter((row) => row.flagged !== true)
+    .map((r) => r.raw_input);
 
   const deduped = dedupeCandidates(candidates, existingRawInputs);
   const rejectedDuplicate = candidates.length - deduped.length;

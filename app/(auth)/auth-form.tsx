@@ -27,23 +27,24 @@ export function AuthForm({
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
+    <form action={formAction} className="stack">
       <input type="hidden" name="next" value={next} />
 
-      <label className="flex flex-col gap-1 text-sm" htmlFor="email">
-        Work email
+      <div className="field">
+        <label htmlFor="email">Work email</label>
         <input
           id="email"
           name="email"
           type="email"
           required
           autoComplete="email"
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
+          placeholder="you@firm.com"
+          className="input"
         />
-      </label>
+      </div>
 
-      <label className="flex flex-col gap-1 text-sm" htmlFor="password">
-        Password
+      <div className="field">
+        <label htmlFor="password">Password</label>
         <input
           id="password"
           name="password"
@@ -51,27 +52,24 @@ export function AuthForm({
           required
           minLength={8}
           autoComplete="current-password"
-          className="rounded border border-black/20 px-3 py-2 dark:border-white/20"
+          placeholder="At least 8 characters"
+          className="input"
         />
-      </label>
+      </div>
 
       {state?.error ? (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="rounded-lg bg-destructive-soft px-3 py-2 text-sm text-destructive">
           {state.error}
         </p>
       ) : null}
 
       {state?.needsConfirmation ? (
-        <p role="status" className="text-sm">
+        <p role="status" className="rounded-lg bg-accent px-3 py-2 text-sm text-accent-foreground">
           Account created. Check your email for a confirmation link, then log in.
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
-      >
+      <button type="submit" disabled={isPending} className="btn btn-primary" style={{ width: "100%" }}>
         {isPending ? "Working…" : submitLabel}
       </button>
     </form>

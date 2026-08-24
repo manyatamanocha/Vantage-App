@@ -13,14 +13,15 @@ export default async function ProgressPage() {
   const overallPercentage = Math.round(stats.firstGuessAccuracy * 100);
 
   return (
-    <main>
-      <h1>Progress</h1>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+      <div className="topline"><span className="datechip">Your learning signal</span></div>
+      <header><h1 className="display">Your Progress</h1><p className="lede">See how your AI judgment is building over time.</p></header>
 
-      <section>
-        <h2>Overall Accuracy</h2>
-        <div className="accuracy-display">
-          <div className="large-number">{overallPercentage}%</div>
-          <p>
+      <section className="card stack">
+        <span className="card-label">First-guess accuracy</span>
+        <div>
+          <strong className="text-5xl font-heading">{overallPercentage}%</strong>
+          <p className="card-text mt-2">
             {stats.completedCount === 0
               ? "No completed solves yet"
               : `Correct on first guess`}
@@ -28,18 +29,18 @@ export default async function ProgressPage() {
         </div>
       </section>
 
-      <section>
-        <h2>Accuracy by Category</h2>
+      <section className="stack">
+        <span className="card-label">By category</span>
         {Object.keys(stats.byCategory).length === 0 ? (
           <p>No data yet</p>
         ) : (
-          <div className="category-breakdown">
+          <div className="card">
             {Object.entries(stats.byCategory)
               .sort(([catA], [catB]) => catA.localeCompare(catB))
               .map(([category, accuracy]) => (
-                <div key={category} className="category-item">
-                  <span className="category-name">{category}</span>
-                  <span className="category-accuracy">
+                <div key={category} className="bar-row">
+                  <span>{category}</span>
+                  <span>
                     {Math.round(accuracy * 100)}%
                   </span>
                 </div>
@@ -48,8 +49,8 @@ export default async function ProgressPage() {
         )}
       </section>
 
-      <section>
-        <h2>Weekly Trend</h2>
+      <section className="stack">
+        <span className="card-label">Accuracy trend</span>
         <ProgressTrend solves={solves} />
       </section>
     </main>

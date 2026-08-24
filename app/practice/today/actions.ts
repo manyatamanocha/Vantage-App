@@ -92,7 +92,7 @@ async function fetchActiveCases(
     ? query
     : query.eq("difficulty", difficulty));
   if (error) throw new Error(error.message);
-  return (data ?? []) as PracticeCaseRow[];
+  return (data ?? []).filter((row) => (row as PracticeCaseRow & { flagged?: boolean }).flagged !== true) as PracticeCaseRow[];
 }
 
 /**

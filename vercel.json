@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/generate-practice-cases", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/generate-quiz-questions", "schedule": "30 2 * * *" }
+  ]
+}

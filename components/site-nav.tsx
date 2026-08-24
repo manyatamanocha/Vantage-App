@@ -27,21 +27,24 @@ export async function SiteNav() {
   if (!user) return null;
 
   return (
-    <header className="border-b border-black/10 dark:border-white/15">
+    <header className="border-b border-border">
       <nav
         aria-label="Main"
-        className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-4 px-6 py-3 text-sm"
+        className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-[18px] px-[22px] py-[13px] text-[13.5px]"
       >
-        <Link href="/" className="font-semibold">
+        <Link href="/" className="font-heading font-bold tracking-tight text-foreground">
           Vantage
         </Link>
         {NAV_LINKS.map((link) => (
-          <Link key={link.href} href={link.href} className="opacity-80 hover:opacity-100">
+          <Link key={link.href} href={link.href} className="text-foreground opacity-70 hover:opacity-100">
             {link.label}
           </Link>
         ))}
         <form action={signOutAction} className="ml-auto">
-          <button type="submit" className="opacity-80 hover:opacity-100">
+          <button
+            type="submit"
+            className="flex items-center gap-1.5 border-0 bg-transparent p-0 font-sans text-[13px] text-foreground opacity-60 hover:opacity-100"
+          >
             Sign out
           </button>
         </form>

@@ -6,17 +6,9 @@ import { CATEGORY_TAXONOMY, type Category } from "@/lib/engine/taxonomy";
 import { CategorySelector } from "@/components/category-selector";
 import { saveGuess } from "./actions";
 
-// This screen is deliberately client-only. Picking a category is the active-recall
-// beat of the product, so selection must be instant and must not depend on the
-// network. The only request made here is the final "lock in" write.
-export default function GuessPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default function GuessPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-
   const [selected, setSelected] = useState<Category | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, startSaving] = useTransition();
@@ -28,27 +20,35 @@ export default function GuessPage({
       try {
         await saveGuess(id, selected);
         router.push(`/solve/${id}/reveal`);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Could not save your guess.");
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "Could not save your guess.");
       }
     });
   }
 
   return (
-    <main>
-      <h1>What kind of AI problem is this?</h1>
-      <p>Commit to an answer before you see the recommendation.</p>
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+      <div className="topline" aria-label="Solve progress">
+        <div className="stepdots" aria-label="Step 3 of 5"><span className="on" /><span className="on" /><span className="on" /><span /><span /></div>
+        <span className="datechip">Your turn</span>
+      </div>
+      <header>
+        <h1 className="display">Which term best describes it?</h1>
+      </header>
 
-      <CategorySelector
-        taxonomy={CATEGORY_TAXONOMY}
-        selected={selected}
-        onSelect={setSelected}
-      />
+      <section className="stack">
+        <CategorySelector taxonomy={CATEGORY_TAXONOMY} selected={selected} onSelect={setSelected} />
+      </section>
 
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
 
-      <button type="button" onClick={lockIn} disabled={!selected || isSaving}>
-        {isSaving ? "Locking in…" : "Lock in guess"}
+      <button
+        type="button"
+        onClick={lockIn}
+        disabled={!selected || isSaving}
+        className="btn btn-primary w-full sm:w-auto"
+      >
+        {isSaving ? "Locking in…" : "Lock in my guess →"}
       </button>
     </main>
   );
