@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Mic } from "lucide-react";
-import { createDraftSolve } from "./actions";
+import { ArrowDown, Lightbulb, Lock, Mic, Pencil, Sparkles } from "lucide-react";
+import { createDraftSolve, refineAsk } from "./actions";
 
 interface SpeechRecognitionResultLike {
   [index: number]: { transcript: string };
@@ -42,7 +42,6 @@ export function ProblemIntakeForm() {
   const [industry, setIndustry] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseTextRef = useRef("");
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -53,6 +52,15 @@ export function ProblemIntakeForm() {
   // decide whether to quietly restart (seamless dictation) or really stop.
   const intentionalStopRef = useRef(false);
   const fatalErrorRef = useRef(false);
+
+  // Step 2: the LLM's refined restatement of rawInput, shown for the user to
+  // confirm (and edit, since dictation/typing isn't always clean) before
+  // actually committing anything to the database.
+  const [refinedGoal, setRefinedGoal] = useState<string | null>(null);
+  const [problemType, setProblemType] = useState("");
+  const [editedGoal, setEditedGoal] = useState("");
+  const [isRefining, startRefining] = useTransition();
+  const [isConfirming, startConfirming] = useTransition();
 
   useEffect(() => {
     rawInputRef.current = rawInput;
@@ -193,17 +201,33 @@ export function ProblemIntakeForm() {
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleRefine(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    startTransition(async () => {
+    startRefining(async () => {
+      try {
+        const result = await refineAsk(rawInput);
+        setRefinedGoal(result.goal);
+        setProblemType(result.problemType);
+        setEditedGoal(result.goal);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      }
+    });
+  }
+
+  function handleConfirm() {
+    setError(null);
+    startConfirming(async () => {
       try {
         const { solveId } = await createDraftSolve({
           rawInput,
           industry: industry.trim() || undefined,
           source: "live",
+          goal: editedGoal.trim(),
+          problemType,
         });
-        router.push(`/solve/${solveId}/structure`);
+        router.push(`/solve/${solveId}/guess`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       }
@@ -216,7 +240,7 @@ export function ProblemIntakeForm() {
         <h1 className="display">What are you solving today?</h1>
         <p className="lede">Input what you want to discuss</p>
       </header>
-      <form onSubmit={handleSubmit} className="stack">
+      <form onSubmit={handleRefine} className="stack">
         <label className="field" htmlFor="rawInput">
           <span>Ask Awayyyy</span>
           <div className="input-row">
@@ -227,7 +251,10 @@ export function ProblemIntakeForm() {
             rows={4}
             maxLength={MAX_ASK_LENGTH}
             value={rawInput}
-            onChange={(e) => setRawInput(e.target.value)}
+            onChange={(e) => {
+              setRawInput(e.target.value);
+              setRefinedGoal(null);
+            }}
             className="input min-h-32 flex-1"
           />
           {speechSupported && (
@@ -247,17 +274,91 @@ export function ProblemIntakeForm() {
           </span>
       </label>
 
-        <label className="field" htmlFor="industry">
-          <span>Industry <span className="hint">(optional)</span></span>
-        <input
-          id="industry"
-          name="industry"
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          placeholder="e.g. Retail, Healthcare, Financial services"
-          className="input"
-        />
-        </label>
+        <div className="actions" style={{ justifyContent: "center" }}>
+          <button className="btn btn-primary" type="submit" disabled={isRefining || !rawInput.trim()}>
+            {isRefining ? "Checking…" : "Submit"}
+          </button>
+        </div>
+      </form>
+
+      {refinedGoal ? (
+        <>
+          <div style={{ display: "flex", justifyContent: "center", margin: "6px 0" }}>
+            <ArrowDown size={18} style={{ color: "var(--muted-foreground)" }} aria-hidden="true" />
+          </div>
+
+          <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>Is that what you mean?</h2>
+
+          <section
+            className="card"
+            style={{
+              borderColor: "var(--success)",
+              boxShadow: "0 0 0 1px var(--success)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 999,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "color-mix(in oklch, var(--success) 18%, transparent)",
+                  color: "var(--success)",
+                  flexShrink: 0,
+                }}
+              >
+                <Sparkles size={13} aria-hidden="true" />
+              </div>
+              <span style={{ color: "var(--success)", fontWeight: 650, fontSize: 14 }}>
+                Here&apos;s a refined version of your challenge:
+              </span>
+            </div>
+
+            <p
+              className="card-text"
+              style={{
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-lg)",
+                padding: "12px 14px",
+                fontStyle: "italic",
+              }}
+            >
+              &ldquo;{refinedGoal}&rdquo;
+            </p>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "14px 0 8px" }}>
+              <Lightbulb size={14} style={{ color: "#F59E0B", flexShrink: 0 }} aria-hidden="true" />
+              <span className="hint">You can edit this if anything&apos;s missing or not quite right.</span>
+            </div>
+
+            <div className="input-row">
+              <textarea
+                aria-label="Edit refined challenge"
+                rows={3}
+                value={editedGoal}
+                onChange={(e) => setEditedGoal(e.target.value)}
+                className="input min-h-20 flex-1"
+              />
+              <Pencil size={15} style={{ color: "var(--muted-foreground)", flexShrink: 0, marginTop: 14 }} aria-hidden="true" />
+            </div>
+
+            <label className="field" htmlFor="industry" style={{ marginTop: 18 }}>
+              <span>Industry <span className="hint">(optional)</span></span>
+              <input
+                id="industry"
+                name="industry"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                placeholder="e.g. Retail, Healthcare, Financial services"
+                className="input"
+              />
+            </label>
+          </section>
+        </>
+      ) : null}
 
       {error ? (
         <p role="alert" className="text-sm text-destructive">
@@ -265,12 +366,21 @@ export function ProblemIntakeForm() {
         </p>
       ) : null}
 
-        <div className="actions" style={{ justifyContent: "center" }}>
-          <button className="btn btn-primary" type="submit" disabled={isPending || !rawInput.trim()}>
-        {isPending ? "Submitting…" : "Submit"}
+      {refinedGoal ? (
+        <div className="actions" style={{ justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleConfirm}
+            disabled={isConfirming || !editedGoal.trim()}
+          >
+            {isConfirming ? "Loading…" : "Let's solve →"}
           </button>
+          <p className="hint" style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8 }}>
+            <Lock size={11} aria-hidden="true" /> You can modify this anytime
+          </p>
         </div>
-      </form>
+      ) : null}
     </main>
   );
 }

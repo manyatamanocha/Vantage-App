@@ -31,10 +31,6 @@ export default async function StructurePage({ params }: { params: Promise<{ id: 
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
-      <div className="topline" aria-label="Solve progress">
-        <div className="stepdots" aria-label="Step 2 of 5"><span className="on" /><span className="on" /><span /><span /><span /></div>
-        <span className="datechip">Understand</span>
-      </div>
       <header>
         <h1 className="display">Here&apos;s what I understand</h1>
         <p className="lede">Edit anything that&apos;s not right before you continue.</p>
