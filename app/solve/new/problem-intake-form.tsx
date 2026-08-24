@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, Lightbulb, Lock, Mic, Pencil, Sparkles } from "lucide-react";
+import { ArrowDown, Lock, Mic, Pencil, Sparkles } from "lucide-react";
 import { createDraftSolve, refineAsk } from "./actions";
 
 interface SpeechRecognitionResultLike {
@@ -249,10 +249,7 @@ export function ProblemIntakeForm() {
             rows={4}
             maxLength={MAX_ASK_LENGTH}
             value={rawInput}
-            onChange={(e) => {
-              setRawInput(e.target.value);
-              setRefinedGoal(null);
-            }}
+            onChange={(e) => setRawInput(e.target.value)}
             className="input min-h-32 flex-1"
           />
           {speechSupported && (
@@ -327,12 +324,7 @@ export function ProblemIntakeForm() {
               &ldquo;{refinedGoal}&rdquo;
             </p>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "14px 0 8px" }}>
-              <Lightbulb size={14} style={{ color: "#F59E0B", flexShrink: 0 }} aria-hidden="true" />
-              <span className="hint">You can edit this if anything&apos;s missing or not quite right.</span>
-            </div>
-
-            <div className="input-row">
+            <div className="input-row" style={{ marginTop: 14 }}>
               <textarea
                 aria-label="Edit refined challenge"
                 rows={3}

@@ -38,9 +38,12 @@ export async function getJargonQuestions(difficulty: JargonQuestion["difficulty"
 export async function recordJargonAttempt(input: { questionId: string; selectedAnswer: string; seconds: number | null; }) {
   const { supabase, user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
-  const { data: question, error: questionError } = await supabase.from("daily_quiz_questions").select("correct_answer").eq("id", input.questionId).single();
+  // Compared against `term`, not `correct_answer` — the quiz now asks
+  // "Which term means: [definition]?" with term names as the answer
+  // options, so the selected answer the client submits is a term.
+  const { data: question, error: questionError } = await supabase.from("daily_quiz_questions").select("term").eq("id", input.questionId).single();
   if (questionError) throw new Error(questionError.message);
-  const correct = question.correct_answer === input.selectedAnswer;
+  const correct = question.term === input.selectedAnswer;
   const { data: attempt, error } = await supabase.from("jargon_attempts").insert({
     user_id: user.id, question_id: input.questionId, selected_answer: input.selectedAnswer,
     correct, seconds: input.seconds, helpful_rating: null,

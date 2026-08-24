@@ -9,6 +9,14 @@ import { EndingCard } from "@/components/ending-card";
 const RING = 2 * Math.PI * 54;
 const TIERS = ["easy", "medium", "hard"] as const;
 
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return hash;
+}
+
 const TIER_META: Record<(typeof TIERS)[number], {
   label: string;
   color: string;
@@ -66,6 +74,24 @@ export function JargonSession() {
   }, [startedAt, stoppedAt]);
 
   const progress = useMemo(() => Math.min((seconds % 8) / 8, 1), [seconds]);
+
+  // The quiz asks "Which term means: [definition]?" with term names as the
+  // answer options — distractor terms are drawn from this session's own
+  // loaded pool (same difficulty tier) rather than invented, so they're
+  // always real terms a consultant might plausibly confuse this one with.
+  //
+  // Ordering is a deterministic hash-based shuffle, not Math.random() — a
+  // render must stay pure (idempotent for the same inputs), and a random
+  // reorder on every re-render would make the options visibly reshuffle
+  // whenever unrelated state (e.g. the timer) triggers a render.
+  const termOptions = useMemo(() => {
+    if (!question || !questions) return [];
+    const otherTerms = [...new Set(questions.map((q) => q.term).filter((term) => term !== question.term))];
+    const seed = question.id;
+    const byHash = (a: string, b: string) => hashString(seed + a) - hashString(seed + b);
+    const distractors = [...otherTerms].sort(byHash).slice(0, 3);
+    return [question.term, ...distractors].sort(byHash);
+  }, [question, questions]);
 
   function startQuiz() {
     setError(null);
@@ -221,8 +247,8 @@ export function JargonSession() {
         <>
           <header className="row-between">
             <div>
-              <h1 className="display">What does {question.term} mean?</h1>
-              <p className="lede">Choose the clearest definition.</p>
+              <h1 className="display">Which term means: {question.correctAnswer}?</h1>
+              <p className="lede">Choose the term that fits.</p>
             </div>
             <button
               type="button"
@@ -250,15 +276,15 @@ export function JargonSession() {
           <section className="stack">
             <div className="card">
               <div className="cat-grid">
-                {question.options.map((option) => (
+                {termOptions.map((term) => (
                   <button
-                    key={option}
+                    key={term}
                     type="button"
                     className="cat-btn"
-                    aria-pressed={selected === option}
-                    onClick={() => setSelected(option)}
+                    aria-pressed={selected === term}
+                    onClick={() => setSelected(term)}
                   >
-                    {option}
+                    {term}
                   </button>
                 ))}
               </div>
