@@ -212,9 +212,6 @@ export function ProblemIntakeForm() {
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
-      <div className="topline" aria-label="Solve progress">
-        <div className="stepdots" aria-label="Step 1 of 5"><span className="on" /><span /><span /><span /><span /></div>
-      </div>
       <header>
         <h1 className="display">What are you solving today?</h1>
         <p className="lede">Input what you want to discuss</p>
