@@ -39,7 +39,6 @@ const MAX_ASK_LENGTH = 10000;
 export function ProblemIntakeForm() {
   const router = useRouter();
   const [rawInput, setRawInput] = useState("");
-  const [industry, setIndustry] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -222,7 +221,6 @@ export function ProblemIntakeForm() {
       try {
         const { solveId } = await createDraftSolve({
           rawInput,
-          industry: industry.trim() || undefined,
           source: "live",
           goal: editedGoal.trim(),
           problemType,
@@ -313,7 +311,7 @@ export function ProblemIntakeForm() {
                 <Sparkles size={13} aria-hidden="true" />
               </div>
               <span style={{ color: "var(--success)", fontWeight: 650, fontSize: 14 }}>
-                Here&apos;s a refined version of your challenge:
+                Here&apos;s a refined version:
               </span>
             </div>
 
@@ -344,18 +342,6 @@ export function ProblemIntakeForm() {
               />
               <Pencil size={15} style={{ color: "var(--muted-foreground)", flexShrink: 0, marginTop: 14 }} aria-hidden="true" />
             </div>
-
-            <label className="field" htmlFor="industry" style={{ marginTop: 18 }}>
-              <span>Industry <span className="hint">(optional)</span></span>
-              <input
-                id="industry"
-                name="industry"
-                value={industry}
-                onChange={(e) => setIndustry(e.target.value)}
-                placeholder="e.g. Retail, Healthcare, Financial services"
-                className="input"
-              />
-            </label>
           </section>
         </>
       ) : null}

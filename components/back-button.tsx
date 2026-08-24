@@ -17,7 +17,7 @@ export function BackButton() {
     <button
       type="button"
       onClick={() => router.back()}
-      className="flex items-center gap-1.5 border-0 bg-transparent p-0 text-[13.5px] font-semibold text-primary transition-opacity hover:opacity-70 active:opacity-50"
+      className="flex cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0 text-[13.5px] font-semibold text-primary transition-opacity hover:opacity-70 active:opacity-50"
     >
       <ArrowLeft size={15} aria-hidden="true" /> Back
     </button>
