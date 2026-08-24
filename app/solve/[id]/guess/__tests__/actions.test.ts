@@ -16,8 +16,8 @@ const state = vi.hoisted(() => ({
  * matched set from `.select()`, exactly as PostgREST does — a stub that always
  * returned one row would report the guard as working whether or not it was.
  */
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({
+vi.mock("@/lib/supabase/server", () => {
+  const buildClient = () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
     from: () => ({
       update: (values: Row) => {
@@ -42,8 +42,12 @@ vi.mock("@/lib/supabase/server", () => ({
         return builder;
       },
     }),
-  }),
-}));
+  });
+  return {
+    getSupabaseServerClient: async () => buildClient(),
+    getVerifiedUser: async () => ({ supabase: buildClient(), user: state.user }),
+  };
+});
 
 import { saveGuess } from "../actions";
 

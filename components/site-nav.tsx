@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 import { signOutAction } from "@/app/(auth)/actions";
 
 const NAV_LINKS = [
@@ -22,10 +22,7 @@ const NAV_LINKS = [
  * /login would be worse than no nav.
  */
 export async function SiteNav() {
-  const supabase = await getSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getVerifiedUser();
 
   if (!user) return null;
 

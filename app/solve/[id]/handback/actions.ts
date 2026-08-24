@@ -1,5 +1,5 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 import { generateHandback } from "@/lib/engine/handback";
 
 /**
@@ -9,9 +9,8 @@ import { generateHandback } from "@/lib/engine/handback";
  * enforced here, not only by the page's routing.
  */
 export async function createHandback(solveId: string): Promise<string> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { createDraftSolve } from "../actions";
 
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({
+vi.mock("@/lib/supabase/server", () => {
+  const buildClient = () => ({
     auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
     from: () => ({
       insert: () => ({
@@ -11,8 +11,12 @@ vi.mock("@/lib/supabase/server", () => ({
         }),
       }),
     }),
-  }),
-}));
+  });
+  return {
+    getSupabaseServerClient: async () => buildClient(),
+    getVerifiedUser: async () => ({ supabase: buildClient(), user: { id: "u1" } }),
+  };
+});
 
 describe("createDraftSolve", () => {
   it("returns the new solve id", async () => {

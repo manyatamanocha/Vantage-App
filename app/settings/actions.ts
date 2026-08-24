@@ -1,5 +1,5 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 
 // Defaults must match the DB column defaults in supabase/migrations/0001_init.sql
 // (practice_difficulty default 'medium', practice_frequency default 'daily'), since
@@ -12,9 +12,8 @@ const DEFAULT_SETTINGS = {
 export async function getSettings(
   userId: string
 ): Promise<{ practiceDifficulty: string; practiceFrequency: string }> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   const { data, error } = await supabase
     .from("user_settings")
@@ -34,9 +33,8 @@ export async function updateSettings(
   userId: string,
   patch: { practiceDifficulty?: string; practiceFrequency?: string }
 ): Promise<void> {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   // Upsert (rather than update) because no row is guaranteed to exist for this
   // user yet (nothing creates a user_settings row at signup). Only the patched

@@ -1,16 +1,15 @@
 import { redirect } from "next/navigation";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseServerClient, getVerifiedUser } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { getSettings } from "./actions";
 import { getProgressStats } from "@/app/progress/actions";
 import { SettingsForm } from "./settings-form";
 
 export default async function SettingsPage() {
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) redirect("/login");
+  const { user } = await getVerifiedUser();
+  if (!user?.id) redirect("/login");
 
-  const userId = userData.user.id;
+  const userId = user.id;
   const settings = await getSettings(userId);
   const stats = await getProgressStats(userId);
 

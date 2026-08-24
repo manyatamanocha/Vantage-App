@@ -1,5 +1,5 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 import { isCategory } from "@/lib/engine/taxonomy";
 
 export async function saveGuess(
@@ -12,9 +12,8 @@ export async function saveGuess(
     throw new Error(`Unknown category: ${guessedCategory}`);
   }
 
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user?.id) throw new Error("Not authenticated");
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
 
   // The guess-before-reveal mechanic is the product. Once `revealed_category`
   // is set the answer is on screen, so a later write to `guessed_category`

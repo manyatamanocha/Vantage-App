@@ -1,5 +1,5 @@
 "use server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getVerifiedUser } from "@/lib/supabase/server";
 
 export async function createDraftSolve(input: {
   rawInput: string;
@@ -8,9 +8,8 @@ export async function createDraftSolve(input: {
 }): Promise<{ solveId: string }> {
   if (!input.rawInput.trim()) throw new Error("Raw input is required");
 
-  const supabase = await getSupabaseServerClient();
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
+  const { supabase, user } = await getVerifiedUser();
+  const userId = user?.id;
   if (!userId) throw new Error("Not authenticated");
 
   const { data, error } = await supabase

@@ -71,10 +71,15 @@ export const config = {
   matcher: [
     /*
      * Everything except Next's own static output, image optimizer, the
-     * favicon, and static asset requests — none of which carry a session worth
-     * refreshing, and all of which would otherwise pay for a network round trip
-     * to Supabase on every single request.
+     * favicon, static asset requests, and /login|/signup — none of which
+     * carry a session worth refreshing, and all of which would otherwise pay
+     * for a network round trip to Supabase on every single request. /login
+     * and /signup are excluded because a visitor there either has no session
+     * yet (nothing to refresh) or is about to establish one via the auth
+     * actions in app/(auth)/actions.ts, which get their own Supabase client —
+     * this middleware's refresh is redundant work on the one path where
+     * request latency is most visible.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|login|signup|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf)$).*)",
   ],
 };

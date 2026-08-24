@@ -1,6 +1,7 @@
 import { getGroqClient } from "@/lib/groq";
 import { withRetry } from "./with-retry";
 import { checkFinishReason } from "./check-finish-reason";
+import { assertNoNamedProducts } from "./guardrails";
 
 /**
  * The third Groq call site: a short, client-facing draft the consultant can
@@ -44,5 +45,9 @@ export async function generateHandback(input: {
 
   const text = response.choices[0]?.message?.content ?? "";
   if (!text.trim()) throw new Error("Handback generation returned empty text");
+  // This is the one draft a consultant hands straight to a client — the
+  // system prompt forbids naming a product, but only enforcing it here
+  // guarantees it, rather than trusting the model followed the instruction.
+  assertNoNamedProducts(text, "handback");
   return text;
 }

@@ -10,8 +10,8 @@ const upsertMock = vi.fn(
 );
 const maybeSingleMock = vi.fn(async () => ({ data: state.settingsRow, error: null }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  getSupabaseServerClient: async () => ({
+vi.mock("@/lib/supabase/server", () => {
+  const buildClient = () => ({
     auth: {
       getUser: async () => ({ data: { user: state.user } }),
     },
@@ -23,8 +23,12 @@ vi.mock("@/lib/supabase/server", () => ({
       }),
       upsert: upsertMock,
     }),
-  }),
-}));
+  });
+  return {
+    getSupabaseServerClient: async () => buildClient(),
+    getVerifiedUser: async () => ({ supabase: buildClient(), user: state.user }),
+  };
+});
 
 import { getSettings, updateSettings } from "../actions";
 
