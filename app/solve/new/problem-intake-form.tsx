@@ -46,6 +46,17 @@ export function ProblemIntakeForm() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseTextRef = useRef("");
   const micStreamRef = useRef<MediaStream | null>(null);
+  const rawInputRef = useRef("");
+  // Chrome's SpeechRecognition periodically ends a "continuous" session on
+  // its own between phrases — a well-known quirk, not something we asked
+  // for. These two refs distinguish that from an actual stop, so onend can
+  // decide whether to quietly restart (seamless dictation) or really stop.
+  const intentionalStopRef = useRef(false);
+  const fatalErrorRef = useRef(false);
+
+  useEffect(() => {
+    rawInputRef.current = rawInput;
+  }, [rawInput]);
 
   function releaseMicStream() {
     micStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -68,13 +79,65 @@ export function ProblemIntakeForm() {
 
   useEffect(() => {
     return () => {
+      intentionalStopRef.current = true;
       recognitionRef.current?.stop();
       releaseMicStream();
     };
   }, []);
 
+  function startRecognitionSession(Ctor: SpeechRecognitionCtor) {
+    const recognition = new Ctor();
+    recognition.lang = "en-IN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    baseTextRef.current = rawInputRef.current;
+
+    recognition.onresult = (event) => {
+      let transcript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      const separator = baseTextRef.current && !baseTextRef.current.endsWith(" ") ? " " : "";
+      setRawInput((baseTextRef.current + separator + transcript).slice(0, MAX_ASK_LENGTH));
+    };
+
+    recognition.onerror = (event) => {
+      // Both are benign here — "no-speech" is just a pause, and "aborted"
+      // is our own stop() call. onend (fired right after either) is what
+      // actually decides whether to restart or finalize.
+      if (event.error === "no-speech" || event.error === "aborted") return;
+      fatalErrorRef.current = true;
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        setError("Microphone access was blocked — allow it in your browser's site settings to dictate.");
+      } else {
+        setError(`Voice input stopped unexpectedly (${event.error}). You can try again or type instead.`);
+      }
+    };
+
+    recognition.onend = () => {
+      if (intentionalStopRef.current || fatalErrorRef.current) {
+        setIsListening(false);
+        releaseMicStream();
+        return;
+      }
+      // Not a real stop — restart immediately so dictation reads as one
+      // continuous session instead of capturing one disconnected phrase
+      // per pause. isListening / the mic icon deliberately isn't touched.
+      try {
+        startRecognitionSession(Ctor);
+      } catch {
+        setIsListening(false);
+        releaseMicStream();
+      }
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }
+
   async function toggleListening() {
     if (isListening) {
+      intentionalStopRef.current = true;
       recognitionRef.current?.stop();
       return;
     }
@@ -83,6 +146,8 @@ export function ProblemIntakeForm() {
     if (!Ctor) return;
 
     setError(null);
+    intentionalStopRef.current = false;
+    fatalErrorRef.current = false;
 
     // SpeechRecognition.start() is supposed to trigger the browser's own
     // microphone permission prompt on first use, but that's inconsistent
@@ -113,41 +178,8 @@ export function ProblemIntakeForm() {
       return;
     }
 
-    const recognition = new Ctor();
-    recognition.lang = "en-IN";
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    baseTextRef.current = rawInput;
-
-    recognition.onresult = (event) => {
-      let transcript = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        transcript += event.results[i][0].transcript;
-      }
-      const separator = baseTextRef.current && !baseTextRef.current.endsWith(" ") ? " " : "";
-      setRawInput((baseTextRef.current + separator + transcript).slice(0, MAX_ASK_LENGTH));
-    };
-    recognition.onerror = (event) => {
-      setIsListening(false);
-      releaseMicStream();
-      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
-        setError("Microphone access was blocked — allow it in your browser's site settings to dictate.");
-      } else if (event.error === "no-speech") {
-        setError(null);
-      } else if (event.error === "aborted") {
-        // Fires from our own recognition.stop() call — not a real failure.
-      } else {
-        setError(`Voice input stopped unexpectedly (${event.error}). You can try again or type instead.`);
-      }
-    };
-    recognition.onend = () => {
-      setIsListening(false);
-      releaseMicStream();
-    };
-
     try {
-      recognitionRef.current = recognition;
-      recognition.start();
+      startRecognitionSession(Ctor);
       setIsListening(true);
     } catch {
       setError("Couldn't start voice input. You can type instead.");
