@@ -15,6 +15,15 @@ export type AuthResult = {
 
 export type MagicLinkResult = { error?: string; sent?: boolean };
 
+// The WHATWG HTML spec's own email-format regex (same one browsers use for
+// <input type="email"> validation) — catches genuinely malformed input
+// (missing @, no TLD, spaces, consecutive dots). It cannot and does not try
+// to catch a valid-shaped typo (e.g. "gmail.co" instead of "gmail.com");
+// that class of mistake only real delivery verification can catch, which
+// this flow deliberately doesn't have — see emailLogin's own comment.
+const EMAIL_PATTERN =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
 /**
  * Instant email login — no password, no clicked link. The magic-link email
  * flow was dropped (localhost dev links can't be reached from wherever an
@@ -37,6 +46,7 @@ export async function emailLogin(
 ): Promise<MagicLinkResult> {
   const email = formData.get("email")?.toString().trim() ?? "";
   if (!email) return { error: "Enter your email to continue." };
+  if (!EMAIL_PATTERN.test(email)) return { error: "That doesn't look like a valid email address." };
 
   const admin = getSupabaseAdminClient();
   const { data, error: generateError } = await admin.auth.admin.generateLink({
