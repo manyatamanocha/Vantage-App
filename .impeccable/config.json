@@ -8,6 +8,138 @@
         "value": "cubic-bezier(0.34, 1.56, 0.64, 1)",
         "createdAt": "2026-08-25T18:00:28.184Z",
         "reason": "user asked explicitly for the feedback pop-in to look 'interesting eye catchy' - a one-shot celebratory reveal (PartyPopper/Heart icon), not a persistent control, so a springy overshoot serves the request rather than being an accidental default"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:17.504Z",
+        "reason": "locked project typeface, already established"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "16px",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:17.791Z",
+        "reason": "brainstorm scratch mockup, not shipped code; no DESIGN.md exists for this project"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "9px",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:18.083Z",
+        "reason": "brainstorm scratch mockup, not shipped code"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#5a6b8c",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:18.340Z",
+        "reason": "brainstorm scratch mockup; matches project's existing muted-foreground family"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(127,176,255,0.35)",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:18.573Z",
+        "reason": "brainstorm scratch mockup; derived from locked dark-theme secondary #7FB0FF"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#b8c9ee",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:18.809Z",
+        "reason": "brainstorm scratch mockup; muted tint of locked palette"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#7fb0ff",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:19.023Z",
+        "reason": "brainstorm scratch mockup; this is the project's own locked dark-theme secondary accent color"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "12px",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:19.426Z",
+        "reason": "brainstorm scratch mockup, not shipped code"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "12.5px",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:19.969Z",
+        "reason": "brainstorm scratch mockup, not shipped code"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "10px",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:20.473Z",
+        "reason": "brainstorm scratch mockup, not shipped code"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "26px",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:21.119Z",
+        "reason": "brainstorm scratch mockup, not shipped code"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "13px",
+        "files": [
+          ".superpowers/brainstorm/2996-1787695183/content/landing-hero.html"
+        ],
+        "createdAt": "2026-08-25T23:12:21.655Z",
+        "reason": "brainstorm scratch mockup, not shipped code"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "38px",
+        "createdAt": "2026-08-25T23:14:05.794Z",
+        "reason": "Verbatim-ported landing hero size from the locked mockup, not a scale violation — documented in DESIGN.md Typography as intentional literal sizing"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "13.5px",
+        "createdAt": "2026-08-25T23:14:06.101Z",
+        "reason": "Verbatim-ported component text size from the locked mockup, not a scale violation — documented in DESIGN.md Typography as intentional literal sizing"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "27px",
+        "createdAt": "2026-08-25T23:14:06.419Z",
+        "reason": "Verbatim-ported component text size from the locked mockup, not a scale violation — documented in DESIGN.md Typography as intentional literal sizing"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#f59e0b",
+        "createdAt": "2026-08-25T23:38:52.252Z",
+        "reason": "pre-existing 'hard' difficulty tier color already used in jargon-session.tsx and whats-inside.tsx before DESIGN.md existed; mirrored for consistency in the two new quiz sessions, not new drift"
       }
     ]
   }
