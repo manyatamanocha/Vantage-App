@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Copy, Download } from "lucide-react";
 
 /**
  * Preview/Copy/Download for the generated draft (screen 2g/2h). Purely
@@ -33,22 +34,15 @@ export function HandbackViewer({ draftText }: { draftText: string }) {
 
   return (
     <section aria-label="Takeaway draft">
-      <p className="text-sm leading-6">{draftText}</p>
+      <p className="card-text" style={{ marginBottom: 14 }}>{draftText}</p>
 
-      <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-secondary px-3.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary/75"
-        >
+      <div className="actions">
+        <button type="button" onClick={handleCopy} className="btn btn-secondary">
+          {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
           {copied ? "Copied" : "Copy"}
         </button>
-        <button
-          type="button"
-          onClick={handleDownload}
-          className="inline-flex h-9 items-center justify-center rounded-lg border border-border bg-secondary px-3.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary/75"
-        >
-          Download
+        <button type="button" onClick={handleDownload} className="btn btn-secondary">
+          <Download size={16} aria-hidden="true" /> Download
         </button>
       </div>
     </section>

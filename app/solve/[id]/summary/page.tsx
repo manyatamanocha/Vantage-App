@@ -59,21 +59,16 @@ export default async function SolveSummaryPage({
 
   if (!solve.revealed_category || solve.correct === null) {
     return (
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-5 py-8 sm:px-8 sm:py-12">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
         <header>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            This solve isn&apos;t finished yet
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Lock in a guess and see the reveal before checking the summary.
-          </p>
+          <h1 className="display">This solve isn&apos;t finished yet</h1>
+          <p className="lede">Lock in a guess and see the reveal before checking the summary.</p>
         </header>
-        <Link
-          href={restartHref}
-          className="inline-flex h-10 w-fit items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Continue where you left off
-        </Link>
+        <div className="actions">
+          <Link href={restartHref} className="btn btn-primary">
+            Continue where you left off
+          </Link>
+        </div>
       </main>
     );
   }
@@ -87,105 +82,75 @@ export default async function SolveSummaryPage({
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-5 py-8 sm:px-8 sm:py-12">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          {solve.correct ? "You had it." : "Not quite."}
-        </h1>
-        <p className="mt-2 text-muted-foreground">Saved to your record.</p>
+        <h1 className="display">{solve.correct ? "You had it." : "Not quite."}</h1>
+        <p className="lede">Saved to your record.</p>
       </header>
 
-      {hasStructuredProblem ? (
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            The problem
-          </span>
-          <p className="mt-2 text-sm leading-6">
-            <strong>Goal:</strong> {solve.goal}
-          </p>
-          <p className="mt-1 text-sm leading-6">
-            <strong>Problem type:</strong> {solve.problem_type}
-          </p>
-        </section>
-      ) : null}
+      <div className="stack">
+        {hasStructuredProblem ? (
+          <section className="card">
+            <span className="card-label">The problem</span>
+            <p className="card-text">
+              <strong>Goal:</strong> {solve.goal}
+              <br />
+              <strong>Problem type:</strong> {solve.problem_type}
+            </p>
+          </section>
+        ) : null}
 
-      <section className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <div>
-          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Your answer
-          </span>
-          <p className="mt-2 text-sm leading-6">
-            You guessed <strong>{solve.guessed_category}</strong>. This is a{" "}
-            <strong>{solve.revealed_category}</strong> problem.
-            {solve.tool_class ? (
-              <>
-                {" "}
-                Tool class: <strong>{solve.tool_class}</strong>.
-              </>
-            ) : null}
-          </p>
-        </div>
-        <span
-          className={
-            "inline-flex flex-shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold " +
-            (solve.correct
-              ? "bg-primary/10 text-primary"
-              : "bg-destructive/10 text-destructive")
-          }
-        >
-          {solve.correct ? "Matched" : "Missed"}
-        </span>
-      </section>
-
-      {solve.why_it_fits ? (
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Why {solve.revealed_category} fits
-          </span>
-          <p className="mt-2 text-sm leading-6">{solve.why_it_fits}</p>
-        </section>
-      ) : null}
-
-      {takeaway?.draft_text ? (
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Your client takeaway
-          </span>
-          <div className="mt-2">
-            <HandbackViewer draftText={takeaway.draft_text} />
+        <section className="card row-between" style={{ alignItems: "flex-start" }}>
+          <div>
+            <span className="card-label">Your answer</span>
+            <p className="card-text">
+              You guessed <strong>{solve.guessed_category}</strong>. This is a{" "}
+              <strong>{solve.revealed_category}</strong> problem.
+              {solve.tool_class ? (
+                <>
+                  {" "}
+                  Tool class: <strong>{solve.tool_class}</strong>.
+                </>
+              ) : null}
+            </p>
           </div>
-        </div>
-      ) : (
-        // Generation is on-demand — nothing upstream of this screen ever
-        // triggers it automatically.
-        <form action={generateTakeaway}>
-          <button
-            type="submit"
-            className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground hover:bg-secondary/75 sm:w-auto"
-          >
-            Generate a client takeaway
-          </button>
-        </form>
-      )}
+          <span className={`badge ${solve.correct ? "matched" : "missed"}`}>
+            {solve.correct ? "Matched" : "Missed"}
+          </span>
+        </section>
 
-      <nav aria-label="What's next" className="flex flex-col gap-2 sm:flex-row">
-        <Link
-          href="/solve/new"
-          className="inline-flex h-10 flex-1 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Solve another
+        {solve.why_it_fits ? (
+          <section className="card">
+            <span className="card-label">Why {solve.revealed_category} fits</span>
+            <p className="card-text">{solve.why_it_fits}</p>
+          </section>
+        ) : null}
+
+        {takeaway?.draft_text ? (
+          <section className="card">
+            <span className="card-label">Your client takeaway</span>
+            <HandbackViewer draftText={takeaway.draft_text} />
+          </section>
+        ) : (
+          // Generation is on-demand — nothing upstream of this screen ever
+          // triggers it automatically.
+          <form action={generateTakeaway} className="actions">
+            <button type="submit" className="btn btn-secondary">
+              Generate a client takeaway
+            </button>
+          </form>
+        )}
+      </div>
+
+      <nav aria-label="What's next" className="actions">
+        <Link href="/solve/new" className="btn btn-primary">
+          Solve another problem
         </Link>
-        <Link
-          href="/practice/today"
-          className="inline-flex h-10 flex-1 items-center justify-center rounded-lg border border-border bg-secondary px-4 text-sm font-semibold text-secondary-foreground hover:bg-secondary/75"
-        >
-          Today&apos;s practice
+        <Link href="/practice/today" className="btn btn-secondary">
+          Try today&apos;s practice
         </Link>
-        <Link
-          href="/"
-          className="inline-flex h-10 flex-1 items-center justify-center rounded-lg px-4 text-sm font-semibold text-muted-foreground hover:bg-secondary/50"
-        >
-          Home
+        <Link href="/" className="btn btn-ghost">
+          Back to home
         </Link>
       </nav>
     </main>
