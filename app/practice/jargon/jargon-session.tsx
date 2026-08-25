@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Brain, Clock3, FileText, Leaf, Star, Zap } from "lucide-react";
+import { Brain, Check, Clock3, FileText, Leaf, Star, X, Zap } from "lucide-react";
 import type { JargonQuestion } from "./actions";
 import { getJargonQuestions, rateJargonAttempt, recordJargonAttempt } from "./actions";
 import { EndingCard } from "@/components/ending-card";
@@ -73,7 +73,7 @@ export function JargonSession() {
     return () => window.clearInterval(timer);
   }, [startedAt, stoppedAt]);
 
-  const progress = useMemo(() => Math.min((seconds % 8) / 8, 1), [seconds]);
+  const progress = useMemo(() => Math.min(seconds / 60, 1), [seconds]);
 
   // The quiz asks "Which term means: [definition]?" with term names as the
   // answer options — distractor terms are drawn from this session's own
@@ -239,7 +239,7 @@ export function JargonSession() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <div className="topline">
-        <span className="datechip">{question.difficulty} · Daily quiz</span>
+        <span className="datechip">Level: {question.difficulty[0].toUpperCase() + question.difficulty.slice(1)}</span>
         <span className="badge progress">{index + 1} / {questions.length}</span>
       </div>
 
@@ -293,7 +293,7 @@ export function JargonSession() {
 
           {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
 
-          <div className="actions">
+          <div className="actions" style={{ justifyContent: "center" }}>
             <button type="button" className="btn btn-primary" disabled={!selected || isPending} onClick={lockAnswer}>
               {isPending ? "Checking…" : "Lock it"}
             </button>
@@ -304,10 +304,24 @@ export function JargonSession() {
         </>
       ) : (
         <>
-          <header>
-            <span className={`badge ${result ? "matched" : "missed"}`}>{result ? "Correct" : "Not quite"}</span>
+          <header className="row-between">
             <h1 className="display">{question.term}</h1>
-            <p className="lede">{question.explanation}</p>
+            <div
+              aria-label={result ? "Correct" : "Not quite"}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 999,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                background: result ? "var(--success-soft)" : "var(--destructive-soft)",
+                color: result ? "var(--success)" : "var(--destructive)",
+              }}
+            >
+              {result ? <Check size={24} aria-hidden="true" /> : <X size={24} aria-hidden="true" />}
+            </div>
           </header>
 
           <section className="quote-card stack">
@@ -335,20 +349,25 @@ export function JargonSession() {
 
           <section aria-label="All terms in this quiz" className="card">
             <span className="card-label">Explore all terms</span>
-            {questions.map((q) => (
-              <details key={q.id} open={openTerm === q.term} onToggle={(e) => e.currentTarget.open && setOpenTerm(q.term)}>
+            {questions.map((q, i) => (
+              <details
+                key={q.id}
+                open={openTerm === q.term}
+                onToggle={(e) => e.currentTarget.open && setOpenTerm(q.term)}
+                style={i > 0 ? { borderTop: "1px solid var(--border)" } : undefined}
+              >
                 <summary className="toggle-row">
                   <span className="label">{q.term}</span>
                 </summary>
-                <p className="card-text">{q.explanation}</p>
+                <p className="card-text" style={{ paddingBottom: 16 }}>{q.explanation}</p>
               </details>
             ))}
           </section>
 
           <EndingCard
+            variant="minimal"
             explainMore={question.explanation}
             example={`${question.questionText} → ${question.correctAnswer}`}
-            followupPlaceholder="e.g. How is this different from a related term?"
           />
 
           <div className="actions">

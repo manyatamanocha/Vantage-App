@@ -366,11 +366,11 @@ h1.display, .display {
 
 .quiz-timer { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
 .quiz-timer-link { font-size: 12.5px; font-weight: 650; color: var(--primary); background: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 0; }
-.quiz-ring-btn { position: relative; width: 132px; height: 132px; border-radius: 999px; border: 0; background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.quiz-ring-btn { position: relative; width: 132px; height: 132px; border-radius: 999px; border: 0; background: color-mix(in oklch, var(--primary) 8%, var(--card)); cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .quiz-ring-btn:disabled { cursor: default; }
 .quiz-ring-svg { position: absolute; inset: 0; transform: rotate(-90deg); }
-.quiz-ring-track { fill: none; stroke: var(--border); stroke-width: 9; }
-.quiz-ring-progress { fill: none; stroke: var(--primary); stroke-width: 9; stroke-linecap: round; }
+.quiz-ring-track { fill: none; stroke: color-mix(in oklch, var(--primary) 22%, var(--border)); stroke-width: 10; }
+.quiz-ring-progress { fill: none; stroke: var(--primary); stroke-width: 10; stroke-linecap: round; }
 .quiz-ring-center { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .quiz-ring-num { font-family: "Manrope", var(--font-sans), sans-serif; font-size: 26px; font-weight: 750; letter-spacing: -0.02em; color: var(--foreground); font-variant-numeric: tabular-nums; }
 .quiz-ring-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted-foreground); text-transform: uppercase; }

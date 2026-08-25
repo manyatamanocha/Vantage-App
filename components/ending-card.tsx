@@ -15,10 +15,13 @@ export function EndingCard({
   explainMore,
   example,
   followupPlaceholder = "What would help?",
+  variant = "full",
 }: {
   explainMore: string;
   example: string;
   followupPlaceholder?: string;
+  /** "minimal" keeps just Got what I needed / Explain more — used by the daily quiz, where Example/Follow-up don't add anything beyond the term's own explanation already shown above. */
+  variant?: "full" | "minimal";
 }) {
   const [selected, setSelected] = useState<
     "got" | "explain" | "example" | "followup" | null
@@ -26,12 +29,13 @@ export function EndingCard({
   const [followupText, setFollowupText] = useState("");
   const [followupSent, setFollowupSent] = useState(false);
 
-  const chips: { key: "got" | "explain" | "example" | "followup"; label: string }[] = [
+  const allChips: { key: "got" | "explain" | "example" | "followup"; label: string }[] = [
     { key: "got", label: "Got what I needed" },
     { key: "explain", label: "Explain more" },
     { key: "example", label: "Example" },
     { key: "followup", label: "Follow-up" },
   ];
+  const chips = variant === "minimal" ? allChips.slice(0, 2) : allChips;
 
   return (
     <section className="card ending-card">
