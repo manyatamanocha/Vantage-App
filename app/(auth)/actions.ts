@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type AuthResult = {
   error?: string;
@@ -16,29 +16,46 @@ export type AuthResult = {
 export type MagicLinkResult = { error?: string; sent?: boolean };
 
 /**
- * Passwordless: `signInWithOtp` creates the account on first use (Supabase's
- * `shouldCreateUser` defaults true), so this single action covers both login
- * and signup — there's no separate account-creation step for email-only auth.
- * `emailRedirectTo` must be an absolute URL; derived from the incoming
- * request's own host rather than a hardcoded env var so this works
- * identically on localhost and whatever origin it's actually deployed to.
+ * Instant email login — no password, no clicked link. The magic-link email
+ * flow was dropped (localhost dev links can't be reached from wherever an
+ * email client actually opens them, and Supabase's shared sender is
+ * rate-limited to 2/hour with no custom SMTP configured), at the user's
+ * explicit call, knowing the tradeoff: typing any email logs in as that
+ * email, no proof of inbox ownership. Real risk once real users' data is on
+ * the line — revisit before this ships beyond local testing.
+ *
+ * Mechanism: `admin.generateLink` (service-role only) mints the same
+ * hashed_token Supabase would otherwise email, and `verifyOtp` immediately
+ * redeems it server-side — a real Supabase session via Supabase's own
+ * legitimate primitives, just with the "click the email" step skipped
+ * entirely rather than faked. `shouldCreateUser`-equivalent: generateLink
+ * creates the account on first use, same as the old signInWithOtp did.
  */
-export async function sendMagicLink(
+export async function emailLogin(
   _prevState: MagicLinkResult | null,
   formData: FormData
 ): Promise<MagicLinkResult> {
   const email = formData.get("email")?.toString().trim() ?? "";
   if (!email) return { error: "Enter your email to continue." };
 
-  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
-  const next = formData.get("next")?.toString() || "/";
-  const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithOtp({
+  const admin = getSupabaseAdminClient();
+  const { data, error: generateError } = await admin.auth.admin.generateLink({
+    type: "magiclink",
     email,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
   });
-  if (error) return { error: error.message };
-  return { sent: true };
+  if (generateError) return { error: generateError.message };
+
+  const hashedToken = data.properties?.hashed_token;
+  if (!hashedToken) return { error: "Could not sign you in. Try again." };
+
+  const supabase = await getSupabaseServerClient();
+  const { error: verifyError } = await supabase.auth.verifyOtp({
+    token_hash: hashedToken,
+    type: "email",
+  });
+  if (verifyError) return { error: verifyError.message };
+
+  redirect(safeNext(formData.get("next")));
 }
 
 export async function signUpWithEmail(formData: FormData): Promise<AuthResult> {

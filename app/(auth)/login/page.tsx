@@ -1,5 +1,5 @@
 import { Flame, MessageCircleQuestion, Target, TrendingUp } from "lucide-react";
-import { MagicLinkForm } from "../magic-link-form";
+import { EmailLoginForm } from "../email-login-form";
 
 const FEATURES = [
   {
@@ -32,7 +32,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   // The middleware appends `?next=…` when it turns an unauthenticated visitor
   // away from a protected route, so signing in returns them where they meant
   // to go instead of dumping everyone on the dashboard.
-  const { next, error } = await searchParams;
+  const { next } = await searchParams;
   const target = typeof next === "string" ? next : "/";
 
   return (
@@ -57,12 +57,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       </div>
 
       <div className="mx-auto mt-8 w-full max-w-[380px]">
-        {error ? (
-          <p role="alert" className="mb-3 rounded-lg bg-destructive-soft px-3 py-2 text-center text-sm text-destructive">
-            That link expired or was already used — enter your email for a fresh one.
-          </p>
-        ) : null}
-        <MagicLinkForm next={target} />
+        <EmailLoginForm next={target} />
       </div>
 
       <div className="mt-14">
