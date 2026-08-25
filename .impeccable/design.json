@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-26T22:00:00.000Z",
+  "title": "Design System: Vantage",
+  "extensions": {
+    "colorMeta": {
+      "signal-blue": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#2F6FF5",
+        "tonalRamp": ["#0A1A3D", "#0F2A66", "#153C8C", "#1D50B3", "#2F6FF5", "#5F8FF8", "#96B6FA", "#D6E3FD"]
+      },
+      "console-navy": {
+        "role": "secondary",
+        "displayName": "Deep Console Navy",
+        "canonical": "#13294B",
+        "tonalRamp": ["#050A14", "#0A1526", "#0F1F38", "#13294B", "#1E3A66", "#345486", "#5C79A8", "#93AACB"]
+      },
+      "success": {
+        "role": "semantic-positive",
+        "displayName": "Success Green",
+        "canonical": "#2FBE7A",
+        "tonalRamp": ["#0D3B24", "#145838", "#1C7B4D", "#249C63", "#2FBE7A", "#5DCE97", "#94E0B9", "#CDF2DE"]
+      },
+      "destructive": {
+        "role": "semantic-negative",
+        "displayName": "Destructive Coral",
+        "canonical": "#E8536B",
+        "tonalRamp": ["#4A0E18", "#6E1524", "#96202F", "#C13345", "#E8536B", "#EF7E8F", "#F5AAB3", "#FBD6DA"]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas Blue-White",
+        "canonical": "#DCE8FB",
+        "tonalRamp": ["#16233F", "#3A4C6E", "#6B7A99", "#9FB0CC", "#C6D6F0", "#DCE8FB", "#EEF4FD", "#FFFFFF"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Every screen's h1 — Manrope, capped 30ch, balanced wrap." },
+      "headline": { "displayName": "Headline", "purpose": "Panel/section titles — Manrope, 21px." },
+      "metric": { "displayName": "Metric", "purpose": "The one big countable number on a screen (accuracy %, streak count) — Manrope, tabular-nums." },
+      "body": { "displayName": "Body / Lede", "purpose": "Paragraph copy and subtitle lines — Inter, capped ~52ch." },
+      "label": { "displayName": "Label", "purpose": "Small-caps kicker above a card's content — Inter, Signal Blue." }
+    },
+    "shadows": [
+      { "name": "resting", "value": "0 1px 2px hsl(220 45% 25% / 0.05)", "purpose": "Default near-invisible shadow on cards and inputs at rest." },
+      { "name": "hover-lift", "value": "0 6px 20px -10px hsl(220 45% 25% / 0.3)", "purpose": "Outline panel-link hover state." },
+      { "name": "tile-lift", "value": "0 14px 28px -14px hsl(220 45% 25% / 0.25)", "purpose": "Landing feature tile hover state, paired with lift+scale transform." },
+      { "name": "glow-badge", "value": "0 3px 8px -2px hsl(220 45% 25% / 0.35)", "purpose": "Small circular icon badge centered inside a stat-tile ring." }
+    ],
+    "motion": [
+      { "name": "ease-overshoot", "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Pop-in feel for feedback reveals and landing tile entrance — used sparingly, not a general animation default." },
+      { "name": "ease-standard", "value": "ease", "purpose": "Default hover transform/shadow transitions (0.15s–0.2s)." }
+    ],
+    "breakpoints": [
+      { "name": "two-up-collapse", "value": "520px–560px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single most-wanted action on a screen.",
+      "html": "<button class=\"ds-btn-primary\">Continue</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 14px; font-size: 14.5px; font-weight: 650; cursor: pointer; border: 1px solid transparent; white-space: nowrap; background: #2F6FF5; color: #FFFFFF; transition: background 0.15s ease; } .ds-btn-primary:hover { background: color-mix(in oklch, #2F6FF5 90%, black 6%); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, #2F6FF5 20%, transparent); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A lower-emphasis action beside a primary button.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: 14px; font-size: 14.5px; font-weight: 650; cursor: pointer; background: #EEF3FC; color: #16233F; border: 1px solid #E1E7F5; transition: background 0.15s ease; } .ds-btn-secondary:hover { background: color-mix(in oklch, #EEF3FC 75%, #16233F 6%); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The default content container — flat at rest, hairline border only.",
+      "html": "<div class=\"ds-card\"><span class=\"ds-card-label\">First-guess accuracy</span><div class=\"ds-card-text\">Correct on first guess, across 12 attempts.</div></div>",
+      "css": ".ds-card { background: #FFFFFF; border: 1px solid #E1E7F5; border-radius: 20px; padding: 26px; box-shadow: 0 1px 2px hsl(220 45% 25% / 0.05); } .ds-card-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #2F6FF5; display: block; margin-bottom: 8px; } .ds-card-text { font-size: 14.5px; line-height: 1.6; color: #16233F; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A single-line or multi-line field with a Signal Blue focus glow.",
+      "html": "<input class=\"ds-input\" type=\"email\" placeholder=\"you@firm.com\" />",
+      "css": ".ds-input { width: 100%; border: 1px solid #E1E7F5; background: #FFFFFF; color: #16233F; border-radius: 14px; padding: 14px 16px; font-size: 15px; box-shadow: 0 1px 2px hsl(220 45% 25% / 0.05); } .ds-input::placeholder { color: #6B7A99; } .ds-input:focus-visible { outline: none; border-color: #2F6FF5; box-shadow: 0 0 0 3px color-mix(in oklch, #2F6FF5 20%, transparent); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "nav",
+      "refersTo": "segmented-active",
+      "description": "A pill-shaped toggle group; the selected option fills Deep Console Navy.",
+      "html": "<div class=\"ds-segmented\" role=\"tablist\"><button aria-pressed=\"true\">Log in</button><button aria-pressed=\"false\">Sign up</button></div>",
+      "css": ".ds-segmented { display: inline-flex; padding: 3px; background: #EEF3FC; border-radius: 999px; gap: 2px; } .ds-segmented button { border: 0; background: transparent; padding: 8px 15px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #6B7A99; cursor: pointer; } .ds-segmented button[aria-pressed=\"true\"] { background: #13294B; color: #FFFFFF; box-shadow: 0 1px 2px hsl(220 45% 25% / 0.12); }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "A small pill communicating outcome purely through color — matched/missed/in-progress.",
+      "html": "<span class=\"ds-badge ds-badge-matched\">Matched</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 650; padding: 5px 10px; border-radius: 999px; width: fit-content; } .ds-badge-matched { background: #E6F8EF; color: #2FBE7A; } .ds-badge-missed { background: #EEF3FC; color: #6B7A99; }"
+    },
+    {
+      "name": "Outline Panel Link",
+      "kind": "card",
+      "refersTo": "panel-link-outline",
+      "description": "Home dashboard's big entry tiles — lifts and warms its border on hover.",
+      "html": "<a class=\"ds-panel-link\" href=\"#\"><h2>What are we solving today?</h2><p>A messy client ask in, a sharp AI approach out.</p></a>",
+      "css": ".ds-panel-link { display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; border-radius: 20px; padding: 30px; background: #FFFFFF; color: #16233F; border: 1px solid #E1E7F5; transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; } .ds-panel-link:hover { transform: translateY(-2px); border-color: color-mix(in oklch, #2F6FF5 45%, #E1E7F5); box-shadow: 0 6px 20px -10px hsl(220 45% 25% / 0.3); } .ds-panel-link h2 { margin-top: 7px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; font-family: 'Manrope', sans-serif; } .ds-panel-link p { margin-top: 8px; font-size: 14px; color: #6B7A99; }"
+    },
+    {
+      "name": "Ring Stat Tile",
+      "kind": "custom",
+      "refersTo": "stat-tile",
+      "description": "Signature component: a circular progress ring with a colored icon badge, showing a percentage. Same ring math as the quiz countdown timer, at a smaller size.",
+      "html": "<div class=\"ds-stat-tile\"><div class=\"ds-stat-ring\"><svg viewBox=\"0 0 120 120\"><circle class=\"ds-ring-track\" cx=\"60\" cy=\"60\" r=\"54\" /><circle class=\"ds-ring-progress\" cx=\"60\" cy=\"60\" r=\"54\" style=\"stroke-dasharray: 339.3; stroke-dashoffset: 85\" /></svg><span class=\"ds-ring-icon\">●</span></div><div><span class=\"ds-card-label\">First-guess accuracy</span><div class=\"ds-metric\">75%</div></div></div>",
+      "css": ".ds-stat-tile { display: flex; align-items: center; gap: 18px; border-radius: 20px; padding: 22px; background: linear-gradient(155deg, color-mix(in oklch, #2F6FF5 10%, #FFFFFF), #FFFFFF); border: 1px solid color-mix(in oklch, #2F6FF5 24%, #E1E7F5); box-shadow: 0 1px 2px hsl(220 45% 25% / 0.05); } .ds-stat-ring { position: relative; width: 68px; height: 68px; flex-shrink: 0; } .ds-stat-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); } .ds-ring-track { fill: none; stroke-width: 9; stroke: color-mix(in oklch, #2F6FF5 18%, #E1E7F5); } .ds-ring-progress { fill: none; stroke-width: 9; stroke-linecap: round; stroke: #2F6FF5; transition: stroke-dashoffset 0.5s ease; } .ds-ring-icon { position: absolute; inset: 0; margin: auto; width: 30px; height: 30px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #fff; background: #2F6FF5; font-size: 14px; box-shadow: 0 3px 8px -2px hsl(220 45% 25% / 0.35); } .ds-metric { font-family: 'Manrope', sans-serif; font-size: 30px; font-weight: 750; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: #16233F; }"
+    },
+    {
+      "name": "Quiz Timer Ring",
+      "kind": "custom",
+      "refersTo": "quiz-ring",
+      "description": "Signature component: a 132px circular countdown with a navy clock face at center, used on quiz screens.",
+      "html": "<button class=\"ds-quiz-ring\"><svg class=\"ds-quiz-ring-svg\" viewBox=\"0 0 132 132\"><circle class=\"ds-quiz-ring-track\" cx=\"66\" cy=\"66\" r=\"58\" /><circle class=\"ds-quiz-ring-progress\" cx=\"66\" cy=\"66\" r=\"58\" style=\"stroke-dasharray: 364.4; stroke-dashoffset: 120\" /></svg><span class=\"ds-quiz-ring-num\">12.4s</span></button>",
+      "css": ".ds-quiz-ring { position: relative; width: 132px; height: 132px; border-radius: 999px; border: 0; background: color-mix(in oklch, #2F6FF5 8%, #FFFFFF); cursor: pointer; display: flex; align-items: center; justify-content: center; } .ds-quiz-ring-svg { position: absolute; inset: 0; transform: rotate(-90deg); } .ds-quiz-ring-track { fill: none; stroke: color-mix(in oklch, #2F6FF5 22%, #E1E7F5); stroke-width: 10; } .ds-quiz-ring-progress { fill: none; stroke: #2F6FF5; stroke-width: 10; stroke-linecap: round; } .ds-quiz-ring-num { font-family: 'Manrope', sans-serif; font-size: 26px; font-weight: 750; letter-spacing: -0.02em; color: #16233F; font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Judgment Console",
+    "overview": "Vantage is where a consultant makes a call — not a game, not a toy. The visual system reads like an instrument panel built for confident decisions under time pressure: a deep navy control surface, one disciplined signal-blue accent, flat and precise rather than soft and decorative. Every screen is built around the same act — guess, then reveal — so the interface stays quiet and gets out of the way of that moment.\nThe palette runs in two registers: a light \"New Blue\" mode (soft blue-white canvas, white cards, navy ink) for daytime work, and a dark \"Black & Blue\" mode (true black canvas, near-black cards, the same signal blue turned up in luminance) for a genuine console-at-night feel. Both are locked and share the same structural rules — only the values change.\nConfirmed anti-reference: not a playful, cartoonish consumer app. Vantage has streaks and quizzes, but they're instrumentation for judgment-building, not gamified decoration — no mascots, no candy colors, no bounce for its own sake.",
+    "keyCharacteristics": [
+      "One disciplined accent color (Signal Blue) against a navy/white console structure",
+      "Flat by design — depth comes from color and tonal contrast, not shadow layering",
+      "Manrope for anything the eye should land on first (headings, metrics); Inter for everything read in full sentences",
+      "Pill shapes for state and status (segmented controls, badges, chips); rectangular radii for containers and inputs"
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Signal Blue is the only color used to mean 'act on this.' Everything else in the palette is structural (navy, neutral) or purely semantic status (success/destructive) — never decorative color for its own sake.", "section": "colors" },
+      { "name": "The Tabular Numbers Rule", "body": "Any number that updates or is compared against another number (metrics, timers, history timestamps) uses font-variant-numeric: tabular-nums — digits never reflow the layout as they change.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "Surfaces are flat by default. A stronger shadow appears only as a direct response to hover/interaction state, never as ambient decoration on a static element.", "section": "elevation" },
+      { "name": "The Pill-Means-State Rule", "body": "If a border-radius: 999px is used, the element is communicating a mode, status, or selectable state (segmented control, badge, chip, tag). Containers and static content never use a full pill radius.", "section": "shapes" }
+    ],
+    "dos": [
+      "Do keep Signal Blue rare — it should mean 'the answer' or 'act here,' not 'a nice color to add.'",
+      "Do use Deep Console Navy for the one 'selected/active' state that Signal Blue doesn't already own (segmented controls).",
+      "Do use tabular-nums on every metric, timer, and comparable number.",
+      "Do keep shadows near-invisible at rest; let hover states carry the only real lift.",
+      "Do pair Manrope (headings/metrics) with Inter (body) — never introduce a third typeface."
+    ],
+    "donts": [
+      "Don't add a second accent color. If something needs to stand out, use Signal Blue, Console Navy, or a semantic status color — not a new hue.",
+      "Don't design toward a playful/cartoonish consumer-app look, even for streak or quiz features — those are judgment-building instrumentation, not gamified decoration.",
+      "Don't default to generic AI-slop gradient blobs or purple/violet AI branding — this palette is blue/navy on purpose, not a stand-in for 'AI product colors.'",
+      "Don't add ambient shadow or glow to a static element — motion/glow is reserved for meaningful state (live recording, a correct-answer pop, the pro-tip bulb)."
+    ]
+  }
+}
