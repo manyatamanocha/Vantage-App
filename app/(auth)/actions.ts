@@ -1,5 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthResult = {
@@ -11,6 +12,34 @@ export type AuthResult = {
    */
   needsConfirmation?: boolean;
 };
+
+export type MagicLinkResult = { error?: string; sent?: boolean };
+
+/**
+ * Passwordless: `signInWithOtp` creates the account on first use (Supabase's
+ * `shouldCreateUser` defaults true), so this single action covers both login
+ * and signup — there's no separate account-creation step for email-only auth.
+ * `emailRedirectTo` must be an absolute URL; derived from the incoming
+ * request's own host rather than a hardcoded env var so this works
+ * identically on localhost and whatever origin it's actually deployed to.
+ */
+export async function sendMagicLink(
+  _prevState: MagicLinkResult | null,
+  formData: FormData
+): Promise<MagicLinkResult> {
+  const email = formData.get("email")?.toString().trim() ?? "";
+  if (!email) return { error: "Enter your email to continue." };
+
+  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
+  const next = formData.get("next")?.toString() || "/";
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
+  });
+  if (error) return { error: error.message };
+  return { sent: true };
+}
 
 export async function signUpWithEmail(formData: FormData): Promise<AuthResult> {
   const email = formData.get("email")?.toString() ?? "";
