@@ -17,8 +17,8 @@ const FEATURES = [
   {
     icon: MessageCircleQuestion,
     color: "#EC4899",
-    title: "Jargon quiz",
-    body: "RAG? KPI? LLM? Level up your buzzword game.",
+    title: "Daily quizzes",
+    body: "Level up your buzzword game.",
   },
   {
     icon: TrendingUp,
