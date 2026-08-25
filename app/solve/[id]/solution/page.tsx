@@ -86,7 +86,7 @@ export default async function SolutionPage({
           >
             <Sparkles size={13} aria-hidden="true" />
           </div>
-          <span style={{ color: "var(--success)", fontWeight: 650, fontSize: 14 }}>Your challenge</span>
+          <span style={{ color: "var(--success)", fontWeight: 650, fontSize: 14 }}>We are solving...</span>
         </div>
         <p className="card-text">{solve.goal || solve.raw_input}</p>
       </section>
