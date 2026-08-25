@@ -151,17 +151,17 @@ export default async function SolutionPage({
                   <div style={{ width: 2, flex: 1, background: "var(--border)", margin: "4px 0" }} />
                 ) : null}
               </div>
-              <div className="card" style={{ marginBottom: 12, flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 4 }}>{step.title}</div>
-                <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{step.description}</p>
+              <div className="card" style={{ marginBottom: 8, flex: 1, padding: "14px 16px" }}>
+                <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{step.title}</div>
+                <p className="card-text" style={{ color: "var(--muted-foreground)", fontSize: 13.5 }}>{step.description}</p>
                 {step.detail ? (
                   <pre
                     style={{
-                      marginTop: 10,
-                      padding: "10px 12px",
+                      marginTop: 8,
+                      padding: "8px 10px",
                       background: "var(--secondary)",
                       borderRadius: "var(--radius-md)",
-                      fontSize: 12.5,
+                      fontSize: 12,
                       overflowX: "auto",
                       fontFamily: "ui-monospace, monospace",
                     }}
@@ -177,11 +177,14 @@ export default async function SolutionPage({
 
       <SolutionFeedback />
 
-      <div className="actions" style={{ justifyContent: "center" }}>
-        <Link href="/solve/new" className="hint">
-          Go back and edit
+      <nav aria-label="What's next" className="actions" style={{ justifyContent: "center" }}>
+        <Link href="/solve/new" className="btn btn-primary">
+          Solve another case
         </Link>
-      </div>
+        <Link href="/practice/jargon" className="btn btn-secondary">
+          Quiz time
+        </Link>
+      </nav>
     </main>
   );
 }
