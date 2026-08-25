@@ -1,7 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export type AuthResult = {
   error?: string;
@@ -13,57 +12,61 @@ export type AuthResult = {
   needsConfirmation?: boolean;
 };
 
-export type MagicLinkResult = { error?: string; sent?: boolean };
+export type OtpRequestResult = { error?: string; sent?: boolean; email?: string };
 
 // The WHATWG HTML spec's own email-format regex (same one browsers use for
 // <input type="email"> validation) — catches genuinely malformed input
 // (missing @, no TLD, spaces, consecutive dots). It cannot and does not try
 // to catch a valid-shaped typo (e.g. "gmail.co" instead of "gmail.com");
-// that class of mistake only real delivery verification can catch, which
-// this flow deliberately doesn't have — see emailLogin's own comment.
+// only real delivery — the code actually landing in that inbox — catches
+// that class of mistake, which is exactly why this flow sends one.
 const EMAIL_PATTERN =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
 
 /**
- * Instant email login — no password, no clicked link. The magic-link email
- * flow was dropped (localhost dev links can't be reached from wherever an
- * email client actually opens them, and Supabase's shared sender is
- * rate-limited to 2/hour with no custom SMTP configured), at the user's
- * explicit call, knowing the tradeoff: typing any email logs in as that
- * email, no proof of inbox ownership. Real risk once real users' data is on
- * the line — revisit before this ships beyond local testing.
+ * Step 1 of email login: send a one-time OTP code (real Supabase Auth email,
+ * `shouldCreateUser` covers first-time signup too). Replaces both the earlier
+ * magic-link flow (broken: emailed links to localhost can't be reached from
+ * wherever the email client actually opens them) and the instant
+ * no-verification login that followed it (a well-formed typo like
+ * "gmail.co" logged in as the wrong account with zero way to catch it). A
+ * code the user reads from their own inbox and retypes here is what actually
+ * proves they own that address.
  *
- * Mechanism: `admin.generateLink` (service-role only) mints the same
- * hashed_token Supabase would otherwise email, and `verifyOtp` immediately
- * redeems it server-side — a real Supabase session via Supabase's own
- * legitimate primitives, just with the "click the email" step skipped
- * entirely rather than faked. `shouldCreateUser`-equivalent: generateLink
- * creates the account on first use, same as the old signInWithOtp did.
+ * NOTE: whether the email actually *shows* a one-time code depends on the
+ * Supabase project's "Magic Link" email template including `{{ .Token }}` —
+ * check Authentication → Email Templates in the dashboard if a code never
+ * arrives even though sending succeeds.
  */
-export async function emailLogin(
-  _prevState: MagicLinkResult | null,
+export async function requestOtp(
+  _prevState: OtpRequestResult | null,
   formData: FormData
-): Promise<MagicLinkResult> {
+): Promise<OtpRequestResult> {
   const email = formData.get("email")?.toString().trim() ?? "";
   if (!email) return { error: "Enter your email to continue." };
   if (!EMAIL_PATTERN.test(email)) return { error: "That doesn't look like a valid email address." };
 
-  const admin = getSupabaseAdminClient();
-  const { data, error: generateError } = await admin.auth.admin.generateLink({
-    type: "magiclink",
+  const supabase = await getSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithOtp({
     email,
+    options: { shouldCreateUser: true },
   });
-  if (generateError) return { error: generateError.message };
+  if (error) return { error: error.message };
+  return { sent: true, email };
+}
 
-  const hashedToken = data.properties?.hashed_token;
-  if (!hashedToken) return { error: "Could not sign you in. Try again." };
+/** Step 2: redeem the code the user read from their inbox for a real session. */
+export async function verifyOtpCode(
+  _prevState: AuthResult | null,
+  formData: FormData
+): Promise<AuthResult> {
+  const email = formData.get("email")?.toString().trim() ?? "";
+  const token = formData.get("code")?.toString().trim() ?? "";
+  if (!token) return { error: "Enter the code from your email." };
 
   const supabase = await getSupabaseServerClient();
-  const { error: verifyError } = await supabase.auth.verifyOtp({
-    token_hash: hashedToken,
-    type: "email",
-  });
-  if (verifyError) return { error: verifyError.message };
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (error) return { error: error.message };
 
   redirect(safeNext(formData.get("next")));
 }
