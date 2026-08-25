@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CheckCircle2, Lightbulb, Sparkles, Wrench } from "lucide-react";
+import { CheckCircle2, Sparkles, Wrench } from "lucide-react";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { runSolutionStep } from "./actions";
 import { SolutionFeedback } from "./solution-feedback";
+import { ProTipBadge } from "./pro-tip-badge";
 import type { SolutionResult } from "@/lib/engine/solution";
 
 function isSolutionResult(value: unknown): value is SolutionResult {
@@ -55,8 +56,9 @@ export default async function SolutionPage({
         </span>
       </div>
 
-      <header>
+      <header style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <h1 className="display">Here&apos;s your solution</h1>
+        <ProTipBadge tips={solution.proTips} />
       </header>
 
       <section
@@ -169,20 +171,6 @@ export default async function SolutionPage({
           ))}
         </div>
       </section>
-      ) : null}
-
-      {solution.proTips.length > 0 ? (
-        <section className="quote-card stack">
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <Lightbulb size={14} style={{ color: "#F59E0B" }} aria-hidden="true" />
-            <span className="card-label" style={{ margin: 0 }}>Pro tips</span>
-          </div>
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {solution.proTips.map((tip) => (
-              <li key={tip} className="card-text">{tip}</li>
-            ))}
-          </ul>
-        </section>
       ) : null}
 
       <SolutionFeedback overview={solution.overview} />
