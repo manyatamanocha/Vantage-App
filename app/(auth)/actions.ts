@@ -1,6 +1,8 @@
 "use server";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { track } from "@/lib/analytics/track";
 
 export type AuthResult = {
   error?: string;
@@ -12,87 +14,55 @@ export type AuthResult = {
   needsConfirmation?: boolean;
 };
 
-export type OtpRequestResult = { error?: string; sent?: boolean; email?: string };
-
-// The WHATWG HTML spec's own email-format regex (same one browsers use for
-// <input type="email"> validation) — catches genuinely malformed input
-// (missing @, no TLD, spaces, consecutive dots). It cannot and does not try
-// to catch a valid-shaped typo (e.g. "gmail.co" instead of "gmail.com");
-// only real delivery — the code actually landing in that inbox — catches
-// that class of mistake, which is exactly why this flow sends one.
-const EMAIL_PATTERN =
-  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-
-/**
- * Step 1 of email login: send a one-time OTP code (real Supabase Auth email,
- * `shouldCreateUser` covers first-time signup too). Replaces both the earlier
- * magic-link flow (broken: emailed links to localhost can't be reached from
- * wherever the email client actually opens them) and the instant
- * no-verification login that followed it (a well-formed typo like
- * "gmail.co" logged in as the wrong account with zero way to catch it). A
- * code the user reads from their own inbox and retypes here is what actually
- * proves they own that address.
- *
- * NOTE: whether the email actually *shows* a one-time code depends on the
- * Supabase project's "Magic Link" email template including `{{ .Token }}` —
- * check Authentication → Email Templates in the dashboard if a code never
- * arrives even though sending succeeds.
- */
-export async function requestOtp(
-  _prevState: OtpRequestResult | null,
-  formData: FormData
-): Promise<OtpRequestResult> {
-  const email = formData.get("email")?.toString().trim() ?? "";
-  if (!email) return { error: "Enter your email to continue." };
-  if (!EMAIL_PATTERN.test(email)) return { error: "That doesn't look like a valid email address." };
-
-  const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: true },
-  });
-  if (error) return { error: error.message };
-  return { sent: true, email };
-}
-
-/** Step 2: redeem the code the user read from their inbox for a real session. */
-export async function verifyOtpCode(
-  _prevState: AuthResult | null,
-  formData: FormData
-): Promise<AuthResult> {
-  const email = formData.get("email")?.toString().trim() ?? "";
-  const token = formData.get("code")?.toString().trim() ?? "";
-  if (!token) return { error: "Enter the code from your email." };
-
-  const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
-  if (error) return { error: error.message };
-
-  redirect(safeNext(formData.get("next")));
-}
+// zod's email check is the same WHATWG HTML-spec pattern browsers use for
+// <input type="email">, so it catches genuinely malformed input (missing @,
+// no TLD, spaces, consecutive dots) without pretending to catch a
+// valid-shaped typo like "gmail.co" — only real delivery (e.g. a
+// confirmation email actually landing in that inbox) catches that class of
+// mistake, which password login can't do by itself.
+const emailSchema = z.email("That doesn't look like a valid email address.");
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters");
 
 export async function signUpWithEmail(formData: FormData): Promise<AuthResult> {
-  const email = formData.get("email")?.toString() ?? "";
-  const password = formData.get("password")?.toString() ?? "";
-  if (!email) return { error: "Email is required" };
-  if (!password || password.length < 8) return { error: "Password must be at least 8 characters" };
+  const rawEmail = formData.get("email")?.toString() ?? "";
+  if (!rawEmail) return { error: "Email is required" };
+  const parsedEmail = emailSchema.safeParse(rawEmail);
+  if (!parsedEmail.success) return { error: parsedEmail.error.issues[0].message };
+
+  const parsedPassword = passwordSchema.safeParse(formData.get("password")?.toString() ?? "");
+  if (!parsedPassword.success) return { error: parsedPassword.error.issues[0].message };
 
   const supabase = await getSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email: parsedEmail.data,
+    password: parsedPassword.data,
+  });
   if (error) return { error: error.message };
+  track("signup", data.user?.id ?? null);
   // Supabase returns a user but no session when email confirmation is on.
   if (!data.session) return { needsConfirmation: true };
   return {};
 }
 
+const signInSchema = z.object({
+  email: z.string().min(1),
+  password: z.string().min(1),
+});
+
 export async function signInWithEmail(formData: FormData): Promise<AuthResult> {
-  const email = formData.get("email")?.toString() ?? "";
-  const password = formData.get("password")?.toString() ?? "";
-  if (!email || !password) return { error: "Email and password are required" };
+  const parsed = signInSchema.safeParse({
+    email: formData.get("email")?.toString() ?? "",
+    password: formData.get("password")?.toString() ?? "",
+  });
+  if (!parsed.success) return { error: "Email and password are required" };
+  const { email, password } = parsed.data;
 
   const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: error.message };
+  track("login", data.user?.id ?? null);
   return {};
 }
 

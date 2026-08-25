@@ -36,6 +36,25 @@ export async function getProgressStats(userId: string): Promise<{
   return { firstGuessAccuracy, byCategory, completedCount: rows.length };
 }
 
+export async function getQuizStats(userId: string): Promise<{
+  accuracy: number;
+  attemptCount: number;
+}> {
+  const { supabase, user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
+
+  const { data, error } = await supabase
+    .from("jargon_attempts")
+    .select("correct")
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+
+  const rows = data as { correct: boolean }[];
+  const accuracy = rows.length ? rows.filter((r) => r.correct).length / rows.length : 0;
+
+  return { accuracy, attemptCount: rows.length };
+}
+
 export type ProgressSolveRow = {
   createdAt: string;
   correct: boolean | null;

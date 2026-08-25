@@ -1,5 +1,17 @@
 "use server";
+import { z } from "zod";
 import { getVerifiedUser } from "@/lib/supabase/server";
+
+// Mirrors settings-form.tsx's DIFFICULTIES/FREQUENCIES/QUESTION_TYPES — there's
+// no DB-level CHECK constraint on practice_difficulty/practice_frequency (only
+// default_question_type has one, in 0007_default_question_type.sql), so this
+// server action is the only thing standing between a crafted request and a
+// junk value silently stored against a user's row.
+const updateSettingsSchema = z.object({
+  practiceDifficulty: z.enum(["easy", "medium", "hard"]).optional(),
+  practiceFrequency: z.enum(["daily", "weekly", "off"]).optional(),
+  defaultQuestionType: z.enum(["scenario", "quiz"]).optional(),
+});
 
 // Defaults must match the DB column defaults in supabase/migrations/0001_init.sql
 // (practice_difficulty default 'medium', practice_frequency default 'daily') and
@@ -42,6 +54,10 @@ export async function updateSettings(
   userId: string,
   patch: { practiceDifficulty?: string; practiceFrequency?: string; defaultQuestionType?: string }
 ): Promise<void> {
+  const parseResult = updateSettingsSchema.safeParse(patch);
+  if (!parseResult.success) throw new Error(parseResult.error.issues[0].message);
+  const parsed = parseResult.data;
+
   const { supabase, user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
 
@@ -51,9 +67,9 @@ export async function updateSettings(
   // column defaults fill in any field not being set, and on conflict only the
   // provided columns are overwritten, preserving partial-patch semantics.
   const dbPatch: Record<string, string> = { user_id: userId };
-  if (patch.practiceDifficulty) dbPatch.practice_difficulty = patch.practiceDifficulty;
-  if (patch.practiceFrequency) dbPatch.practice_frequency = patch.practiceFrequency;
-  if (patch.defaultQuestionType) dbPatch.default_question_type = patch.defaultQuestionType;
+  if (parsed.practiceDifficulty) dbPatch.practice_difficulty = parsed.practiceDifficulty;
+  if (parsed.practiceFrequency) dbPatch.practice_frequency = parsed.practiceFrequency;
+  if (parsed.defaultQuestionType) dbPatch.default_question_type = parsed.defaultQuestionType;
   const { error } = await supabase.from("user_settings").upsert(dbPatch);
   if (error) throw new Error(error.message);
 }

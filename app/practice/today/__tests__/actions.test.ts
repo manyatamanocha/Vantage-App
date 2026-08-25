@@ -93,6 +93,7 @@ function practiceCase(id: string, difficulty: string, extra: Row = {}): Row {
     industry: null,
     difficulty,
     active: true,
+    review_status: "approved",
     ...extra,
   };
 }

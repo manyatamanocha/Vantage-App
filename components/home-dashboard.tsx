@@ -15,7 +15,7 @@ export function HomeDashboard({ quizHref }: { quizHref: string }) {
         </div>
         <LiveClock />
       </section>
-      <section className="grid-2">
+      <section className="stack">
         <Link href="/solve/new" className="panel-link outline group">
           <BriefcaseBusiness className="icon size-7" aria-hidden="true" />
           <h2>What are we solving today?</h2>

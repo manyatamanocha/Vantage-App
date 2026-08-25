@@ -1,6 +1,10 @@
 "use server";
 
+import { z } from "zod";
 import { getVerifiedUser } from "@/lib/supabase/server";
+import { track } from "@/lib/analytics/track";
+
+const ratingSchema = z.number().int().min(1, "Rating must be from 1 to 5").max(5, "Rating must be from 1 to 5");
 
 export type JargonQuestion = {
   id: string;
@@ -50,11 +54,13 @@ export async function recordJargonAttempt(input: { questionId: string; selectedA
     correct, seconds: input.seconds, helpful_rating: null,
   }).select("id").single();
   if (error) throw new Error(error.message);
+  track("quiz_attempt", user.id, { correct });
   return { correct, attemptId: attempt?.id as string | undefined };
 }
 
 export async function rateJargonAttempt(attemptId: string, rating: number) {
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error("Rating must be from 1 to 5");
+  const parseResult = ratingSchema.safeParse(rating);
+  if (!parseResult.success) throw new Error(parseResult.error.issues[0].message);
   const { supabase, user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
   const { error } = await supabase.from("jargon_attempts").update({ helpful_rating: rating }).eq("id", attemptId).eq("user_id", user.id);

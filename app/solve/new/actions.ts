@@ -1,6 +1,16 @@
 "use server";
+import { z } from "zod";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { structureProblem } from "@/lib/engine/structure";
+import { track } from "@/lib/analytics/track";
+
+const createDraftSolveSchema = z.object({
+  rawInput: z.string().trim().min(1, "Raw input is required"),
+  industry: z.string().trim().optional(),
+  source: z.enum(["live", "practice"]),
+  goal: z.string().trim().optional(),
+  problemType: z.string().trim().optional(),
+});
 
 export async function createDraftSolve(input: {
   rawInput: string;
@@ -9,7 +19,9 @@ export async function createDraftSolve(input: {
   goal?: string;
   problemType?: string;
 }): Promise<{ solveId: string }> {
-  if (!input.rawInput.trim()) throw new Error("Raw input is required");
+  const parseResult = createDraftSolveSchema.safeParse(input);
+  if (!parseResult.success) throw new Error(parseResult.error.issues[0].message);
+  const parsed = parseResult.data;
 
   const { supabase, user } = await getVerifiedUser();
   const userId = user?.id;
@@ -19,18 +31,21 @@ export async function createDraftSolve(input: {
     .from("solves")
     .insert({
       user_id: userId,
-      source: input.source,
-      raw_input: input.rawInput,
-      industry: input.industry ?? null,
-      goal: input.goal ?? null,
-      problem_type: input.problemType ?? null,
+      source: parsed.source,
+      raw_input: parsed.rawInput,
+      industry: parsed.industry ?? null,
+      goal: parsed.goal ?? null,
+      problem_type: parsed.problemType ?? null,
     })
     .select()
     .single();
 
   if (error) throw new Error(error.message);
+  track("solve_started", userId, { source: parsed.source });
   return { solveId: data.id };
 }
+
+const rawInputSchema = z.string().trim().min(1, "Raw input is required");
 
 // Runs the LLM refinement without persisting anything yet — used by the
 // intake screen's inline "Is that what you mean?" confirmation step, before
@@ -38,8 +53,9 @@ export async function createDraftSolve(input: {
 // written to the database until createDraftSolve, which happens only once
 // they confirm.
 export async function refineAsk(rawInput: string): Promise<{ goal: string; problemType: string }> {
-  if (!rawInput.trim()) throw new Error("Raw input is required");
+  const parseResult = rawInputSchema.safeParse(rawInput);
+  if (!parseResult.success) throw new Error(parseResult.error.issues[0].message);
   const { user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
-  return structureProblem(rawInput);
+  return structureProblem(parseResult.data);
 }

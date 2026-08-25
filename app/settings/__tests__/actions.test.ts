@@ -97,12 +97,12 @@ describe("updateSettings", () => {
   });
 
   it("includes both fields plus user_id when both are supplied", async () => {
-    await updateSettings("u1", { practiceDifficulty: "easy", practiceFrequency: "monthly" });
+    await updateSettings("u1", { practiceDifficulty: "easy", practiceFrequency: "off" });
 
     expect(upsertMock).toHaveBeenCalledWith({
       user_id: "u1",
       practice_difficulty: "easy",
-      practice_frequency: "monthly",
+      practice_frequency: "off",
     });
   });
 
