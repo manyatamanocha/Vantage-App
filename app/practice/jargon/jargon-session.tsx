@@ -1,13 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Brain, Check, FileText, Leaf, Star, X, Zap } from "lucide-react";
+import { Brain, Check, FileText, Heart, Leaf, MessageCircleQuestion, PartyPopper, X, Zap } from "lucide-react";
 import type { JargonQuestion } from "./actions";
 import { getJargonQuestions, rateJargonAttempt, recordJargonAttempt } from "./actions";
-import { EndingCard } from "@/components/ending-card";
 
 const RING = 2 * Math.PI * 54;
 const TIERS = ["easy", "medium", "hard"] as const;
+const HELPFUL_COLOR = "var(--success)";
+const NOT_HELPFUL_COLOR = "#EC4899";
+
+function chipStyle(color: string, active: boolean) {
+  return active
+    ? { background: color, borderColor: color, color: "#fff", fontWeight: 650 }
+    : {
+        background: `color-mix(in oklch, ${color} 14%, var(--card))`,
+        borderColor: `color-mix(in oklch, ${color} 45%, var(--border))`,
+        color,
+        fontWeight: 650,
+      };
+}
 
 function hashString(value: string): number {
   let hash = 0;
@@ -88,6 +100,17 @@ export function JargonSession() {
     const distractors = [...otherTerms].sort(byHash).slice(0, 3);
     return [question.term, ...distractors].sort(byHash);
   }, [question, questions]);
+
+  // The 3 wrong options shown for this question, resolved to their own real
+  // question objects (they're real terms from this pool, not placeholders)
+  // so their explanation can be revealed on click.
+  const otherOptions = useMemo(() => {
+    if (!question || !questions) return [];
+    return termOptions
+      .filter((term) => term !== question.term)
+      .map((term) => questions.find((q) => q.term === term))
+      .filter((q): q is JargonQuestion => q !== undefined);
+  }, [question, questions, termOptions]);
 
   function startQuiz() {
     setError(null);
@@ -350,27 +373,68 @@ export function JargonSession() {
             <p className="card-text">{question.explanation}</p>
           </section>
 
-          <section className="card stack">
-            <span className="card-label">Was this helpful?</span>
-            <div className="actions">
-              {[1, 2, 3, 4, 5].map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  className="btn btn-icon"
-                  aria-label={`${value} stars`}
-                  aria-pressed={rating === value}
-                  onClick={() => setHelpful(value)}
-                >
-                  <Star fill={rating >= value ? "currentColor" : "none"} />
-                </button>
-              ))}
+          <section
+            className="card"
+            style={{
+              textAlign: "center",
+              background: `linear-gradient(135deg, color-mix(in oklch, var(--primary) 9%, var(--card)), color-mix(in oklch, ${NOT_HELPFUL_COLOR} 9%, var(--card)))`,
+              borderColor: "color-mix(in oklch, var(--primary) 25%, var(--border))",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: 40, height: 40, borderRadius: 999, marginBottom: 10,
+                background: "color-mix(in oklch, var(--primary) 16%, transparent)", color: "var(--primary)",
+              }}
+            >
+              <MessageCircleQuestion size={20} aria-hidden="true" />
+            </span>
+            <div style={{ fontFamily: "var(--font-heading)", fontSize: 18, fontWeight: 750, marginBottom: 14 }}>
+              Was this helpful?
             </div>
+            <div className="chip-row" style={{ justifyContent: "center" }}>
+              <button
+                type="button"
+                onClick={() => setHelpful(5)}
+                aria-pressed={rating === 5}
+                className="chip-btn"
+                style={{ ...chipStyle(HELPFUL_COLOR, rating === 5), padding: "10px 20px", fontSize: 14.5 }}
+              >
+                It was helpful
+              </button>
+              <button
+                type="button"
+                onClick={() => setHelpful(1)}
+                aria-pressed={rating === 1}
+                className="chip-btn"
+                style={{ ...chipStyle(NOT_HELPFUL_COLOR, rating === 1), padding: "10px 20px", fontSize: 14.5 }}
+              >
+                Not really
+              </button>
+            </div>
+
+            {rating === 5 ? (
+              <div className="feedback-pop" style={{ color: HELPFUL_COLOR }}>
+                <span className="feedback-pop-icon" style={{ background: `color-mix(in oklch, ${HELPFUL_COLOR} 20%, transparent)` }}>
+                  <PartyPopper size={20} aria-hidden="true" />
+                </span>
+                <span>Glad that helped!</span>
+              </div>
+            ) : null}
+            {rating === 1 ? (
+              <div className="feedback-pop" style={{ color: NOT_HELPFUL_COLOR }}>
+                <span className="feedback-pop-icon" style={{ background: `color-mix(in oklch, ${NOT_HELPFUL_COLOR} 20%, transparent)` }}>
+                  <Heart size={20} aria-hidden="true" />
+                </span>
+                <span>Thanks for your feedback!</span>
+              </div>
+            ) : null}
           </section>
 
-          <section aria-label="All terms in this quiz" className="card">
-            <span className="card-label">Explore all terms</span>
-            {questions.map((q, i) => (
+          <section aria-label="Other options in this question" className="card">
+            <span className="card-label">The other options</span>
+            {otherOptions.map((q, i) => (
               <details
                 key={q.id}
                 open={openTerm === q.term}
@@ -384,12 +448,6 @@ export function JargonSession() {
               </details>
             ))}
           </section>
-
-          <EndingCard
-            variant="minimal"
-            explainMore={question.explanation}
-            example={`${question.questionText} → ${question.correctAnswer}`}
-          />
 
           <div className="actions">
             <button type="button" className="btn btn-primary" onClick={nextQuestion}>
