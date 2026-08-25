@@ -5,26 +5,26 @@ const FEATURES = [
   {
     icon: Target,
     color: "var(--primary)",
-    title: "Solve real client problems",
-    body: "Bring a live client ask, get back the AI approach that actually fits it — never a named tool, always a category you can reason about.",
+    title: "Solve real problems",
+    body: "Messy client ask in. Sharp AI approach out.",
   },
   {
     icon: Flame,
     color: "#F59E0B",
-    title: "Daily practice, real streaks",
-    body: "A fresh client scenario every day. Guess before we reveal — that's what turns \"Vantage told me\" into \"I checked myself.\"",
+    title: "Daily streaks",
+    body: "One scenario a day. Guess first, no peeking.",
   },
   {
     icon: MessageCircleQuestion,
     color: "#EC4899",
-    title: "Jargon quiz, judged by difficulty",
-    body: "Easy, medium, hard — pick your level and build the vocabulary that comes up when you're actually in the room with a client.",
+    title: "Jargon quiz",
+    body: "RAG? KPI? LLM? Level up your buzzword game.",
   },
   {
     icon: TrendingUp,
     color: "var(--success)",
-    title: "Watch your judgment improve",
-    body: "First-guess accuracy, tracked over time. Not a vanity stat — a measure of whether the skill actually transferred.",
+    title: "Level up",
+    body: "Watch your gut instinct get sharper, day by day.",
   },
 ];
 
