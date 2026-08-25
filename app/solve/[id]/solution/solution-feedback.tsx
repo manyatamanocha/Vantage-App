@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { Heart, PartyPopper } from "lucide-react";
 
+const HELPFUL_COLOR = "var(--success)";
+const NOT_HELPFUL_COLOR = "#EC4899";
+
 /**
  * Replaces the old single "Try it yourself" CTA — a lighter-weight close
  * matching the "Got what you needed?" chip pattern used elsewhere
@@ -11,6 +14,17 @@ import { Heart, PartyPopper } from "lucide-react";
  */
 export function SolutionFeedback() {
   const [selected, setSelected] = useState<"helpful" | "explain" | null>(null);
+
+  function chipStyle(color: string, active: boolean) {
+    return active
+      ? { background: color, borderColor: color, color: "#fff", fontWeight: 650 }
+      : {
+          background: `color-mix(in oklch, ${color} 14%, var(--card))`,
+          borderColor: `color-mix(in oklch, ${color} 45%, var(--border))`,
+          color,
+          fontWeight: 650,
+        };
+  }
 
   return (
     <section className="card ending-card" style={{ textAlign: "center" }}>
@@ -21,11 +35,7 @@ export function SolutionFeedback() {
           onClick={() => setSelected("helpful")}
           aria-pressed={selected === "helpful"}
           className="chip-btn"
-          style={
-            selected !== "helpful"
-              ? { background: "color-mix(in oklch, var(--primary) 10%, var(--card))", borderColor: "color-mix(in oklch, var(--primary) 35%, var(--border))", color: "var(--primary)", fontWeight: 650 }
-              : undefined
-          }
+          style={chipStyle(HELPFUL_COLOR, selected === "helpful")}
         >
           It was helpful
         </button>
@@ -34,19 +44,15 @@ export function SolutionFeedback() {
           onClick={() => setSelected("explain")}
           aria-pressed={selected === "explain"}
           className="chip-btn"
-          style={
-            selected !== "explain"
-              ? { background: "color-mix(in oklch, var(--primary) 10%, var(--card))", borderColor: "color-mix(in oklch, var(--primary) 35%, var(--border))", color: "var(--primary)", fontWeight: 650 }
-              : undefined
-          }
+          style={chipStyle(NOT_HELPFUL_COLOR, selected === "explain")}
         >
           Not really
         </button>
       </div>
 
       {selected === "helpful" ? (
-        <div className="feedback-pop" style={{ color: "var(--success)" }}>
-          <span className="feedback-pop-icon" style={{ background: "color-mix(in oklch, var(--success) 20%, transparent)" }}>
+        <div className="feedback-pop" style={{ color: HELPFUL_COLOR }}>
+          <span className="feedback-pop-icon" style={{ background: `color-mix(in oklch, ${HELPFUL_COLOR} 20%, transparent)` }}>
             <PartyPopper size={20} aria-hidden="true" />
           </span>
           <span>Glad that helped!</span>
@@ -54,8 +60,8 @@ export function SolutionFeedback() {
       ) : null}
 
       {selected === "explain" ? (
-        <div className="feedback-pop" style={{ color: "#EC4899" }}>
-          <span className="feedback-pop-icon" style={{ background: "color-mix(in oklch, #EC4899 20%, transparent)" }}>
+        <div className="feedback-pop" style={{ color: NOT_HELPFUL_COLOR }}>
+          <span className="feedback-pop-icon" style={{ background: `color-mix(in oklch, ${NOT_HELPFUL_COLOR} 20%, transparent)` }}>
             <Heart size={20} aria-hidden="true" />
           </span>
           <span>Thanks for your feedback!</span>

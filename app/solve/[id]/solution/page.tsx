@@ -91,16 +91,11 @@ export default async function SolutionPage({
         <p className="card-text">{solve.goal || solve.raw_input}</p>
       </section>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <section className="stack">
-          <span className="card-label">Overview</span>
-          <p className="card-text">{solution.overview}</p>
-        </section>
-
+      <div className="grid grid-cols-1 gap-5">
         {solution.tools.length > 0 ? (
           <section className="stack">
             <span className="card-label">Tools you&apos;ll need</span>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {solution.tools.map((tool) => (
                 <div key={tool.name} className="card" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <div
