@@ -49,6 +49,18 @@ Added a real profile card (camera-badge avatar upload via `FileReader`, capped a
 
 Time-of-day greeting ("Good Morning"/"Afternoon"/"Evening", smaller heading) replacing "Welcome, {name}"; theme toggle now two small circles in the nav (was a full-width card); panel icons centered with a clearer `Bot` icon for the quiz card; one heading + one subtext line per card, user-dictated copy.
 
+### 8a. Second wave, same session — quiz polish + proactive artifact sweep
+
+After the above, went screen-by-screen through the artifact for every remaining screen rather than waiting for individual bug reports (user asked for this explicitly — "you are missing a lot"). Found and fixed:
+
+- **Daily quiz (pre-lock screen)**: ring timer was nearly invisible (faint `var(--border)` track, no background fill) and ran an 8-second loop instead of 60s — fixed both, plus centered Lock it/Try another question, and simplified the datechip to "Level: Medium".
+- **Daily quiz (result screen)**: the explanation text was rendered twice (duplicate bug); "Correct"/"Not quite" was plain text, not the bigger tick/cross icon requested; the "Got what you needed?" ending card had all 4 chips instead of just 2. Fixed all three — `EndingCard` now takes an optional `variant="minimal"` prop (2 chips) used only here; Reveal/practice-session keep the full 4. Also fixed a real CSS bug: `.toggle-row + .toggle-row` dividers never rendered between "Explore all terms" accordion rows since each is wrapped in its own `<details>`, not a direct sibling.
+- **History screen**: was missing the mockup's "Performance record for [name]" card with an accuracy/attempt stat row entirely; rows were plain inline text instead of the real `.history-row` layout with a Correct/Missed badge+icon. Rebuilt both.
+- **Progress screen**: accuracy number used a Tailwind approximation instead of the real `.metric-big` class; "By category" had no visual bar at all, just text. Fixed. Also found and fixed a real hydration bug in `ProgressTrend` — its week-label formatting called `date.toLocaleDateString()` with no explicit locale, which differs between server and browser. Replaced the whole component with the mockup's actual simpler design (a single running-accuracy line chart, no locale-dependent formatting at all) rather than patching the broken one.
+- **Summary screen**: despite an earlier handoff claiming this was ported, it and its `HandbackViewer` (Copy/Download) were entirely raw Tailwind (`rounded-2xl border border-border bg-card p-5 shadow-sm` style) — rebuilt both with real classes. **Lesson: don't trust a prior handoff's "done" claim without a screenshot check** — this is the second screen this session (after Reveal) where the claim didn't hold.
+- **Reveal screen**: same raw-Tailwind problem, rebuilt. While verifying live, found a real correctness bug in the shared engine: `recommendCategory` (`lib/engine/reveal.ts`) asks the model for "1-3" alternative categories but never enforced it — a live run returned all 7 non-matching taxonomy categories. Now truncated to 3 (keeping the consultant's own wrong guess first if present) at the source, so both Reveal and the practice-session's inline reveal (which shares this same engine) are fixed together.
+- **practice-session.tsx** (the daily-practice guess+reveal screen) was already correctly using real classes throughout — no changes needed there, and it automatically inherited the alternatives-truncation fix.
+
 ### 8. What's still open
 
 - Merge/consolidate: nothing pending — worktree-content-pipeline was already merged before this session started.
