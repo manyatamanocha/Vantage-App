@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, Lock, Mic, Pencil, Sparkles } from "lucide-react";
+import { ArrowDown, Lock, Mic, Sparkles } from "lucide-react";
 import { createDraftSolve, refineAsk } from "./actions";
 
 interface SpeechRecognitionResultLike {
@@ -53,11 +53,9 @@ export function ProblemIntakeForm() {
   const fatalErrorRef = useRef(false);
 
   // Step 2: the LLM's refined restatement of rawInput, shown for the user to
-  // confirm (and edit, since dictation/typing isn't always clean) before
-  // actually committing anything to the database.
+  // confirm before actually committing anything to the database.
   const [refinedGoal, setRefinedGoal] = useState<string | null>(null);
   const [problemType, setProblemType] = useState("");
-  const [editedGoal, setEditedGoal] = useState("");
   const [isRefining, startRefining] = useTransition();
   const [isConfirming, startConfirming] = useTransition();
 
@@ -208,7 +206,6 @@ export function ProblemIntakeForm() {
         const result = await refineAsk(rawInput);
         setRefinedGoal(result.goal);
         setProblemType(result.problemType);
-        setEditedGoal(result.goal);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
       }
@@ -222,7 +219,7 @@ export function ProblemIntakeForm() {
         const { solveId } = await createDraftSolve({
           rawInput,
           source: "live",
-          goal: editedGoal.trim(),
+          goal: (refinedGoal ?? "").trim(),
           problemType,
         });
         router.push(`/solve/${solveId}/solution`);
@@ -323,17 +320,6 @@ export function ProblemIntakeForm() {
             >
               &ldquo;{refinedGoal}&rdquo;
             </p>
-
-            <div className="input-row" style={{ marginTop: 14 }}>
-              <textarea
-                aria-label="Edit refined challenge"
-                rows={3}
-                value={editedGoal}
-                onChange={(e) => setEditedGoal(e.target.value)}
-                className="input min-h-20 flex-1"
-              />
-              <Pencil size={15} style={{ color: "var(--muted-foreground)", flexShrink: 0, marginTop: 14 }} aria-hidden="true" />
-            </div>
           </section>
         </>
       ) : null}
@@ -350,7 +336,7 @@ export function ProblemIntakeForm() {
             type="button"
             className="btn btn-primary"
             onClick={handleConfirm}
-            disabled={isConfirming || !editedGoal.trim()}
+            disabled={isConfirming || !refinedGoal?.trim()}
           >
             {isConfirming ? "Loading…" : "Let's solve →"}
           </button>
