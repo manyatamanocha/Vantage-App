@@ -371,6 +371,10 @@ h1.display, .display {
 .quiz-ring-btn:disabled { cursor: default; }
 .quiz-ring-svg { position: absolute; inset: 0; transform: rotate(-90deg); }
 .quiz-ring-track { fill: none; stroke: color-mix(in oklch, var(--primary) 22%, var(--border)); stroke-width: 10; }
+.quiz-clock-face { fill: #13294B; }
+.quiz-clock-tick { stroke: rgba(255, 255, 255, 0.55); stroke-width: 1.5; stroke-linecap: round; }
+.quiz-clock-hand { stroke: #fff; stroke-width: 2.5; stroke-linecap: round; transition: transform 0.1s linear; }
+.quiz-clock-pivot { fill: #fff; }
 .quiz-ring-progress { fill: none; stroke: var(--primary); stroke-width: 10; stroke-linecap: round; }
 .quiz-ring-center { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .quiz-ring-num { font-family: "Manrope", var(--font-sans), sans-serif; font-size: 26px; font-weight: 750; letter-spacing: -0.02em; color: var(--foreground); font-variant-numeric: tabular-nums; }

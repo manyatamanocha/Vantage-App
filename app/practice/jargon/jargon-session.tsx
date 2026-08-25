@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Brain, Check, Clock3, FileText, Leaf, Star, X, Zap } from "lucide-react";
+import { Brain, Check, FileText, Leaf, Star, X, Zap } from "lucide-react";
 import type { JargonQuestion } from "./actions";
 import { getJargonQuestions, rateJargonAttempt, recordJargonAttempt } from "./actions";
 import { EndingCard } from "@/components/ending-card";
@@ -257,9 +257,38 @@ export function JargonSession() {
                   r="54"
                   style={{ strokeDasharray: RING, strokeDashoffset: RING * (1 - progress) }}
                 />
+                <circle className="quiz-clock-face" cx="60" cy="60" r="47" />
+                {/* Clock-face ticks — hour marks at every 30°, quarter marks slightly longer */}
+                {Array.from({ length: 12 }, (_, i) => {
+                  const angle = i * 30;
+                  const isQuarter = i % 3 === 0;
+                  const outer = 54;
+                  const inner = isQuarter ? 47 : 50;
+                  return (
+                    <line
+                      key={i}
+                      className="quiz-clock-tick"
+                      x1={60}
+                      y1={60 - outer}
+                      x2={60}
+                      y2={60 - inner}
+                      transform={`rotate(${angle} 60 60)`}
+                    />
+                  );
+                })}
+                {/* Sweeping second hand — one full rotation per 60s of thinking time */}
+                <line
+                  className="quiz-clock-hand"
+                  x1={60}
+                  y1={60}
+                  x2={60}
+                  y2={26}
+                  style={{ transform: `rotate(${(seconds % 60) * 6}deg)`, transformOrigin: "60px 60px" }}
+                />
+                <circle className="quiz-clock-pivot" cx={60} cy={60} r={3} />
               </svg>
               <span className="quiz-ring-center">
-                {startedAt === null ? <Clock3 size={18} /> : <span className="quiz-ring-num">{seconds.toFixed(1)}s</span>}
+                {startedAt === null ? null : <span className="quiz-ring-num">{seconds.toFixed(1)}s</span>}
                 <span className="quiz-ring-label">{startedAt === null ? "Start" : "Thinking time"}</span>
               </span>
             </button>
