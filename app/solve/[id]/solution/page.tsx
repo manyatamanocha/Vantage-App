@@ -180,7 +180,7 @@ export default async function SolutionPage({
         </div>
       </section>
 
-      <SolutionFeedback overview={solution.overview} />
+      <SolutionFeedback />
 
       <div className="actions" style={{ justifyContent: "center" }}>
         <Link href="/solve/new" className="hint">

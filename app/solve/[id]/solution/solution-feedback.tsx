@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Heart, PartyPopper } from "lucide-react";
 
 /**
  * Replaces the old single "Try it yourself" CTA — a lighter-weight close
@@ -8,7 +9,7 @@ import { useState } from "react";
  * (components/ending-card.tsx), but scoped to this screen's own two options
  * rather than reusing that component's fixed label set.
  */
-export function SolutionFeedback({ overview }: { overview: string }) {
+export function SolutionFeedback() {
   const [selected, setSelected] = useState<"helpful" | "explain" | null>(null);
 
   return (
@@ -39,16 +40,26 @@ export function SolutionFeedback({ overview }: { overview: string }) {
               : undefined
           }
         >
-          Explain more
+          Not really
         </button>
       </div>
 
       {selected === "helpful" ? (
-        <p className="ending-panel card-text">Glad that helped.</p>
+        <div className="feedback-pop" style={{ color: "var(--success)" }}>
+          <span className="feedback-pop-icon" style={{ background: "color-mix(in oklch, var(--success) 20%, transparent)" }}>
+            <PartyPopper size={20} aria-hidden="true" />
+          </span>
+          <span>Glad that helped!</span>
+        </div>
       ) : null}
 
       {selected === "explain" ? (
-        <p className="ending-panel card-text">{overview}</p>
+        <div className="feedback-pop" style={{ color: "#EC4899" }}>
+          <span className="feedback-pop-icon" style={{ background: "color-mix(in oklch, #EC4899 20%, transparent)" }}>
+            <Heart size={20} aria-hidden="true" />
+          </span>
+          <span>Thanks for your feedback!</span>
+        </div>
       ) : null}
     </section>
   );
