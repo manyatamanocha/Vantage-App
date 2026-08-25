@@ -56,6 +56,11 @@ export default async function SolutionPage({
         </span>
       </div>
 
+      {/* Zero-height, full-width anchor the pro-tip popover portals into, so
+          it opens flush under "Step 2 of 2" regardless of where the bulb
+          itself sits in the heading below. */}
+      <div id="pro-tip-anchor" style={{ position: "relative", height: 0 }} />
+
       <header style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
         <h1 className="display" style={{ fontSize: "clamp(20px, 2.6vw, 25px)" }}>Here&apos;s your solution</h1>
         <ProTipBadge tips={solution.proTips} />
