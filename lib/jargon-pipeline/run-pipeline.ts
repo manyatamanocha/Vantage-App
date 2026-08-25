@@ -8,8 +8,8 @@ export async function runJargonPipeline() {
   const generated = await generateJargonQuestions();
   const { data: existing, error: fetchError } = await supabase.from("daily_quiz_questions").select("term, question_text").eq("flagged", false);
   if (fetchError) throw new Error(fetchError.message);
-  const existingKeys = (existing ?? []).map((row) => `${row.term} ${row.question_text}`);
-  const deduped = dedupeQuestions(generated, existingKeys);
+  const existingPairs = (existing ?? []).map((row) => ({ term: row.term as string, questionText: row.question_text as string }));
+  const deduped = dedupeQuestions(generated, existingPairs);
   const rejectedDuplicate = generated.length - deduped.length;
   const valid = deduped.filter((candidate) => {
     const result = validateQuestion(candidate);

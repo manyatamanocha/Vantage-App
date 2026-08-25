@@ -21,6 +21,7 @@ export async function getJargonQuestions(difficulty: JargonQuestion["difficulty"
     .select("id, pool_date, difficulty, term, question_text, options, correct_answer, explanation")
     .eq("difficulty", difficulty)
     .eq("flagged", false)
+    .eq("review_status", "approved")
     .order("pool_date", { ascending: false })
     .order("created_at", { ascending: true });
   if (error) throw new Error(error.message);

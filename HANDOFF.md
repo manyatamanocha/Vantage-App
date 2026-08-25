@@ -1,6 +1,28 @@
 # Vantage handoff
 
-## ⚠️⚠️⚠️ NEWEST HANDOFF — 2026-08-25 — READ THIS FIRST, IT SUPERSEDES EVERYTHING BELOW
+## ⚠️⚠️⚠️⚠️ NEWEST HANDOFF — 2026-08-25 (later session) — READ THIS FIRST
+
+Local-testing session. Found and fixed a chain of real bugs by actually running the app and querying the live DB directly (via REST + the service-role key in `.env.local`), not just reading code.
+
+### 1. Login was fully broken — stale oversized session cookie
+Root cause already fixed in code before this session (avatar moved from `user_metadata` into `user_settings.avatar_url` — see `profile-actions.ts`'s own comment), but two of its own migrations were **never actually applied to the live Supabase DB**: `0007_default_question_type.sql` and `0008_avatar_url.sql`. Applied both manually via the Supabase SQL editor (confirmed via REST). Login was failing with `ERR_RESPONSE_HEADERS_TOO_BIG` / "Failed to fetch" because the browser's `sb-*` cookie was still the old oversized one from before the code fix — clearing it in DevTools resolved it. **Lesson: a migration file existing in `supabase/migrations/` does not mean it ran. Verify against the live DB directly** (`curl` the PostgREST endpoint with the service-role key and check the error) rather than trusting the repo state.
+
+### 2. Git had no remote at all
+`git remote -v` was empty — nothing had ever been pushed, all history was local-only. Created `https://github.com/manyatamanocha/Vantage-App.git` and pushed `master`. Also excluded `.claude/worktrees/` from git (it's a full duplicate checkout via `git worktree`, not source — would have committed thousands of duplicate files including its own `node_modules`).
+
+### 3. Jargon quiz content pipeline — real content-quality bug, now fixed
+`lib/jargon-pipeline/generate-questions.ts`'s prompt said "AI vocabulary" with no constraint, so the model generated ML-engineering-internals terms (Backpropagation, Gradient Descent, Cross-Validation, Regularization, Embeddings-as-training-mechanic, Bayesian Inference, GANs, Monte Carlo Dropout, Differential Privacy) — wrong for the actual persona (a non-technical, client-facing consultant, per PRODUCT.md). Rewrote the prompt to constrain terms to the taxonomy + applied-AI vocabulary a consultant would actually encounter, and explicitly forbid the ML-internals list. Also fixed `lib/jargon-pipeline/dedupe.ts`, which only checked term+questionText word-overlap similarity and let same-term-different-phrasing duplicates through (caught "Algorithm" inserted twice) — now also blocks on exact term match. The 12 old bad/duplicate rows already live in the DB were flagged `review_status: rejected` (see #4) rather than deleted.
+
+### 4. No review gate existed before content reached users — now added (migration NOT yet applied)
+Both `daily_quiz_questions` and `practice_cases` had a `flagged` boolean, but every serving query only filtered `flagged = false`, and new rows default to `flagged = false` — meaning "unreviewed" and "approved" were the same state. Anything the generation pipeline produced went live to real users with zero human check. Added `supabase/migrations/0009_review_status.sql` (adds a real `pending` / `approved` / `rejected` `review_status` column to both tables, backfills existing rows to `approved` except already-flagged ones → `rejected`) and updated the two serving queries (`app/practice/jargon/actions.ts`, `app/practice/today/actions.ts`) to require `review_status = 'approved'`. **This migration has NOT been run in Supabase yet — run it manually in the SQL editor before relying on the gate, same as 0007/0008.** Also rebuilt `/admin/quiz-review` (previously blocklist-only — flag-to-exclude after the fact) to show a Pending-review queue with real Approve/Reject actions, separate from the existing decided-content list.
+
+### 5. Deployment status
+App is **not deployed to Vercel yet**. The `vercel.json` Cron jobs (daily content generation) will not run until it is. Locally, generation only happens when the `/api/cron/*` routes are hit manually (no `CRON_SECRET` set locally, so unauthenticated works for local dev — **set `CRON_SECRET` in Vercel env vars before deploying**, not after).
+
+### 6. Next step (not started)
+User wants a manually-curated ~30-50 question "golden set" per content type before generation volume scales further, plus an observable (not vibes-based) difficulty rubric — discussed but not built this session.
+
+## ⚠️⚠️⚠ PREVIOUS HANDOFF — 2026-08-25 — READ THIS SECOND
 
 Full session: visual verification + real bug fixes across almost every screen, then a confirmed product pivot on the live Solve flow. Everything below was found by actually running the app in a real (Playwright-driven) browser, not just reading code — several real bugs had shipped invisibly in earlier sessions because nobody had rendered the pages.
 

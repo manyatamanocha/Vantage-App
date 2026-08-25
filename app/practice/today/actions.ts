@@ -86,6 +86,7 @@ async function fetchActiveCases(
     .from("practice_cases")
     .select("id, raw_input, industry, difficulty")
     .eq("active", true)
+    .eq("review_status", "approved")
     .order("id", { ascending: true });
 
   const { data, error } = await (difficulty === null
