@@ -50,10 +50,6 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </span>
 
         <div className="font-heading text-[32px] font-bold tracking-tight sm:text-[38px]">Vantage AI</div>
-        <p className="mx-auto mt-3 max-w-[440px] text-[15px] leading-[1.6] text-muted-foreground">
-          Turn a messy client ask into the right AI approach — and build the judgment to see it
-          yourself, before we ever show you the answer.
-        </p>
       </div>
 
       <div className="mx-auto mt-8 w-full max-w-[380px]">
