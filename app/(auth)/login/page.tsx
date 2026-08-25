@@ -61,27 +61,39 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       </div>
 
       <div className="mt-14">
-        <p style={{ textAlign: "center", fontSize: 12.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--muted-foreground)", marginBottom: 18 }}>
-          What&apos;s inside
-        </p>
+        <div style={{ textAlign: "center", fontFamily: "var(--font-heading)", fontSize: 22, fontWeight: 750, marginBottom: 22 }}>
+          What&apos;s inside <span style={{ display: "inline-block", transform: "rotate(-8deg)" }}>✨</span>
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {FEATURES.map((feature) => {
+          {FEATURES.map((feature, i) => {
             const Icon = feature.icon;
+            const tilt = i % 2 === 0 ? -3 : 3;
             return (
-              <div key={feature.title} className="card" style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+              <div
+                key={feature.title}
+                className="landing-feature-tile"
+                style={{
+                  textAlign: "center",
+                  padding: "26px 20px",
+                  borderRadius: "var(--radius-2xl)",
+                  background: `linear-gradient(150deg, color-mix(in oklch, ${feature.color} 12%, var(--card)), var(--card))`,
+                  border: `1px solid color-mix(in oklch, ${feature.color} 28%, var(--border))`,
+                  animationDelay: `${i * 90}ms`,
+                }}
+              >
                 <span
                   style={{
                     display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    width: 38, height: 38, borderRadius: "var(--radius-md)", flexShrink: 0,
-                    background: `color-mix(in oklch, ${feature.color} 16%, transparent)`, color: feature.color,
+                    width: 52, height: 52, borderRadius: "var(--radius-lg)", marginBottom: 14,
+                    background: feature.color, color: "#fff",
+                    transform: `rotate(${tilt}deg)`,
+                    boxShadow: `0 8px 20px -8px color-mix(in oklch, ${feature.color} 70%, transparent)`,
                   }}
                 >
-                  <Icon size={18} aria-hidden="true" />
+                  <Icon size={24} aria-hidden="true" />
                 </span>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 3 }}>{feature.title}</div>
-                  <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{feature.body}</p>
-                </div>
+                <div style={{ fontWeight: 750, fontSize: 15.5, marginBottom: 5 }}>{feature.title}</div>
+                <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{feature.body}</p>
               </div>
             );
           })}

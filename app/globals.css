@@ -411,3 +411,12 @@ h1.display, .display {
   display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px;
   border-radius: 999px; flex-shrink: 0;
 }
+
+.landing-feature-tile {
+  animation: feedback-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.landing-feature-tile:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 14px 28px -14px hsl(var(--shadow-color) / 0.25);
+}
