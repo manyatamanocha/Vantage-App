@@ -1,6 +1,7 @@
 "use server";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { isCategory } from "@/lib/engine/taxonomy";
+import { track } from "@/lib/analytics/track";
 
 export async function saveGuess(
   solveId: string,
@@ -42,4 +43,6 @@ export async function saveGuess(
       "This guess wasn't saved: the solve has already been revealed, or it isn't available to you."
     );
   }
+
+  track("guess_locked", user.id, { source: "live", guessedCategory });
 }

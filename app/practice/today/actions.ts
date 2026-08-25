@@ -3,6 +3,7 @@ import { getVerifiedUser, getSupabaseServerClient } from "@/lib/supabase/server"
 import { recommendCategory, type RevealResult } from "@/lib/engine/reveal";
 import { isCategory } from "@/lib/engine/taxonomy";
 import { dailySeed, pickDailyIndex, utcDayKey } from "@/lib/practice/daily-pick";
+import { track } from "@/lib/analytics/track";
 
 export type TodaysPracticeCase = {
   id: string;
@@ -165,5 +166,6 @@ export async function submitPracticeGuess(
     .single();
   if (insertErr) throw new Error(insertErr.message);
 
+  track("guess_locked", userId, { source: "practice", guessedCategory, correct: result.match });
   return { ...result, solveId: inserted.id as string };
 }

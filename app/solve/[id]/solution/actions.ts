@@ -1,6 +1,7 @@
 "use server";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { generateSolution, type SolutionResult } from "@/lib/engine/solution";
+import { track } from "@/lib/analytics/track";
 
 export async function runSolutionStep(solveId: string): Promise<SolutionResult> {
   const { supabase, user } = await getVerifiedUser();
@@ -22,5 +23,6 @@ export async function runSolutionStep(solveId: string): Promise<SolutionResult> 
     .eq("id", solveId);
   if (updateErr) throw new Error(updateErr.message);
 
+  track("solution_generated", user.id, { solveId });
   return solution;
 }
