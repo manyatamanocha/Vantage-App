@@ -23,7 +23,6 @@ const TIER_META: Record<(typeof TIERS)[number], {
   icon: typeof Leaf;
   description: string;
   whatYouGet: string;
-  time: string;
 }> = {
   easy: {
     label: "Easy",
@@ -31,7 +30,6 @@ const TIER_META: Record<(typeof TIERS)[number], {
     icon: Leaf,
     description: "Covers basic AI terms and ideas in simple situations.",
     whatYouGet: "Clear explanations of fundamental concepts.",
-    time: "~3 min",
   },
   medium: {
     label: "Medium",
@@ -39,15 +37,13 @@ const TIER_META: Record<(typeof TIERS)[number], {
     icon: Zap,
     description: "Includes real-world scenarios and practical applications.",
     whatYouGet: "Context-based questions to test your understanding.",
-    time: "~5 min",
   },
   hard: {
     label: "Hard",
     color: "#F59E0B",
     icon: Brain,
     description: "Focuses on advanced concepts and tricky real-world problems.",
-    whatYouGet: "Complex questions that challenge your AI thinking.",
-    time: "~7 min",
+    whatYouGet: "Complex questions that challenge your thinking.",
   },
 };
 
@@ -149,7 +145,6 @@ export function JargonSession() {
         </div>
         <header>
           <h1 className="display">Quiz of the day</h1>
-          <p className="lede">Pick a difficulty level and test your understanding of AI concepts.</p>
         </header>
 
         <section className="stack">
@@ -201,9 +196,6 @@ export function JargonSession() {
                       <div style={{ fontWeight: 650, fontSize: 13 }}>What you&apos;ll get:</div>
                       <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{meta.whatYouGet}</p>
                     </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "var(--muted-foreground)" }}>
-                    <Clock3 size={13} aria-hidden="true" /> {meta.time}
                   </div>
                 </button>
               );
