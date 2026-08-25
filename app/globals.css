@@ -277,11 +277,12 @@ h1.display, .display {
 .field label { font-size: 13px; font-weight: 600; color: var(--foreground); }
 .field .hint { font-weight: 400; color: var(--muted-foreground); }
 .input, textarea.input, select.input {
-  width: 100%; border: 1px solid var(--input); background: var(--background); color: var(--foreground);
+  width: 100%; border: 1px solid var(--input); background: var(--card); color: var(--foreground);
   border-radius: var(--radius-lg); padding: 14px 16px; font: inherit; font-size: 15px; resize: vertical;
+  box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.05);
 }
 .input::placeholder { color: var(--muted-foreground); }
-.input:focus-visible { border-color: var(--ring); }
+.input:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 20%, transparent); }
 .input-row { display: flex; align-items: flex-start; gap: 9px; }
 
 .btn {
