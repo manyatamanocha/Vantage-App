@@ -47,7 +47,7 @@ export function ProTipBadge({ tips }: { tips: string[] }) {
           aria-label="Pro tips"
           style={{
             position: "absolute",
-            top: "calc(100% + 8px)",
+            bottom: "calc(100% + 8px)",
             left: 0,
             zIndex: 10,
             width: 280,
