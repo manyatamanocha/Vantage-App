@@ -139,6 +139,7 @@ export default async function SolutionPage({
         </div>
       </section>
 
+      {solution.tools.length > 0 ? (
       <section className="stack">
         <span className="card-label">Tools you&apos;ll need</span>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -167,6 +168,7 @@ export default async function SolutionPage({
           ))}
         </div>
       </section>
+      ) : null}
 
       {solution.proTips.length > 0 ? (
         <section className="quote-card stack">
