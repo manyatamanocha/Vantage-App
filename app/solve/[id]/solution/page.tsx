@@ -91,10 +91,43 @@ export default async function SolutionPage({
         <p className="card-text">{solve.goal || solve.raw_input}</p>
       </section>
 
-      <section className="stack">
-        <span className="card-label">Overview</span>
-        <p className="card-text">{solution.overview}</p>
-      </section>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <section className="stack">
+          <span className="card-label">Overview</span>
+          <p className="card-text">{solution.overview}</p>
+        </section>
+
+        {solution.tools.length > 0 ? (
+          <section className="stack">
+            <span className="card-label">Tools you&apos;ll need</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {solution.tools.map((tool) => (
+                <div key={tool.name} className="card" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: "var(--radius-md)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--accent)",
+                      color: "var(--accent-foreground)",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Wrench size={16} aria-hidden="true" />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14.5 }}>{tool.name}</div>
+                    <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{tool.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
 
       <section className="stack">
         <span className="card-label">Step-by-step guide</span>
@@ -146,37 +179,6 @@ export default async function SolutionPage({
           ))}
         </div>
       </section>
-
-      {solution.tools.length > 0 ? (
-      <section className="stack">
-        <span className="card-label">Tools you&apos;ll need</span>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {solution.tools.map((tool) => (
-            <div key={tool.name} className="card" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <div
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "var(--radius-md)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "var(--accent)",
-                  color: "var(--accent-foreground)",
-                  flexShrink: 0,
-                }}
-              >
-                <Wrench size={16} aria-hidden="true" />
-              </div>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14.5 }}>{tool.name}</div>
-                <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{tool.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      ) : null}
 
       <SolutionFeedback overview={solution.overview} />
 

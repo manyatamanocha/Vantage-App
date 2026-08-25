@@ -12,14 +12,19 @@ export function SolutionFeedback({ overview }: { overview: string }) {
   const [selected, setSelected] = useState<"helpful" | "explain" | null>(null);
 
   return (
-    <section className="card ending-card">
-      <span className="card-label">Was this helpful?</span>
-      <div className="chip-row">
+    <section className="card ending-card" style={{ textAlign: "center" }}>
+      <span className="card-label" style={{ textAlign: "center" }}>Was this helpful?</span>
+      <div className="chip-row" style={{ justifyContent: "center" }}>
         <button
           type="button"
           onClick={() => setSelected("helpful")}
           aria-pressed={selected === "helpful"}
           className="chip-btn"
+          style={
+            selected !== "helpful"
+              ? { background: "color-mix(in oklch, var(--primary) 10%, var(--card))", borderColor: "color-mix(in oklch, var(--primary) 35%, var(--border))", color: "var(--primary)", fontWeight: 650 }
+              : undefined
+          }
         >
           It was helpful
         </button>
@@ -28,6 +33,11 @@ export function SolutionFeedback({ overview }: { overview: string }) {
           onClick={() => setSelected("explain")}
           aria-pressed={selected === "explain"}
           className="chip-btn"
+          style={
+            selected !== "explain"
+              ? { background: "color-mix(in oklch, var(--primary) 10%, var(--card))", borderColor: "color-mix(in oklch, var(--primary) 35%, var(--border))", color: "var(--primary)", fontWeight: 650 }
+              : undefined
+          }
         >
           Explain more
         </button>
