@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, PartyPopper } from "lucide-react";
+import { Heart, MessageCircleQuestion, PartyPopper } from "lucide-react";
 
 const HELPFUL_COLOR = "var(--success)";
 const NOT_HELPFUL_COLOR = "#EC4899";
@@ -27,15 +27,33 @@ export function SolutionFeedback() {
   }
 
   return (
-    <section className="card ending-card" style={{ textAlign: "center" }}>
-      <span className="card-label" style={{ textAlign: "center" }}>Was this helpful?</span>
+    <section
+      className="card ending-card"
+      style={{
+        textAlign: "center",
+        background: `linear-gradient(135deg, color-mix(in oklch, var(--primary) 9%, var(--card)), color-mix(in oklch, ${NOT_HELPFUL_COLOR} 9%, var(--card)))`,
+        borderColor: "color-mix(in oklch, var(--primary) 25%, var(--border))",
+      }}
+    >
+      <span
+        style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 40, height: 40, borderRadius: 999, marginBottom: 10,
+          background: "color-mix(in oklch, var(--primary) 16%, transparent)", color: "var(--primary)",
+        }}
+      >
+        <MessageCircleQuestion size={20} aria-hidden="true" />
+      </span>
+      <div style={{ fontFamily: "var(--font-heading)", fontSize: 18, fontWeight: 750, marginBottom: 14 }}>
+        Was this helpful?
+      </div>
       <div className="chip-row" style={{ justifyContent: "center" }}>
         <button
           type="button"
           onClick={() => setSelected("helpful")}
           aria-pressed={selected === "helpful"}
           className="chip-btn"
-          style={chipStyle(HELPFUL_COLOR, selected === "helpful")}
+          style={{ ...chipStyle(HELPFUL_COLOR, selected === "helpful"), padding: "10px 20px", fontSize: 14.5 }}
         >
           It was helpful
         </button>
@@ -44,7 +62,7 @@ export function SolutionFeedback() {
           onClick={() => setSelected("explain")}
           aria-pressed={selected === "explain"}
           className="chip-btn"
-          style={chipStyle(NOT_HELPFUL_COLOR, selected === "explain")}
+          style={{ ...chipStyle(NOT_HELPFUL_COLOR, selected === "explain"), padding: "10px 20px", fontSize: 14.5 }}
         >
           Not really
         </button>
