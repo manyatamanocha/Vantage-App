@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CheckCircle2, Lightbulb, Sparkles, Wrench } from "lucide-react";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { runSolutionStep } from "./actions";
+import { SolutionFeedback } from "./solution-feedback";
 import type { SolutionResult } from "@/lib/engine/solution";
 
 function isSolutionResult(value: unknown): value is SolutionResult {
@@ -184,11 +185,10 @@ export default async function SolutionPage({
         </section>
       ) : null}
 
-      <div className="actions" style={{ justifyContent: "center", flexDirection: "column", alignItems: "center" }}>
-        <Link href="/practice/history" className="btn btn-primary">
-          Try it yourself →
-        </Link>
-        <Link href="/solve/new" className="hint" style={{ marginTop: 8 }}>
+      <SolutionFeedback overview={solution.overview} />
+
+      <div className="actions" style={{ justifyContent: "center" }}>
+        <Link href="/solve/new" className="hint">
           Go back and edit
         </Link>
       </div>
