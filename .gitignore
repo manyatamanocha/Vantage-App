@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# claude worktrees (full duplicate checkouts, not source)
+/.claude/worktrees/
+
 # supabase
 /supabase/.temp
 
