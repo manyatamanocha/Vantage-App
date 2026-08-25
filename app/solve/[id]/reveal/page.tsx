@@ -69,79 +69,58 @@ export default async function RevealPage({
     reveal?.whyNotAlternatives ?? toAlternatives(solve.why_not_alternatives);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-5 py-8 sm:px-8 sm:py-12">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          {match ? "You had it." : "Not quite."}
-        </h1>
-        <p className="mt-2 text-muted-foreground">Let&apos;s discuss the takeaway.</p>
+        <h1 className="display">{match ? "You had it." : "Not quite."}</h1>
+        <p className="lede">Let&apos;s discuss the takeaway.</p>
       </header>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Your guess
-          </span>
-          <p className="mt-1 text-lg font-semibold">{guessedCategory}</p>
+      <div className="compare-grid">
+        <div className="card">
+          <span className="card-label">Your guess</span>
+          <h3>{guessedCategory}</h3>
         </div>
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Correct answer
-          </span>
-          <p className="mt-1 text-lg font-semibold">{revealedCategory}</p>
+        <div className="card">
+          <span className="card-label">Correct answer</span>
+          <h3>{revealedCategory}</h3>
         </div>
       </div>
 
-      <span
-        className={
-          "inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold " +
-          (match
-            ? "bg-primary/10 text-primary"
-            : "bg-destructive/10 text-destructive")
-        }
-      >
-        {match ? "Matched" : "Missed"}
-      </span>
+      <div className="tag-row">
+        <span className={`tag ${match ? "good" : "weak"}`}>{match ? "Matched" : "Missed"}</span>
+      </div>
 
       {whyItFits && whyNotAlternatives.length > 0 ? (
         <>
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Why it fits
-            </span>
-            <p className="mt-2 text-base leading-6">{whyItFits}</p>
+          <section className="card stack">
+            <span className="card-label">Why it fits</span>
+            <p className="card-text">{whyItFits}</p>
           </section>
 
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Why not the others
-            </span>
-            <dl className="mt-3 flex flex-col gap-3">
+          <section className="card stack">
+            <span className="card-label">Why not the others</span>
+            <div className="stack">
               {whyNotAlternatives.map((alternative) => (
                 <div key={alternative.category}>
-                  <dt className="text-sm font-semibold">{alternative.category}</dt>
-                  <dd className="mt-0.5 text-sm text-muted-foreground">{alternative.reason}</dd>
+                  <div style={{ fontWeight: 650, fontSize: 14 }}>{alternative.category}</div>
+                  <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{alternative.reason}</p>
                 </div>
               ))}
-            </dl>
+            </div>
           </section>
         </>
       ) : (
         // Solves revealed before the reasoning columns existed have only the
         // verdict stored. Nothing is invented to fill the gap, and the model is
         // not re-run to regenerate it.
-        <p className="text-muted-foreground">
-          You worked through this one already — here&apos;s what you landed on.
-        </p>
+        <p className="card-text">You worked through this one already — here&apos;s what you landed on.</p>
       )}
 
       {toolClass ? (
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <span className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Recommended tool class
-          </span>
-          <p className="mt-2 text-base font-semibold">{toolClass}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{TOOL_CLASS_GLOSS[toolClass]}</p>
+        <section className="card stack">
+          <span className="card-label">Recommended tool class</span>
+          <p className="card-text" style={{ fontWeight: 650 }}>{toolClass}</p>
+          <p className="card-text" style={{ color: "var(--muted-foreground)" }}>{TOOL_CLASS_GLOSS[toolClass]}</p>
         </section>
       ) : null}
 
@@ -153,12 +132,11 @@ export default async function RevealPage({
         />
       ) : null}
 
-      <Link
-        href={`/solve/${id}/summary`}
-        className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
-      >
-        Continue to summary →
-      </Link>
+      <div className="actions">
+        <Link href={`/solve/${id}/summary`} className="btn btn-primary">
+          Continue to summary →
+        </Link>
+      </div>
     </main>
   );
 }

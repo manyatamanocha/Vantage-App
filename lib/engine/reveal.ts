@@ -111,7 +111,7 @@ export async function recommendCategory(input: {
   // Anything that isn't a taxonomy category is a named product or an invention,
   // both of which the plan forbids surfacing; an "alternative" that restates the
   // revealed category teaches nothing.
-  const whyNotAlternatives = parsed.whyNotAlternatives
+  const filteredAlternatives = parsed.whyNotAlternatives
     .filter(
       (alternative) =>
         isCategory(alternative.category) &&
@@ -121,6 +121,18 @@ export async function recommendCategory(input: {
       category: alternative.category as Category,
       reason: alternative.reason,
     }));
+
+  // The prompt asks for 1-3 alternatives, with the consultant's own (wrong)
+  // guess first, but nothing enforces that on the model's side — it has
+  // returned every other taxonomy category in practice. Truncating here,
+  // not just hoping the prompt is followed, keeps the guess-before-reveal
+  // comparison focused rather than an exhaustive list of everything it isn't.
+  const guessIndex = filteredAlternatives.findIndex((a) => a.category === input.guessedCategory);
+  const ordered =
+    guessIndex > 0
+      ? [filteredAlternatives[guessIndex], ...filteredAlternatives.filter((_, i) => i !== guessIndex)]
+      : filteredAlternatives;
+  const whyNotAlternatives = ordered.slice(0, 3);
 
   if (whyNotAlternatives.length === 0) {
     throw new Error(
