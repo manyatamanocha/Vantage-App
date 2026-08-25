@@ -376,3 +376,15 @@ h1.display, .display {
 .quiz-ring-num { font-family: "Manrope", var(--font-sans), sans-serif; font-size: 26px; font-weight: 750; letter-spacing: -0.02em; color: var(--foreground); font-variant-numeric: tabular-nums; }
 .quiz-ring-label { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; color: var(--muted-foreground); text-transform: uppercase; }
 .quiz-timer-chip { font-size: 12px; font-weight: 650; padding: 6px 12px; border-radius: 999px; background: var(--accent); color: var(--accent-foreground); display: inline-flex; align-items: center; gap: 5px; }
+
+@keyframes pro-tip-shine {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, #F59E0B 45%, transparent), 0 0 8px 1px color-mix(in oklch, #F59E0B 35%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in oklch, #F59E0B 0%, transparent), 0 0 14px 4px color-mix(in oklch, #F59E0B 55%, transparent); }
+}
+.pro-tip-bulb {
+  display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px;
+  border-radius: 999px; border: 0; cursor: pointer;
+  background: color-mix(in oklch, #F59E0B 20%, transparent); color: #F59E0B;
+  animation: pro-tip-shine 2.2s ease-in-out infinite;
+}
+.pro-tip-bulb:hover { background: color-mix(in oklch, #F59E0B 30%, transparent); }

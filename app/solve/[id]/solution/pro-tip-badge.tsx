@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lightbulb } from "lucide-react";
 
 /**
@@ -11,30 +11,33 @@ import { Lightbulb } from "lucide-react";
  */
 export function ProTipBadge({ tips }: { tips: string[] }) {
   const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLSpanElement>(null);
+
+  // Click anywhere outside the badge/popover closes it — without this the
+  // only way to close was clicking the bulb again, which reads as a trap
+  // once the popover is covering other content the user wants to click.
+  useEffect(() => {
+    if (!open) return;
+    function handlePointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
   if (tips.length === 0) return null;
 
   return (
-    <span style={{ position: "relative", display: "inline-flex" }}>
+    <span ref={containerRef} style={{ position: "relative", display: "inline-flex" }}>
       <button
         type="button"
         title="Pro tip"
         aria-label="Show pro tips"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 30,
-          height: 30,
-          borderRadius: 999,
-          border: 0,
-          cursor: "pointer",
-          background: "color-mix(in oklch, #F59E0B 18%, transparent)",
-          color: "#F59E0B",
-        }}
+        className="pro-tip-bulb"
       >
-        <Lightbulb size={15} aria-hidden="true" />
+        <Lightbulb size={19} aria-hidden="true" />
       </button>
 
       {open ? (

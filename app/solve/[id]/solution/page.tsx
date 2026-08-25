@@ -56,8 +56,8 @@ export default async function SolutionPage({
         </span>
       </div>
 
-      <header style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <h1 className="display">Here&apos;s your solution</h1>
+      <header style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 22 }}>
+        <h1 className="display" style={{ fontSize: "clamp(20px, 2.6vw, 25px)" }}>Here&apos;s your solution</h1>
         <ProTipBadge tips={solution.proTips} />
       </header>
 
