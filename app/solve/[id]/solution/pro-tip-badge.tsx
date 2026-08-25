@@ -50,8 +50,10 @@ export function ProTipBadge({ tips }: { tips: string[] }) {
             bottom: "calc(100% + 8px)",
             left: 0,
             zIndex: 10,
-            width: 280,
-            padding: 16,
+            width: 220,
+            maxHeight: "min(220px, 60vh)",
+            overflowY: "auto",
+            padding: 12,
           }}
         >
           <span className="card-label" style={{ margin: 0 }}>Pro tips</span>
