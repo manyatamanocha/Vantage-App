@@ -1,6 +1,66 @@
 # Vantage handoff
 
-## ⚠️⚠️⚠️⚠️ NEWEST HANDOFF — 2026-08-25 (later session) — READ THIS FIRST
+## ⚠️⚠️⚠️⚠️⚠️ NEWEST HANDOFF — 2026-08-26 — READ THIS FIRST
+
+This session picked up cold from the 2026-08-25 handoff below and found `master` had already moved ~20 commits past it with **zero narrative anywhere** — landing page rewrites, an OTP login detour, quiz redesigns, nav renames. None of that prior work is re-summarized here; `git log 2e3b26d..97e34ca --oneline` is the record if you need it. This section covers only what changed in *this* session, commit `97e34ca`.
+
+### 1. Login flow: OTP code → email+password (confirmed product decision)
+
+The account had drifted through three login mechanisms across recent sessions: password → OTP-verified email → (this session) back to password. The user explicitly chose email+password over "email only, no verification" after I flagged that the latter was the exact flow removed earlier for letting a well-formed typo (`gmail.co`) log into someone else's real account. `app/(auth)/login/page.tsx` now uses the existing `AuthForm`/`loginAction` (same component `signup/page.tsx` already used), with a Log in/Sign up segmented toggle for symmetry. `app/(auth)/email-login-form.tsx` (the OTP UI) and `requestOtp`/`verifyOtpCode` (`app/(auth)/actions.ts`) are deleted — nothing else referenced them.
+
+**Known gap, not fixed**: any account created during the OTP-era window has **no password set at all** (`signInWithOtp` never sets one). Password login correctly rejects them with "Invalid login credentials" — this is not a bug, there is genuinely nothing to check against. Confirmed via the Supabase admin API (`auth/v1/admin/users`) that `manyata126@gmail.com` had `has_password: false`; set a password for that one account manually through the same admin API as a stopgap. **No self-serve fix exists yet** — anyone else who signed up during that window is locked out until either someone manually sets their password the same way, or a real forgot-password email flow gets built (discussed, not started).
+
+### 2. Landing page: "What's inside" tile grid now shared, and lives on `/signup` too
+
+Extracted the feature-tile grid (Solve real problems / Daily streaks / Daily quizzes / Level up) from `login/page.tsx` into `app/(auth)/whats-inside.tsx` and added it to `signup/page.tsx`, which previously had no product info at all — just the bare form. Both pages now render identically below their respective forms; the tile content itself is unchanged.
+
+### 3. zod adopted as the validation convention going forward (standing decision)
+
+User confirmed this via a `/grill-me` session: **standardize on zod for server-action input validation across the app**, keep it server-side only for now (no schemas shared with client components — not worth it unless a form needs real-time client feedback later), and audit existing hand-rolled validation now rather than convert opportunistically. Converted, all confirmed to be real gaps (either no validation existed, or a hand-rolled regex/length check did the same job worse):
+
+- `app/(auth)/actions.ts` — email format, password length, OTP-era code removed
+- `app/solve/new/actions.ts` — `rawInput`/`source`, previously **not validated at all**
+- `app/settings/actions.ts` — `practiceDifficulty`/`practiceFrequency`/`defaultQuestionType`, previously **not validated at all server-side** (no DB `CHECK` constraint either, except question type) — a crafted request could have written any string into a user's row
+- `app/settings/profile-actions.ts` — name/role length caps, and the avatar's documented-but-only-client-side-enforced 500KB size cap + image-data-URL format
+- `app/practice/jargon/actions.ts` — rating range (was a hand-rolled `if`, now identical logic via zod)
+
+Deliberately **not** converted: `isCategory()` (`lib/engine/taxonomy.ts`) — it's already a proper single-source-of-truth type guard (used as a TS type predicate elsewhere, not just validation), converting it would be a wash.
+
+### 4. Progress page: added Quiz accuracy, redesigned both stat cards
+
+`getProgressStats`/"First-guess accuracy" only ever counted the `solves` table (live Solve flow + daily practice guess-then-reveal) — **it never included jargon quiz attempts at all**, a separate table (`jargon_attempts`) nothing on the Progress page read from. User confirmed (structured question, not assumed): keep them as **two separate stats**, don't pool into one number — they measure different skills (category judgment vs. vocab recall). Added `getQuizStats` (`app/progress/actions.ts`) and a new card.
+
+While at it, fixed a real spacing bug (the two `<section className="card">` stat blocks were literal siblings with no gap — they visually touched) and redesigned both as colored ring tiles (`components/stat-tile.tsx`) reusing the app's own established visual language rather than inventing new treatment: the quiz-timer ring math (`app/practice/jargon/jargon-session.tsx`'s `RING` circumference constant, same r=54/120 viewBox) at a smaller size, and the exact accent colors + icons already tied to these two features on the landing tiles (blue/Target for Solve, pink `#EC4899`/MessageCircleQuestion for quizzes). Layout gap fixed for free by reusing the app's existing `.compare-grid` two-up class instead of two bare `.card` siblings.
+
+Home screen: the two `panel-link` cards (`components/home-dashboard.tsx`) were changed from side-by-side (`.grid-2`) to stacked (`.stack`) per direct request — scoped to Home only; `app/practice/page.tsx` still uses `.grid-2` for its own two cards, untouched.
+
+### 5. Two pre-existing test failures found and fixed (root-caused, not papered over)
+
+Both were **stale test fixtures that never caught up with real product changes**, not production bugs:
+
+- `app/practice/today/__tests__/actions.test.ts` — 6 of its 13 tests failed on a clean `master` (confirmed via `git stash` before touching anything). Root cause: `fetchActiveCases` filters `.eq("review_status", "approved")` (added when the 0009 review-gate migration shipped, back on 2026-08-25), but the test's `practiceCase()` fixture helper never set that field — every seeded row had `review_status: undefined`, so the mock's `eq()` filtered every row out and the pool came back empty every time. Fix: added `review_status: "approved"` to the fixture default.
+- `app/settings/__tests__/actions.test.ts` — one test used `practiceFrequency: "monthly"`, a value the UI dropped for `"off"` back on 2026-08-25 (`settings-form.tsx`'s `FREQUENCIES` is `["daily", "weekly", "off"]`). This only surfaced once §3's zod enum started actually rejecting values outside the real set. Fix: updated the test to use `"off"`.
+
+All 391 tests pass now (`npx.cmd vitest run`), `tsc --noEmit` clean.
+
+### 6. Multiple other Claude sessions active concurrently — coordinate before touching these
+
+At least 3 peer sessions (`manyata-manocha-49`, `-6f`, `-07`) were live on this machine/repo during this session, building **a whole analytics + general/scenario-quiz feature set** in real time — files kept appearing mid-turn. Messaged all 3 asking what they're mid-editing; **no reply received by end of session**. As of commit `97e34ca`, these are uncommitted in the working tree and were deliberately left untouched (verified via `git diff --cached --stat` before committing, not just filename):
+
+- `lib/analytics/`, `app/admin/analytics/`, `supabase/migrations/0010_analytics_events.sql`
+- `app/practice/general/`, `app/practice/scenario-quiz/`, `supabase/migrations/0011_general_and_scenario_quiz.sql`
+- Modified (not by this session): `app/practice/page.tsx`, `app/practice/today/actions.ts`, `app/progress/progress-trend.tsx`, `app/settings/page.tsx`, `app/solve/[id]/guess/actions.ts`, `app/solve/[id]/solution/actions.ts`
+
+**Do not assume these are stable or finished** — re-check `git status`/`git diff` fresh before building on any of them; they were still changing every few seconds during this session.
+
+### 7. Still open (not started this session)
+
+- Real forgot-password flow (see §1).
+- Push `97e34ca` to `origin/master` — committed locally only, not pushed.
+- No DESIGN.md exists for this project despite a fully built visual system — `/impeccable document` was recommended, not run.
+- Carried over from 2026-08-25, still true: a manually-curated ~30-50 item "golden set" per content type + an observable difficulty rubric, and the app still isn't deployed to Vercel (cron content-generation jobs won't run until it is; set `CRON_SECRET` in Vercel env vars before deploying, not after).
+
+## ⚠️⚠️⚠️⚠️ PREVIOUS HANDOFF — 2026-08-25 (later session) — READ THIS SECOND
 
 Local-testing session. Found and fixed a chain of real bugs by actually running the app and querying the live DB directly (via REST + the service-role key in `.env.local`), not just reading code.
 
