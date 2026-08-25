@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const state = vi.hoisted(() => ({
   user: null as { id: string } | null,
-  settingsRow: null as { practice_difficulty: string; practice_frequency: string } | null,
+  settingsRow: null as { practice_difficulty: string; practice_frequency: string; default_question_type?: string } | null,
 }));
 
 const upsertMock = vi.fn(
@@ -42,13 +42,18 @@ beforeEach(() => {
 
 describe("getSettings", () => {
   it("returns the user's actual saved values when a row exists", async () => {
-    state.settingsRow = { practice_difficulty: "hard", practice_frequency: "weekly" };
+    state.settingsRow = {
+      practice_difficulty: "hard",
+      practice_frequency: "weekly",
+      default_question_type: "quiz",
+    };
 
     const result = await getSettings("u1");
 
     expect(result).toEqual({
       practiceDifficulty: "hard",
       practiceFrequency: "weekly",
+      defaultQuestionType: "quiz",
     });
   });
 
@@ -58,6 +63,7 @@ describe("getSettings", () => {
     await expect(getSettings("u1")).resolves.toEqual({
       practiceDifficulty: "medium",
       practiceFrequency: "daily",
+      defaultQuestionType: "scenario",
     });
   });
 

@@ -3,7 +3,7 @@ import { Bot, BriefcaseBusiness } from "lucide-react";
 import { LiveClock } from "@/components/live-clock";
 import { Greeting } from "@/components/greeting";
 
-export function HomeDashboard() {
+export function HomeDashboard({ quizHref }: { quizHref: string }) {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <section className="topline">
@@ -21,7 +21,7 @@ export function HomeDashboard() {
           <h2>What are we solving today?</h2>
           <p className="panel-lede">What&apos;s in your mind. Lets Solve</p>
         </Link>
-        <Link href="/practice/jargon" className="panel-link outline group">
+        <Link href={quizHref} className="panel-link outline group">
           <Bot className="icon size-7" aria-hidden="true" />
           <h2>Quiz time</h2>
           <p className="panel-lede">Daily Quizes and Challenges your away</p>

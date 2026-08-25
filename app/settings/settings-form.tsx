@@ -6,19 +6,26 @@ import { updateSettings } from "./actions";
 interface SettingsFormProps {
   initialDifficulty?: string;
   initialFrequency?: string;
+  initialDefaultQuestionType?: string;
   userId: string;
 }
 
 const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 const FREQUENCIES = ["daily", "weekly", "off"] as const;
+const QUESTION_TYPES = [
+  { value: "scenario", label: "Scenario based question" },
+  { value: "quiz", label: "Quiz" },
+] as const;
 
 export function SettingsForm({
   initialDifficulty,
   initialFrequency,
+  initialDefaultQuestionType,
   userId,
 }: SettingsFormProps) {
   const [difficulty, setDifficulty] = useState(initialDifficulty || "medium");
   const [frequency, setFrequency] = useState(initialFrequency || "daily");
+  const [questionType, setQuestionType] = useState(initialDefaultQuestionType || "scenario");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -31,6 +38,7 @@ export function SettingsForm({
       await updateSettings(userId, {
         practiceDifficulty: difficulty,
         practiceFrequency: frequency,
+        defaultQuestionType: questionType,
       });
       setMessage("Settings saved successfully!");
     } catch (error) {
@@ -85,6 +93,25 @@ export function SettingsForm({
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="toggle-row">
+        <div>
+          <div className="label">Default question type</div>
+          <div className="desc">Choose your preferred practice mode</div>
+        </div>
+        <select
+          className="input"
+          aria-label="Default question type"
+          value={questionType}
+          disabled={isSubmitting}
+          onChange={(e) => setQuestionType(e.target.value)}
+          style={{ width: "auto" }}
+        >
+          {QUESTION_TYPES.map((type) => (
+            <option key={type.value} value={type.value}>{type.label}</option>
+          ))}
+        </select>
       </div>
 
       {message ? (

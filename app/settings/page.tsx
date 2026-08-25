@@ -23,6 +23,7 @@ export default async function SettingsPage() {
         userId={userId}
         initialDifficulty={settings.practiceDifficulty}
         initialFrequency={settings.practiceFrequency}
+        initialDefaultQuestionType={settings.defaultQuestionType}
       />
     </main>
   );
