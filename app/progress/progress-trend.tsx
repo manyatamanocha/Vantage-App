@@ -2,129 +2,47 @@
 
 import type { ProgressSolveRow } from "./actions";
 
-interface WeeklyData {
-  week: string;
-  accuracy: number;
-  totalSolves: number;
-}
-
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day;
-  return new Date(d.setDate(diff));
-}
-
-function formatWeekLabel(date: Date): string {
-  const start = getWeekStart(new Date(date));
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
-}
-
+/**
+ * Mirrors the mockup's trendChart() (UI Design Log.md) exactly: a running
+ * cumulative first-guess accuracy line over chronological completed solves,
+ * only shown once there's more than one attempt (a single point isn't a
+ * trend). Replaces an earlier from-scratch weekly-bar-chart implementation
+ * that was both unstyled (its .trend-* classes were never defined in
+ * globals.css) and had a real hydration bug — it called
+ * `date.toLocaleDateString()` with no explicit locale, which formats
+ * differently between the server's and the browser's locale.
+ */
 export function ProgressTrend({ solves }: { solves: ProgressSolveRow[] }) {
-  // Group solves by week and compute weekly accuracy
-  const weeklyMap = new Map<string, { correct: number; total: number }>();
+  const chronological = [...solves]
+    .filter((s) => s.correct !== null)
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  for (const solve of solves) {
-    const date = new Date(solve.createdAt);
-    const weekStart = getWeekStart(date);
-    const weekKey = weekStart.toISOString().split("T")[0];
-
-    const current = weeklyMap.get(weekKey) || { correct: 0, total: 0 };
-
-    // Only count complete solves (where correct is not null)
-    if (solve.correct !== null) {
-      current.total += 1;
-      if (solve.correct) {
-        current.correct += 1;
-      }
-    }
-
-    weeklyMap.set(weekKey, current);
+  if (chronological.length <= 1) {
+    return <p className="card-text">No data yet</p>;
   }
 
-  const weeklyData: WeeklyData[] = Array.from(weeklyMap.entries())
-    .map(([weekKey, data]) => ({
-      week: weekKey,
-      accuracy: data.total > 0 ? data.correct / data.total : 0,
-      totalSolves: data.total,
-    }))
-    .sort((a, b) => a.week.localeCompare(b.week));
+  let runningCorrect = 0;
+  const pcts = chronological.map((solve, i) => {
+    if (solve.correct) runningCorrect++;
+    return (runningCorrect / (i + 1)) * 100;
+  });
 
-  if (weeklyData.length === 0) {
-    return <p>No data yet</p>;
-  }
-
-  const maxAccuracy = Math.max(...weeklyData.map((w) => w.accuracy), 1);
-  const chartHeight = 200;
+  const n = pcts.length;
+  const stepX = 284 / (n - 1);
+  const points = pcts.map((p, i) => [i * stepX, 58 - (p / 100) * 50] as const);
+  const path = points.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+  const last = points[points.length - 1];
 
   return (
-    <div className="trend-container">
-      <svg
-        width="100%"
-        height={chartHeight}
-        className="trend-chart"
-        viewBox={`0 0 ${weeklyData.length * 60} ${chartHeight}`}
-        preserveAspectRatio="xMidYMid slice"
-      >
-        {weeklyData.map((data, i) => {
-          const barWidth = 40;
-          const barHeight = (data.accuracy / maxAccuracy) * (chartHeight - 40);
-          const x = i * 60 + 10;
-          const y = chartHeight - barHeight - 20;
-
-          return (
-            <g key={data.week}>
-              <rect
-                x={x}
-                y={y}
-                width={barWidth}
-                height={barHeight}
-                fill="#3b82f6"
-                opacity="0.7"
-              />
-              <text
-                x={x + barWidth / 2}
-                y={chartHeight - 5}
-                textAnchor="middle"
-                fontSize="12"
-                className="week-label"
-              >
-                {new Date(data.week).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </text>
-              <title>
-                {formatWeekLabel(new Date(data.week))}: {Math.round(data.accuracy * 100)}% (
-                {data.totalSolves} solves)
-              </title>
-            </g>
-          );
-        })}
+    <div className="card">
+      <svg width="100%" height="86" viewBox="0 0 284 60" preserveAspectRatio="none" style={{ overflow: "visible" }}>
+        <line x1="0" y1="15" x2="284" y2="15" stroke="var(--border)" strokeWidth="1" />
+        <line x1="0" y1="30" x2="284" y2="30" stroke="var(--border)" strokeWidth="1" />
+        <line x1="0" y1="45" x2="284" y2="45" stroke="var(--border)" strokeWidth="1" />
+        <path d={`${path} L${last[0].toFixed(1)},60 L0,60 Z`} fill="var(--accent2)" opacity="0.12" stroke="none" />
+        <path d={path} fill="none" stroke="var(--accent2)" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={last[0].toFixed(1)} cy={last[1].toFixed(1)} r="3.5" fill="var(--accent2)" />
       </svg>
-
-      <div className="trend-table">
-        <table>
-          <thead>
-            <tr>
-              <th>Week</th>
-              <th>Accuracy</th>
-              <th>Solves</th>
-            </tr>
-          </thead>
-          <tbody>
-            {weeklyData.map((data) => (
-              <tr key={data.week}>
-                <td>{formatWeekLabel(new Date(data.week))}</td>
-                <td>{Math.round(data.accuracy * 100)}%</td>
-                <td>{data.totalSolves}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }

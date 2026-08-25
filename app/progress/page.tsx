@@ -17,34 +17,36 @@ export default async function ProgressPage() {
       <div className="topline"><span className="datechip">Your learning signal</span></div>
       <header><h1 className="display">Your Progress</h1><p className="lede">See how your AI judgment is building over time.</p></header>
 
-      <section className="card stack">
+      <section className="card">
         <span className="card-label">First-guess accuracy</span>
-        <div>
-          <strong className="text-5xl font-heading">{overallPercentage}%</strong>
-          <p className="card-text mt-2">
-            {stats.completedCount === 0
-              ? "No completed solves yet"
-              : `Correct on first guess`}
-          </p>
-        </div>
+        <div className="metric-big">{overallPercentage}%</div>
+        <p className="card-text" style={{ marginTop: 6 }}>
+          {stats.completedCount === 0
+            ? "No completed solves yet"
+            : `Correct on first guess, across ${stats.completedCount} attempt${stats.completedCount === 1 ? "" : "s"}.`}
+        </p>
       </section>
 
       <section className="stack">
         <span className="card-label">By category</span>
         {Object.keys(stats.byCategory).length === 0 ? (
-          <p>No data yet</p>
+          <p className="card-text">No data yet</p>
         ) : (
-          <div className="card">
+          <div className="card bars">
             {Object.entries(stats.byCategory)
               .sort(([catA], [catB]) => catA.localeCompare(catB))
-              .map(([category, accuracy]) => (
-                <div key={category} className="bar-row">
-                  <span>{category}</span>
-                  <span>
-                    {Math.round(accuracy * 100)}%
-                  </span>
-                </div>
-              ))}
+              .map(([category, accuracy]) => {
+                const pct = Math.round(accuracy * 100);
+                return (
+                  <div key={category} className="bar-row">
+                    <span>{category}</span>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <strong>{pct}%</strong>
+                  </div>
+                );
+              })}
           </div>
         )}
       </section>
