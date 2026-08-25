@@ -39,9 +39,9 @@ export async function SiteNav() {
           </button>
         </form>
       </nav>
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-[22px] pb-[13px]">
+      <div className="mx-auto flex w-full max-w-3xl items-center px-[22px] pb-[13px]">
         <BackButton />
-        <ThemeToggle />
+        <div className="ml-auto"><ThemeToggle /></div>
       </div>
     </header>
   );
