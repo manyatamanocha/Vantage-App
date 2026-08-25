@@ -42,26 +42,40 @@ export function ProTipBadge({ tips }: { tips: string[] }) {
 
       {open ? (
         <div
-          className="quote-card stack"
+          className="quote-card"
           role="dialog"
           aria-label="Pro tips"
           style={{
             position: "absolute",
             bottom: "calc(100% + 8px)",
-            left: 0,
+            left: "50%",
+            transform: "translateX(-50%)",
             zIndex: 10,
-            width: 220,
-            maxHeight: "min(220px, 60vh)",
+            width: "min(420px, calc(100vw - 32px))",
+            maxHeight: "min(160px, 50vh)",
             overflowY: "auto",
-            padding: 12,
+            padding: 10,
           }}
         >
-          <span className="card-label" style={{ margin: 0 }}>Pro tips</span>
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
+          <span className="card-label" style={{ margin: "0 0 6px", display: "block" }}>Pro tips</span>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {tips.map((tip) => (
-              <li key={tip} className="card-text">{tip}</li>
+              <span
+                key={tip}
+                className="card-text"
+                style={{
+                  fontSize: 11.5,
+                  lineHeight: 1.35,
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "4px 8px",
+                  flex: "1 1 auto",
+                }}
+              >
+                {tip}
+              </span>
             ))}
-          </ul>
+          </div>
         </div>
       ) : null}
     </span>
