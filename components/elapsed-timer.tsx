@@ -65,6 +65,7 @@ export function ElapsedTimer({
         flexDirection: "column",
         alignItems: "center",
         gap: 4,
+        marginTop: 10,
         background: "transparent",
         border: 0,
         padding: 0,

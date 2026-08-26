@@ -22,6 +22,13 @@ export function GeneralQuizSession() {
   const [result, setResult] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  // The pool total and how many have been answered, tracked separately from
+  // `questions` — that array shrinks every "Try another" (see nextQuestion)
+  // to guarantee no repeats, so it can't also drive a "2 / 38" progress
+  // count without the denominator shrinking alongside it.
+  const [poolTotal, setPoolTotal] = useState(0);
+  const [answeredCount, setAnsweredCount] = useState(0);
+  const [answerSeconds, setAnswerSeconds] = useState<number | null>(null);
   const elapsedRef = useRef(0);
   const question = questions?.[index] ?? null;
 
@@ -32,6 +39,8 @@ export function GeneralQuizSession() {
         const loaded = await getGeneralQuizQuestions(difficulty);
         setQuestions(loaded);
         setIndex(0);
+        setPoolTotal(loaded.length);
+        setAnsweredCount(0);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Could not load today's quiz.");
       }
@@ -58,9 +67,11 @@ export function GeneralQuizSession() {
       const remaining = questions.filter((_, i) => i !== index);
       setQuestions(remaining);
       setIndex(index >= remaining.length ? 0 : index);
+      setAnsweredCount((count) => count + 1);
     }
     setSelected(null);
     setResult(null);
+    setAnswerSeconds(null);
   }
 
   if (!questions) {
@@ -138,11 +149,11 @@ export function GeneralQuizSession() {
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <div className="topline">
         <span className="datechip">Level: {question.difficulty[0].toUpperCase() + question.difficulty.slice(1)}</span>
-        <span className="badge progress">{index + 1} / {questions.length}</span>
+        <span className="badge progress">{answeredCount + 1} / {poolTotal}</span>
         {result === null ? (
           <ElapsedTimer
             key={question.id}
-            frozen={result !== null}
+            frozen={selected !== null}
             onElapsedChange={(seconds) => {
               elapsedRef.current = seconds;
             }}
@@ -165,7 +176,10 @@ export function GeneralQuizSession() {
                     type="button"
                     className="cat-btn"
                     aria-pressed={selected === option}
-                    onClick={() => setSelected(option)}
+                    onClick={() => {
+                      setSelected(option);
+                      setAnswerSeconds(elapsedRef.current);
+                    }}
                   >
                     {option}
                   </button>
@@ -188,7 +202,14 @@ export function GeneralQuizSession() {
       ) : (
         <>
           <header className="row-between">
-            <h1 className="display">{result ? "Correct" : "Not quite"}</h1>
+            <div>
+              <h1 className="display">{result ? "Correct" : "Not quite"}</h1>
+              {answerSeconds !== null ? (
+                <p className="lede" style={{ marginTop: 4 }}>
+                  Answered in {answerSeconds}s
+                </p>
+              ) : null}
+            </div>
             <div
               aria-label={result ? "Correct" : "Not quite"}
               style={{
