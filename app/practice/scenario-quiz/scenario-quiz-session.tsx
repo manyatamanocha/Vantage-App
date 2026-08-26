@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Brain, Check, Leaf, X, Zap } from "lucide-react";
 import { ElapsedTimer } from "@/components/elapsed-timer";
 import type { ScenarioQuizQuestion } from "./actions";
@@ -20,9 +20,9 @@ export function ScenarioQuizSession() {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [result, setResult] = useState<boolean | null>(null);
-  const [startedAt, setStartedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const elapsedRef = useRef(0);
   const question = questions?.[index] ?? null;
 
   function startQuiz() {
@@ -32,7 +32,6 @@ export function ScenarioQuizSession() {
         const loaded = await getScenarioQuizQuestions(difficulty);
         setQuestions(loaded);
         setIndex(0);
-        setStartedAt(Date.now());
       } catch (e) {
         setError(e instanceof Error ? e.message : "Could not load scenarios.");
       }
@@ -41,7 +40,7 @@ export function ScenarioQuizSession() {
 
   function lockAnswer() {
     if (!selected || isPending || result !== null || !question) return;
-    const seconds = startedAt === null ? null : (Date.now() - startedAt) / 1000;
+    const seconds = elapsedRef.current;
     startTransition(async () => {
       try {
         const response = await recordScenarioQuizAttempt({ questionId: question.id, selectedAnswer: selected, seconds });
@@ -62,7 +61,6 @@ export function ScenarioQuizSession() {
     }
     setSelected(null);
     setResult(null);
-    setStartedAt(Date.now());
   }
 
   if (!questions) {
@@ -141,7 +139,15 @@ export function ScenarioQuizSession() {
       <div className="topline">
         <span className="datechip">Level: {question.difficulty[0].toUpperCase() + question.difficulty.slice(1)}</span>
         <span className="badge progress">{index + 1} / {questions.length}</span>
-        <ElapsedTimer startedAt={startedAt} running={result === null} />
+        {result === null ? (
+          <ElapsedTimer
+            key={question.id}
+            frozen={result !== null}
+            onElapsedChange={(seconds) => {
+              elapsedRef.current = seconds;
+            }}
+          />
+        ) : null}
       </div>
 
       {result === null ? (
