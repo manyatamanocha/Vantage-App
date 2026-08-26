@@ -1,18 +1,17 @@
 import { requireAdmin } from "@/lib/auth/admin";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { SignupChart } from "@/components/signup-chart";
 
+// See Solution Overview.md ("Metric definitions — active / inactive user"):
+// active = >=1 meaningful_activity_completed event in the last 7 days;
+// dormant/churn-risk = none in the last 28 days; everyone else (had
+// activity 8-28 days ago) is the plain "inactive" middle bucket.
 const ACTIVE_WINDOW_DAYS = 7;
-const SIGNUP_WINDOW_DAYS = 14;
+const DORMANT_WINDOW_DAYS = 28;
 
-function activeCutoffMs(): number {
-  return Date.now() - ACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+function cutoffMs(days: number): number {
+  return Date.now() - days * 24 * 60 * 60 * 1000;
 }
-
-const DIFFICULTY_META: Record<string, { label: string; color: string }> = {
-  easy: { label: "Easy", color: "var(--success)" },
-  medium: { label: "Medium", color: "var(--primary)" },
-  hard: { label: "Hard", color: "#F59E0B" },
-};
 
 export default async function AdminUsersPage() {
   await requireAdmin();
@@ -22,36 +21,42 @@ export default async function AdminUsersPage() {
   if (usersError) throw new Error(usersError.message);
   const users = userPage.users;
 
-  const { data: settingsRows } = await admin.from("user_settings").select("user_id, practice_difficulty");
-  const difficultyByUser = new Map((settingsRows ?? []).map((r) => [r.user_id as string, r.practice_difficulty as string]));
+  const dormantCutoff = cutoffMs(DORMANT_WINDOW_DAYS);
+  const activeCutoff = cutoffMs(ACTIVE_WINDOW_DAYS);
 
-  const activeCutoff = activeCutoffMs();
-  const activeCount = users.filter((u) => u.last_sign_in_at && new Date(u.last_sign_in_at).getTime() >= activeCutoff).length;
-  const inactiveCount = users.length - activeCount;
+  const { data: activityRows } = await admin
+    .from("analytics_events")
+    .select("user_id, created_at")
+    .eq("event_name", "meaningful_activity_completed")
+    .gte("created_at", new Date(dormantCutoff).toISOString());
 
-  const difficultyCounts = { easy: 0, medium: 0, hard: 0 } as Record<string, number>;
-  for (const u of users) {
-    const level = difficultyByUser.get(u.id) ?? "medium";
-    difficultyCounts[level] = (difficultyCounts[level] ?? 0) + 1;
+  const lastActivityByUser = new Map<string, number>();
+  for (const row of activityRows ?? []) {
+    const uid = row.user_id as string | null;
+    if (!uid) continue;
+    const ts = new Date(row.created_at as string).getTime();
+    const prev = lastActivityByUser.get(uid);
+    if (!prev || ts > prev) lastActivityByUser.set(uid, ts);
   }
 
-  const signupDays = Array.from({ length: SIGNUP_WINDOW_DAYS }, (_, i) => {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() - (SIGNUP_WINDOW_DAYS - 1 - i));
-    return d.toISOString().slice(0, 10);
-  });
-  const signupsByDay = signupDays.map((day) => ({
-    day,
-    count: users.filter((u) => u.created_at.slice(0, 10) === day).length,
-  }));
-  const maxSignups = Math.max(1, ...signupsByDay.map((d) => d.count));
+  let activeCount = 0;
+  let inactiveCount = 0;
+  let dormantCount = 0;
+  for (const u of users) {
+    const last = lastActivityByUser.get(u.id);
+    if (last && last >= activeCutoff) activeCount++;
+    else if (last && last >= dormantCutoff) inactiveCount++;
+    else dormantCount++;
+  }
+
+  const signupTimestamps = users.map((u) => new Date(u.created_at).getTime());
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
         <div className="topline"><span className="datechip">Admin</span></div>
         <h1 className="display">Users</h1>
-        <p className="lede">Signups, activity, and practice progress. No passwords or auth secrets shown.</p>
+        <p className="lede">Signups and activity, at a glance. No passwords or auth secrets shown.</p>
       </header>
 
       <section className="stack">
@@ -65,37 +70,21 @@ export default async function AdminUsersPage() {
       </section>
 
       <section className="stack">
-        <span className="card-label">Signups — last {SIGNUP_WINDOW_DAYS} days</span>
+        <span className="card-label">Signups</span>
         <div className="card">
-          {users.length === 0 ? (
-            <p className="card-text">No signups yet.</p>
-          ) : (
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 100 }}>
-              {signupsByDay.map(({ day, count }) => (
-                <div key={day} style={{ flex: 1, textAlign: "center" }}>
-                  <div
-                    style={{
-                      height: `${Math.max(4, (count / maxSignups) * 80)}px`,
-                      background: "var(--primary)",
-                      borderRadius: 4,
-                      marginBottom: 6,
-                    }}
-                    title={`${day}: ${count} signup${count === 1 ? "" : "s"}`}
-                  />
-                  <span className="text-sm text-muted-foreground">{day.slice(8)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          {users.length === 0 ? <p className="card-text">No signups yet.</p> : <SignupChart signupTimestamps={signupTimestamps} />}
         </div>
       </section>
 
       <section className="stack">
-        <span className="card-label">Active vs. inactive (last {ACTIVE_WINDOW_DAYS} days)</span>
+        <span className="card-label">
+          Active ({ACTIVE_WINDOW_DAYS}d) · Inactive · Dormant / churn-risk ({DORMANT_WINDOW_DAYS}d+)
+        </span>
         <div className="card">
           {[
             { label: "Active", count: activeCount, color: "var(--success)" },
-            { label: "Inactive", count: inactiveCount, color: "var(--muted-foreground)" },
+            { label: "Inactive", count: inactiveCount, color: "#F59E0B" },
+            { label: "Dormant", count: dormantCount, color: "var(--destructive)" },
           ].map(({ label, count, color }) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
               <span className="text-sm" style={{ width: 64, flexShrink: 0, color: "var(--foreground)", fontWeight: 600 }}>
@@ -114,33 +103,9 @@ export default async function AdminUsersPage() {
               <span className="badge" style={{ flexShrink: 0 }}>{count}</span>
             </div>
           ))}
-        </div>
-      </section>
-
-      <section className="stack">
-        <span className="card-label">Practice difficulty</span>
-        <div className="card">
-          {Object.entries(DIFFICULTY_META).map(([key, meta]) => {
-            const count = difficultyCounts[key] ?? 0;
-            return (
-              <div key={key} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                <span className="text-sm" style={{ width: 64, flexShrink: 0, color: "var(--foreground)", fontWeight: 600 }}>
-                  {meta.label}
-                </span>
-                <div className="bar-track" style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      height: "100%",
-                      width: `${users.length > 0 ? (count / users.length) * 100 : 0}%`,
-                      background: meta.color,
-                      borderRadius: 99,
-                    }}
-                  />
-                </div>
-                <span className="badge" style={{ flexShrink: 0 }}>{count}</span>
-              </div>
-            );
-          })}
+          <p className="text-sm text-muted-foreground" style={{ marginTop: 4 }}>
+            Counts real practice — finishing a Solve, Daily Challenge, or quiz question — not just logging in.
+          </p>
         </div>
       </section>
     </main>

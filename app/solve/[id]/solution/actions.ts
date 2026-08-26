@@ -24,5 +24,8 @@ export async function runSolutionStep(solveId: string): Promise<SolutionResult> 
   if (updateErr) throw new Error(updateErr.message);
 
   track("solution_generated", user.id, { solveId });
+  // Canonical "did real practice" signal, distinct from the specific funnel
+  // events — see Solution Overview.md's active/inactive user definitions.
+  track("meaningful_activity_completed", user.id, { source: "solve" });
   return solution;
 }

@@ -167,5 +167,8 @@ export async function submitPracticeGuess(
   if (insertErr) throw new Error(insertErr.message);
 
   track("guess_locked", userId, { source: "practice", guessedCategory, correct: result.match });
+  // Canonical "did real practice" signal, distinct from the specific funnel
+  // events — see Solution Overview.md's active/inactive user definitions.
+  track("meaningful_activity_completed", userId, { source: "daily_challenge" });
   return { ...result, solveId: inserted.id as string };
 }

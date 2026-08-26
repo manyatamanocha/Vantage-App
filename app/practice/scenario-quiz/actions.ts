@@ -1,6 +1,7 @@
 "use server";
 
 import { getVerifiedUser } from "@/lib/supabase/server";
+import { track } from "@/lib/analytics/track";
 
 export type ScenarioQuizQuestion = {
   id: string;
@@ -59,5 +60,8 @@ export async function recordScenarioQuizAttempt(input: { questionId: string; sel
     seconds: input.seconds,
   });
   if (error) throw new Error(error.message);
+  // Canonical "did real practice" signal, distinct from the specific funnel
+  // events — see Solution Overview.md's active/inactive user definitions.
+  track("meaningful_activity_completed", user.id, { source: "quiz_scenario" });
   return { correct };
 }
