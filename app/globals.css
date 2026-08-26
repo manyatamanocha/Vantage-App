@@ -135,6 +135,13 @@
   --muted-foreground: #8E97A8;
   --accent: #0E1830;
   --accent-foreground: #7FB0FF;
+  /* Deep Console Navy's dark-mode equivalent — #13294B (the light-mode
+     value) is nearly indistinguishable from --card/--background here, which
+     made the segmented control's active pill (Settings' difficulty/frequency
+     toggles) look unselected/broken in dark theme. */
+  --accent2: #1E3A66;
+  --accent2-foreground: #FFFFFF;
+  --accent2-soft: rgba(59, 130, 246, 0.14);
   --destructive: #F17C86;
   --border: rgba(240, 243, 250, 0.10);
   --input: rgba(240, 243, 250, 0.10);
@@ -351,6 +358,11 @@ h1.display, .display {
 .badge.matched { background: var(--success-soft); color: var(--success); }
 .badge.missed { background: var(--muted); color: var(--muted-foreground); }
 .badge.progress { background: var(--accent2-soft); color: var(--accent2); }
+/* accent2 is dark (for the segmented pill's bg-with-white-text role) in both
+   themes, which fails as light-on-dark text against accent2-soft here once
+   accent2-soft itself goes dark/translucent in dark mode — swap to the
+   already-light accent2-foreground instead of redefining accent2 itself. */
+.dark .badge.progress { color: var(--accent2-foreground); }
 
 .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 26px; }
 @media (max-width: 520px) { .compare-grid { grid-template-columns: 1fr; } }
