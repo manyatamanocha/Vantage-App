@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <div className="topline"><span className="datechip">Account</span></div>
-      <header><h1 className="display">Settings</h1><p className="lede">Set the practice rhythm that works for you.</p></header>
+      <header><h1 className="display">Settings</h1></header>
 
       <ProfileCard profile={profile} />
 

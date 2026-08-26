@@ -1,14 +1,12 @@
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { getVerifiedUser } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/admin";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 type ReviewStatus = "pending" | "approved" | "rejected";
 
 async function setStatus(formData: FormData) {
   "use server";
-  const { user } = await getVerifiedUser();
-  if (!user?.id) redirect("/login");
+  await requireAdmin();
   const table = String(formData.get("table") ?? "");
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as ReviewStatus;
@@ -20,8 +18,7 @@ async function setStatus(formData: FormData) {
 
 async function flagQuestion(formData: FormData) {
   "use server";
-  const { user } = await getVerifiedUser();
-  if (!user?.id) redirect("/login");
+  await requireAdmin();
   const id = String(formData.get("id") ?? "");
   await getSupabaseAdminClient().from("daily_quiz_questions").update({ flagged: true }).eq("id", id);
   revalidatePath("/admin/quiz-review");
@@ -29,8 +26,7 @@ async function flagQuestion(formData: FormData) {
 
 async function flagCase(formData: FormData) {
   "use server";
-  const { user } = await getVerifiedUser();
-  if (!user?.id) redirect("/login");
+  await requireAdmin();
   const id = String(formData.get("id") ?? "");
   await getSupabaseAdminClient().from("practice_cases").update({ flagged: true }).eq("id", id);
   revalidatePath("/admin/quiz-review");
@@ -56,8 +52,7 @@ function ReviewButtons({ table, id }: { table: "daily_quiz_questions" | "practic
 }
 
 export default async function QuizReviewPage() {
-  const { user } = await getVerifiedUser();
-  if (!user?.id) redirect("/login");
+  await requireAdmin();
   const admin = getSupabaseAdminClient();
   const [{ data: questions }, { data: cases }] = await Promise.all([
     admin
