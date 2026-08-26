@@ -491,39 +491,51 @@ h1.display, .display {
 .admin-card-btn-sub { font-size: 10.5px; color: var(--muted-foreground); margin: 2px 0 0; }
 
 /*
- * Starter-prompt terminal (Solve intake). Two distinct treatments per direct
- * user request, sharing one mechanic (monospace + typewriter reveal):
+ * Starter-prompt terminal (Solve intake) — a glowing CRT in both themes, but
+ * a different phosphor in each, per direct user request:
  *
- *   LIGHT — a typewriter PAGE: warm paper surface, dark ink, ruled feed lines,
- *           Signal Blue chevron/caret. A near-black CRT on a light screen read
- *           as a hole in the page, and the earlier pale-grey attempt read as
- *           inert; paper keeps the typewriter character while belonging to the
- *           light theme.
- *   DARK  — the glowing green-phosphor CRT ("keep it a bit shining").
+ *   LIGHT — deep Signal Blue screen, text glowing WHITE. A lit blue panel
+ *           reads as a screen against a light page, where a near-black box
+ *           read as a hole in it.
+ *   DARK  — the classic green phosphor on near-black.
  *
- * The dark greens are the one sanctioned exception to DESIGN.md's One Accent
- * Rule — the terminal metaphor, not decorative colour. Light theme stays on
- * Signal Blue and therefore needs no exception.
+ * The green is the One Accent Rule's one sanctioned exception: it carries the
+ * terminal metaphor the typewriter reveal depends on, rather than being
+ * decorative colour. Light mode stays on Signal Blue and needs no exception.
  */
 .suggested-prompt-terminal {
   position: relative; overflow: hidden;
   background:
-    linear-gradient(180deg, #fffdf7 0%, #fdf8ec 100%);
-  border: 1px solid color-mix(in oklch, var(--primary) 22%, #e8dfc9);
+    radial-gradient(120% 100% at 50% 0%,
+      color-mix(in oklch, var(--primary) 72%, black 8%) 0%,
+      color-mix(in oklch, var(--primary) 88%, black 32%) 62%),
+    color-mix(in oklch, var(--primary) 88%, black 32%);
+  border: 1px solid color-mix(in oklch, var(--primary) 55%, white 20%);
   border-radius: var(--radius-lg);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 1px 2px hsl(var(--shadow-color) / 0.06);
+    inset 0 0 34px rgba(255, 255, 255, 0.14),
+    0 10px 28px -16px color-mix(in oklch, var(--primary) 60%, transparent);
   padding: 14px 16px;
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: 13px; letter-spacing: -0.01em;
   display: flex; flex-direction: column; gap: 8px;
 }
-/* Feed lines — the ruled-paper counterpart to the dark theme's scanlines. */
+/* CRT scanlines. */
 .suggested-prompt-terminal::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg, transparent 0 25px, color-mix(in oklch, var(--primary) 7%, transparent) 25px 26px
+  background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(255, 255, 255, 0.055) 2px 3px);
+}
+/* Glass shine — a diagonal highlight sweeping the top-left, so the panel
+   reads as a lit screen behind glass rather than a flat fill. */
+.suggested-prompt-terminal::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  top: -60%; left: -25%; width: 70%; height: 220%;
+  transform: rotate(-16deg);
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.20) 0%,
+    rgba(255, 255, 255, 0.07) 38%,
+    rgba(255, 255, 255, 0) 62%
   );
 }
 .suggested-prompt-row {
@@ -531,26 +543,21 @@ h1.display, .display {
   background: transparent; border: 0; padding: 2px 0; line-height: 1.55;
   position: relative; z-index: 1;
   font-family: inherit; font-size: inherit;
-  color: #2b2a26;
+  color: #ffffff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
   transition: opacity 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;
 }
-.suggested-prompt-row[data-done]:hover { color: var(--primary); }
-.suggested-prompt-chevron {
-  color: var(--primary); font-weight: 700; flex-shrink: 0;
+.suggested-prompt-row[data-done]:hover {
+  color: #ffffff; text-shadow: 0 0 13px rgba(255, 255, 255, 0.95);
 }
-/* Themed, not inline: a hardcoded phosphor-green caret vanished against the
-   light theme's paper surface. */
+.suggested-prompt-chevron {
+  color: #ffffff; text-shadow: 0 0 10px rgba(255, 255, 255, 0.9); font-weight: 700; flex-shrink: 0;
+}
 .suggested-prompt-caret {
-  display: inline-block; color: var(--primary);
+  display: inline-block; color: #ffffff; text-shadow: 0 0 11px rgba(255, 255, 255, 0.98);
   animation: prompt-caret-blink 0.9s steps(1) infinite;
 }
-.dark .suggested-prompt-caret {
-  color: #bbf7d0; text-shadow: 0 0 10px rgba(187, 247, 208, 0.95);
-}
-@keyframes prompt-caret-blink { 50% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .suggested-prompt-caret { animation: none; } }
 
-/* Dark — the glowing green CRT. */
+/* Dark — green phosphor on near-black. */
 .dark .suggested-prompt-terminal {
   background:
     radial-gradient(120% 100% at 50% 0%, #0d1a14 0%, #05070c 62%),
@@ -564,6 +571,16 @@ h1.display, .display {
 .dark .suggested-prompt-terminal::after {
   background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(74, 222, 128, 0.045) 2px 3px);
 }
+/* Dimmer shine on the dark CRT — a white sheen that strong would wash out
+   the phosphor glow it sits over. */
+.dark .suggested-prompt-terminal::before {
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.03) 38%,
+    rgba(255, 255, 255, 0) 62%
+  );
+}
 .dark .suggested-prompt-row {
   color: #4ade80; text-shadow: 0 0 7px rgba(74, 222, 128, 0.55);
 }
@@ -573,6 +590,11 @@ h1.display, .display {
 .dark .suggested-prompt-chevron {
   color: #22c55e; text-shadow: 0 0 9px rgba(34, 197, 94, 0.9);
 }
+.dark .suggested-prompt-caret {
+  color: #bbf7d0; text-shadow: 0 0 10px rgba(187, 247, 208, 0.95);
+}
+@keyframes prompt-caret-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .suggested-prompt-caret { animation: none; } }
 .btn-icon[aria-pressed="true"] { background: var(--destructive); color: var(--destructive-foreground, #fff); border-color: var(--destructive); animation: btn-icon-pulse 1.6s ease-in-out infinite; }
 .btn-icon[aria-pressed="true"]:hover { background: var(--destructive); }
 @keyframes btn-icon-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--destructive) 45%, transparent); } 50% { box-shadow: 0 0 0 8px color-mix(in oklch, var(--destructive) 0%, transparent); } }

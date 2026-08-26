@@ -10,78 +10,28 @@
     </mask>
   </defs>
 
-  <g mask="url(#fadeMask)" fill="none" stroke="#2F6FF5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Convergence Rings — concentric rings pulsing outward from a solid
+       center point, with a few lines locking onto it from different
+       directions: many possible readings converging on one right answer. -->
+  <g mask="url(#fadeMask)" fill="none" stroke="#2F6FF5" stroke-linecap="round" stroke-linejoin="round" opacity="0.75">
+    <circle cx="480" cy="480" r="58" stroke-width="6" opacity="0.9" />
+    <circle cx="480" cy="480" r="144" stroke-width="4.5" stroke-dasharray="4 20" opacity="0.6" />
+    <circle cx="480" cy="480" r="240" stroke-width="3.5" stroke-dasharray="2 26" opacity="0.45" />
+    <circle cx="480" cy="480" r="352" stroke-width="2.5" opacity="0.22" />
 
-    <!-- orbit rings -->
-    <circle cx="480" cy="470" r="290" stroke-width="1.6" opacity="0.4" />
-    <circle cx="480" cy="470" r="290" stroke-width="1.6" opacity="0.25" stroke-dasharray="2 14" />
+    <line x1="480" y1="480" x2="480" y2="150" stroke-width="3.5" opacity="0.55" />
+    <line x1="480" y1="480" x2="740" y2="650" stroke-width="3.5" opacity="0.55" />
+    <line x1="480" y1="480" x2="240" y2="290" stroke-width="3.5" opacity="0.55" />
 
-    <!-- laptop -->
-    <path d="M330 560 L330 380 Q330 368 342 368 L618 368 Q630 368 630 380 L630 560" opacity="0.9" />
-    <path d="M300 560 L660 560 L638 600 L322 600 Z" opacity="0.9" />
-    <line x1="440" y1="580" x2="520" y2="580" stroke-width="4" opacity="0.9" />
-    <line x1="360" y1="430" x2="560" y2="430" stroke-width="2" opacity="0.5" />
-    <line x1="360" y1="470" x2="560" y2="470" stroke-width="2" opacity="0.5" />
-    <line x1="360" y1="510" x2="480" y2="510" stroke-width="2" opacity="0.5" />
+    <circle cx="480" cy="150" r="12" fill="#2F6FF5" stroke="none" opacity="0.85" />
+    <circle cx="740" cy="650" r="12" fill="#2F6FF5" stroke="none" opacity="0.85" />
+    <circle cx="240" cy="290" r="12" fill="#2F6FF5" stroke="none" opacity="0.85" />
 
-    <!-- open book, overlapping laptop top-left -->
-    <g opacity="0.95">
-      <path d="M330 300 L330 420 L420 400 L420 280 Z" />
-      <path d="M420 280 L420 400 L510 420 L510 300 Z" />
-      <line x1="350" y1="330" x2="400" y2="322" stroke-width="1.6" opacity="0.5" />
-      <line x1="350" y1="360" x2="400" y2="352" stroke-width="1.6" opacity="0.5" />
-      <line x1="440" y1="322" x2="490" y2="330" stroke-width="1.6" opacity="0.5" />
-      <line x1="440" y1="352" x2="490" y2="360" stroke-width="1.6" opacity="0.5" />
-    </g>
+    <circle cx="480" cy="480" r="16" fill="#2F6FF5" stroke="none" />
+    <path d="M480 96 A384 384 0 0 1 560 102" stroke-width="9" opacity="0.95" />
 
-    <!-- brain, right of book, over laptop -->
-    <g opacity="0.95">
-      <path d="M560 420 Q540 380 575 355 Q600 335 630 350 Q655 335 680 355 Q715 380 695 420 Q715 450 690 480 Q705 510 675 525 Q665 545 635 540 Q615 555 590 540 Q565 545 555 525 Q525 510 540 480 Q515 450 535 420 Z" />
-      <path d="M630 350 L630 540" stroke-width="1.6" opacity="0.55" />
-      <path d="M580 390 Q600 400 590 420" stroke-width="1.6" opacity="0.5" />
-      <path d="M670 390 Q650 400 660 420" stroke-width="1.6" opacity="0.5" />
-    </g>
-
-    <!-- circuit branches off the brain -->
-    <g stroke-width="2" opacity="0.55">
-      <path d="M690 380 L730 380 L730 340 L760 340" />
-      <path d="M700 430 L750 430 L750 400 L790 400" />
-      <path d="M700 470 L760 470 L760 500 L800 500" />
-      <path d="M660 520 L680 550 L720 550" />
-      <path d="M560 400 L520 400 L520 370 L480 370" />
-    </g>
-    <g fill="#2F6FF5" stroke="none" opacity="0.65">
-      <circle cx="760" cy="340" r="6" />
-      <circle cx="790" cy="400" r="6" />
-      <circle cx="800" cy="500" r="6" />
-      <circle cx="720" cy="550" r="6" />
-      <circle cx="480" cy="370" r="6" />
-    </g>
-
-    <!-- icon badges around the ring -->
-    <g opacity="0.7">
-      <circle cx="700" cy="230" r="52" stroke-width="1.6" stroke-dasharray="1 0" />
-      <path d="M700 205 L700 215 M700 245 L700 255 M675 230 L685 230 M715 230 L725 230 M683 213 L690 220 M710 240 L717 247 M683 247 L690 240 M710 220 L717 213" stroke-width="1.6" />
-      <path d="M688 225 Q688 210 700 210 Q712 210 712 225 Q712 233 704 238 L704 244 L696 244 L696 238 Q688 233 688 225 Z" stroke-width="1.8" />
-      <line x1="696" y1="248" x2="704" y2="248" stroke-width="1.8" />
-    </g>
-
-    <g opacity="0.7">
-      <circle cx="260" cy="660" r="52" stroke-width="1.6" />
-      <path d="M235 675 L235 645 L285 645 L285 668 L268 668 L258 680 L258 668 L235 668 Z" stroke-width="1.8" />
-      <circle cx="248" cy="656" r="2.5" fill="#2F6FF5" stroke="none" />
-      <circle cx="260" cy="656" r="2.5" fill="#2F6FF5" stroke="none" />
-      <circle cx="272" cy="656" r="2.5" fill="#2F6FF5" stroke="none" />
-    </g>
-
-    <g opacity="0.7">
-      <circle cx="290" cy="270" r="46" stroke-width="1.6" />
-      <polyline points="272,285 272,255 285,268 300,245 315,255" stroke-width="1.8" />
-    </g>
-
-    <!-- sparkle + dot grids, matching the reference's scattered accents -->
-    <path d="M230 190 L236 210 L256 216 L236 222 L230 242 L224 222 L204 216 L224 210 Z" opacity="0.5" fill="#2F6FF5" stroke="none" />
-    <g fill="#2F6FF5" stroke="none" opacity="0.3">
+    <!-- faint scattered dot grid, matching the outgoing constellation's texture -->
+    <g fill="#2F6FF5" stroke="none" opacity="0.28">
       <circle cx="150" cy="330" r="3" /><circle cx="170" cy="330" r="3" /><circle cx="190" cy="330" r="3" />
       <circle cx="150" cy="350" r="3" /><circle cx="170" cy="350" r="3" /><circle cx="190" cy="350" r="3" />
       <circle cx="150" cy="370" r="3" /><circle cx="170" cy="370" r="3" /><circle cx="190" cy="370" r="3" />

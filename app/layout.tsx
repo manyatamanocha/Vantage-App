@@ -46,13 +46,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        {/* Applies the stored theme before first paint, avoiding a light-to-dark
-            flash for returning dark-mode users. Matches the class components/
-            theme-toggle.tsx sets. */}
+        {/* Applies the stored theme before first paint, avoiding a flash of
+            the wrong theme. Defaults to dark for a first-time visitor with no
+            stored preference yet; only an explicit 'light' choice (saved by
+            components/theme-toggle.tsx) opts back out. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(localStorage.getItem('vantage-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}",
+              "try{if(localStorage.getItem('vantage-theme')!=='light')document.documentElement.classList.add('dark')}catch(e){}",
           }}
         />
         <SiteNav />
