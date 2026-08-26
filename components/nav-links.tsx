@@ -11,6 +11,8 @@ const NAV_LINKS = [
   { href: "/settings", label: "Settings" },
 ] as const;
 
+const ADMIN_LINK = { href: "/admin", label: "Admin" } as const;
+
 // Home ("/") only matches the exact path — everything else matches the path
 // itself or anything nested under it (e.g. "/solve" also lights up for
 // "/solve/new" and "/solve/abc123/guess"), mirroring how a consultant would
@@ -20,12 +22,13 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-export function NavLinks() {
+export function NavLinks({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
+  const links = isAdmin ? [...NAV_LINKS, ADMIN_LINK] : NAV_LINKS;
 
   return (
     <>
-      {NAV_LINKS.map((link) => {
+      {links.map((link) => {
         const active = isActive(pathname, link.href);
         return (
           <Link

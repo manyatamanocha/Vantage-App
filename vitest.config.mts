@@ -19,5 +19,11 @@ export default defineConfig({
   },
   test: {
     testTimeout: 60000,
+    // Vitest's default excludes don't cover .claude/worktrees/ — each entry
+    // there is a full nested checkout (its own node_modules, its own copy of
+    // every test file), so without this the main checkout's test run picks
+    // up a worktree's tests too, against whatever stale state that worktree
+    // happens to be in relative to the current branch.
+    exclude: ["**/node_modules/**", "**/.claude/worktrees/**"],
   },
 });

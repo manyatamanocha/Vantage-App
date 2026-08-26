@@ -1,6 +1,5 @@
-import { getVerifiedUser } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/admin";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { redirect } from "next/navigation";
 
 type EventRow = {
   id: string;
@@ -17,8 +16,7 @@ function utcDayKey(iso: string): string {
 }
 
 export default async function AnalyticsPage() {
-  const { user } = await getVerifiedUser();
-  if (!user?.id) redirect("/login");
+  await requireAdmin();
 
   const admin = getSupabaseAdminClient();
   // 1000 is well past what a class-project MVP will generate; a real launch

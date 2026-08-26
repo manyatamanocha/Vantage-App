@@ -4,6 +4,7 @@ import { signOutAction } from "@/app/(auth)/actions";
 import { NavLinks } from "./nav-links";
 import { ThemeToggle } from "./theme-toggle";
 import { BackButton } from "./back-button";
+import { NextButton } from "./next-button";
 
 /**
  * The app's only shell. Every screen in this build is otherwise reachable
@@ -20,6 +21,8 @@ export async function SiteNav() {
 
   if (!user) return null;
 
+  const isAdmin = user.app_metadata?.role === "admin";
+
   return (
     <header className="border-b border-border">
       <nav
@@ -29,7 +32,7 @@ export async function SiteNav() {
         <Link href="/" className="font-heading font-bold tracking-tight text-foreground">
           Vantage
         </Link>
-        <NavLinks />
+        <NavLinks isAdmin={isAdmin} />
         <form action={signOutAction} className="ml-auto">
           <button
             type="submit"
@@ -41,7 +44,10 @@ export async function SiteNav() {
       </nav>
       <div className="mx-auto flex w-full max-w-3xl items-center px-[22px] pb-[13px]">
         <BackButton />
-        <div className="ml-auto"><ThemeToggle /></div>
+        <div className="ml-auto flex items-center gap-[18px]">
+          <NextButton />
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );
