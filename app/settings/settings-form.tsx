@@ -14,7 +14,7 @@ const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 const FREQUENCIES = ["daily", "weekly", "off"] as const;
 const QUESTION_TYPES = [
   { value: "scenario", label: "Scenario based question" },
-  { value: "quiz", label: "Quiz" },
+  { value: "quiz", label: "Quiz Time" },
 ] as const;
 
 export function SettingsForm({

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Brain, Leaf, Zap } from "lucide-react";
+import { Brain, Check, Leaf, X, Zap } from "lucide-react";
+import { ElapsedTimer } from "@/components/elapsed-timer";
 import type { ScenarioQuizQuestion } from "./actions";
 import { getScenarioQuizQuestions, recordScenarioQuizAttempt } from "./actions";
 
@@ -17,7 +18,8 @@ export function ScenarioQuizSession() {
   const [difficulty, setDifficulty] = useState<(typeof TIERS)[number]>("medium");
   const [questions, setQuestions] = useState<ScenarioQuizQuestion[] | null>(null);
   const [index, setIndex] = useState(0);
-  const [revealed, setRevealed] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [result, setResult] = useState<boolean | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -37,11 +39,17 @@ export function ScenarioQuizSession() {
     });
   }
 
-  function reveal() {
-    if (!question || revealed) return;
+  function lockAnswer() {
+    if (!selected || isPending || result !== null || !question) return;
     const seconds = startedAt === null ? null : (Date.now() - startedAt) / 1000;
-    setRevealed(true);
-    startTransition(() => recordScenarioQuizAttempt({ questionId: question.id, seconds }).catch(() => undefined));
+    startTransition(async () => {
+      try {
+        const response = await recordScenarioQuizAttempt({ questionId: question.id, selectedAnswer: selected, seconds });
+        setResult(response.correct);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not save your answer.");
+      }
+    });
   }
 
   function nextQuestion() {
@@ -52,7 +60,8 @@ export function ScenarioQuizSession() {
       setQuestions(remaining);
       setIndex(index >= remaining.length ? 0 : index);
     }
-    setRevealed(false);
+    setSelected(null);
+    setResult(null);
     setStartedAt(Date.now());
   }
 
@@ -64,7 +73,7 @@ export function ScenarioQuizSession() {
         </div>
         <header>
           <h1 className="display">Scenario quiz</h1>
-          <p className="lede">90 real work scenarios — think it through, then check the answer.</p>
+          <p className="lede">90 real work scenarios — pick the best approach for each.</p>
         </header>
 
         <section className="stack">
@@ -121,7 +130,7 @@ export function ScenarioQuizSession() {
       <main className="mx-auto max-w-2xl px-5 py-12">
         <section className="card">
           <h1 className="display">No new scenarios left</h1>
-          <p className="lede">You&apos;ve seen every {difficulty} scenario in this pool — check back once more are added, or try another difficulty.</p>
+          <p className="lede">You&apos;ve answered every {difficulty} scenario in this pool — check back once more are added, or try another difficulty.</p>
         </section>
       </main>
     );
@@ -132,37 +141,73 @@ export function ScenarioQuizSession() {
       <div className="topline">
         <span className="datechip">Level: {question.difficulty[0].toUpperCase() + question.difficulty.slice(1)}</span>
         <span className="badge progress">{index + 1} / {questions.length}</span>
+        <ElapsedTimer startedAt={startedAt} running={result === null} />
       </div>
 
-      <header>
-        <h1 className="display">{question.questionText}</h1>
-      </header>
-
-      {revealed ? (
+      {result === null ? (
         <>
-          <section className="quote-card stack">
-            <span className="card-label">Suggested approach</span>
-            <p className="card-text" style={{ fontWeight: 650 }}>{question.answer}</p>
+          <header>
+            <h1 className="display">{question.questionText}</h1>
+          </header>
+
+          <section className="stack">
+            <div className="card">
+              <div className="cat-grid">
+                {question.options.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className="cat-btn"
+                    aria-pressed={selected === option}
+                    onClick={() => setSelected(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
           </section>
-          <section className="card stack">
-            <span className="card-label">Why</span>
+
+          {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
+
+          <div className="actions" style={{ justifyContent: "center" }}>
+            <button type="button" className="btn btn-primary" disabled={!selected || isPending} onClick={lockAnswer}>
+              {isPending ? "Checking…" : "Lock it"}
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={nextQuestion}>
+              Try another scenario
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <header className="row-between">
+            <h1 className="display">{result ? "Correct" : "Not quite"}</h1>
+            <div
+              aria-label={result ? "Correct" : "Not quite"}
+              style={{
+                width: 44, height: 44, borderRadius: 999, display: "flex",
+                alignItems: "center", justifyContent: "center", flexShrink: 0,
+                background: result ? "var(--success-soft)" : "var(--destructive-soft)",
+                color: result ? "var(--success)" : "var(--destructive)",
+              }}
+            >
+              {result ? <Check size={24} aria-hidden="true" /> : <X size={24} aria-hidden="true" />}
+            </div>
+          </header>
+
+          <section className="quote-card stack">
+            <span className="card-label">Suggested approach: {question.answer}</span>
             <p className="card-text">{question.explanation}</p>
           </section>
+
           <div className="actions">
             <button type="button" className="btn btn-primary" onClick={nextQuestion}>
               Try another scenario
             </button>
           </div>
         </>
-      ) : (
-        <div className="actions" style={{ justifyContent: "center" }}>
-          <button type="button" className="btn btn-primary" onClick={reveal} disabled={isPending}>
-            Reveal answer
-          </button>
-        </div>
       )}
-
-      {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
     </main>
   );
 }

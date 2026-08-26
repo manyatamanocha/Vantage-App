@@ -14,7 +14,7 @@ export default async function Home() {
   // working either way; the real preference just doesn't take effect until
   // the migration is applied.
   const quizHref = await getSettings(user.id)
-    .then((settings) => (settings.defaultQuestionType === "quiz" ? "/practice/jargon" : "/practice/today"))
+    .then((settings) => (settings.defaultQuestionType === "quiz" ? "/practice/general" : "/practice/today"))
     .catch(() => "/practice/today");
 
   return <HomeDashboard quizHref={quizHref} />;

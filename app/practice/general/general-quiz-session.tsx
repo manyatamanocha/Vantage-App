@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Brain, Check, Leaf, X, Zap } from "lucide-react";
+import { ElapsedTimer } from "@/components/elapsed-timer";
 import type { GeneralQuizQuestion } from "./actions";
 import { getGeneralQuizQuestions, recordGeneralQuizAttempt } from "./actions";
 
@@ -140,6 +141,7 @@ export function GeneralQuizSession() {
       <div className="topline">
         <span className="datechip">Level: {question.difficulty[0].toUpperCase() + question.difficulty.slice(1)}</span>
         <span className="badge progress">{index + 1} / {questions.length}</span>
+        <ElapsedTimer startedAt={startedAt} running={result === null} />
       </div>
 
       {result === null ? (

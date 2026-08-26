@@ -181,7 +181,7 @@ export default async function SolutionPage({
         <Link href="/solve/new" className="btn btn-primary">
           Solve another case
         </Link>
-        <Link href="/practice/jargon" className="btn btn-secondary">
+        <Link href="/practice/general" className="btn btn-secondary">
           Quiz time
         </Link>
       </nav>

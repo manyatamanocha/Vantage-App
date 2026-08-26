@@ -1,8 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 
-// Same ring math as the quiz timer (app/practice/jargon/jargon-session.tsx) —
-// r=54 in a 120x120 viewBox — so this reads as the same motif at a smaller
-// physical size, not a new one.
+// Same ring math as the quiz timer used to have — r=54 in a 120x120
+// viewBox — so this reads as the same motif at a smaller physical size,
+// not a new one.
 const RING = 2 * Math.PI * 54;
 
 export function StatTile({
