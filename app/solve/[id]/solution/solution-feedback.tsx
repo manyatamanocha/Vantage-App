@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Heart, MessageCircleQuestion, PartyPopper } from "lucide-react";
+import { recordSolutionFeedback } from "./actions";
 
 const HELPFUL_COLOR = "var(--success)";
 const NOT_HELPFUL_COLOR = "#EC4899";
@@ -12,8 +13,16 @@ const NOT_HELPFUL_COLOR = "#EC4899";
  * (components/ending-card.tsx), but scoped to this screen's own two options
  * rather than reusing that component's fixed label set.
  */
-export function SolutionFeedback() {
+export function SolutionFeedback({ solveId }: { solveId: string }) {
   const [selected, setSelected] = useState<"helpful" | "explain" | null>(null);
+
+  function choose(choice: "helpful" | "explain") {
+    if (selected !== null) return; // one answer per solution; don't double-count
+    setSelected(choice);
+    // Fire-and-forget, like the rest of analytics: the thank-you must show
+    // even if recording fails. Nothing here is worth blocking the UI on.
+    void recordSolutionFeedback({ solveId, helpful: choice === "helpful" }).catch(() => {});
+  }
 
   function chipStyle(color: string, active: boolean) {
     return active
@@ -50,7 +59,7 @@ export function SolutionFeedback() {
       <div className="chip-row" style={{ justifyContent: "center" }}>
         <button
           type="button"
-          onClick={() => setSelected("helpful")}
+          onClick={() => choose("helpful")}
           aria-pressed={selected === "helpful"}
           className="chip-btn"
           style={{ ...chipStyle(HELPFUL_COLOR, selected === "helpful"), padding: "10px 20px", fontSize: 14.5 }}
@@ -59,7 +68,7 @@ export function SolutionFeedback() {
         </button>
         <button
           type="button"
-          onClick={() => setSelected("explain")}
+          onClick={() => choose("explain")}
           aria-pressed={selected === "explain"}
           className="chip-btn"
           style={{ ...chipStyle(NOT_HELPFUL_COLOR, selected === "explain"), padding: "10px 20px", fontSize: 14.5 }}

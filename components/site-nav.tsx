@@ -5,6 +5,7 @@ import { NavLinks } from "./nav-links";
 import { ThemeToggle } from "./theme-toggle";
 import { BackButton } from "./back-button";
 import { NextButton } from "./next-button";
+import { LiveClock } from "./live-clock";
 
 /**
  * The app's only shell. Every screen in this build is otherwise reachable
@@ -46,7 +47,10 @@ export async function SiteNav() {
         <BackButton />
         <div className="ml-auto flex items-center gap-[18px]">
           <NextButton />
-          <ThemeToggle size={30} />
+          <div className="flex flex-col items-end gap-[4px]">
+            <ThemeToggle size={30} />
+            <LiveClock compact />
+          </div>
         </div>
       </div>
     </header>

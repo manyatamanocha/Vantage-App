@@ -78,7 +78,7 @@ export function ProfileCard({ profile, extraLine }: { profile: Profile; extraLin
 
   return (
     <>
-      <div className="row-between" style={{ marginBottom: 26 }}>
+      <div className="row-between" style={{ marginTop: 22, marginBottom: 26 }}>
         <div className="row-between" style={{ justifyContent: "flex-start", gap: 12 }}>
           <button
             type="button"
@@ -113,10 +113,10 @@ export function ProfileCard({ profile, extraLine }: { profile: Profile; extraLin
             <span
               style={{
                 position: "absolute",
-                bottom: -4,
-                right: -4,
-                width: 30,
-                height: 30,
+                bottom: -6,
+                right: -6,
+                width: 38,
+                height: 38,
                 borderRadius: 999,
                 background: "var(--primary)",
                 color: "var(--primary-foreground)",
@@ -126,7 +126,7 @@ export function ProfileCard({ profile, extraLine }: { profile: Profile; extraLin
                 border: "2px solid var(--background)",
               }}
             >
-              <Camera size={16} aria-hidden="true" />
+              <Camera size={20} aria-hidden="true" />
             </span>
           </button>
           <input

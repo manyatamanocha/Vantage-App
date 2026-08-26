@@ -13,8 +13,12 @@ function formatNow() {
   return `${datePart} · ${timePart}`;
 }
 
-/** Mirrors the mockup's Home screen live clock — real date/time, ticks every second. */
-export function LiveClock() {
+/**
+ * Real date/time, ticks every second. Lives in SiteNav's header (below the
+ * theme toggle) so it shows on every signed-in screen — previously it only
+ * appeared on the Home dashboard. `compact` shrinks it to fit that spot.
+ */
+export function LiveClock({ compact = false }: { compact?: boolean } = {}) {
   const [now, setNow] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,5 +27,12 @@ export function LiveClock() {
     return () => clearInterval(id);
   }, []);
 
-  return <span className="datechip" style={{ fontSize: 14, padding: "8px 14px" }}>{now ?? " "}</span>;
+  return (
+    <span
+      className="datechip"
+      style={compact ? { fontSize: 11, padding: "4px 9px" } : { fontSize: 14, padding: "8px 14px" }}
+    >
+      {now ?? " "}
+    </span>
+  );
 }

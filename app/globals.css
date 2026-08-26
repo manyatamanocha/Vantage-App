@@ -194,21 +194,27 @@ body::before {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 960px;
-  height: 960px;
-  max-width: 90vw;
-  max-height: 90vw;
-  background-image: url("/watermark.png");
+  width: 1200px;
+  height: 1200px;
+  max-width: 96vw;
+  max-height: 96vw;
+  background-image: url("/watermark.svg");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  opacity: 0.14;
+  opacity: 0.26;
   pointer-events: none;
   z-index: 0;
 }
 .dark body::before {
-  opacity: 0.2;
+  opacity: 0.32;
   mix-blend-mode: screen;
+}
+/* Auth pages (/login, /signup) have their own dedicated gradient-mesh
+   background, gems, and floating chips — the app-wide watermark would just
+   compete with it, so it's excluded there specifically. */
+body:has(.auth-shell)::before {
+  display: none;
 }
 body > * {
   position: relative;
@@ -253,22 +259,121 @@ h1.display, .display {
 .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 26px; }
 @media (max-width: 560px) { .grid-2 { grid-template-columns: 1fr; } }
 
+/*
+ * Admin dashboard: featured hero (whatever needs attention most) + a grid
+ * of stat-forward tiles, replacing the plain icon-and-label link grid —
+ * per direct user request ("boring, not interesting"). Picked from 5
+ * mocked-up options; this is "A" (stat tiles) + "C" (featured hero) combined.
+ */
+.admin-hero {
+  display: block; margin-top: 26px; padding: 24px 26px; border-radius: var(--radius-2xl);
+  background: linear-gradient(135deg, var(--primary), var(--accent2));
+  color: #fff; text-decoration: none; transition: transform 0.12s ease;
+}
+.admin-hero:hover { transform: translateY(-2px); }
+.admin-hero-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.78; }
+.admin-hero-big {
+  font-family: "Manrope", var(--font-sans), sans-serif; font-weight: 800; font-size: 32px;
+  letter-spacing: -0.02em; margin: 6px 0 2px; font-variant-numeric: tabular-nums;
+}
+.admin-hero-sub { font-size: 13.5px; opacity: 0.88; }
+
+.admin-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+@media (max-width: 560px) { .admin-stat-grid { grid-template-columns: 1fr; } }
+.admin-stat-tile {
+  display: block; padding: 16px 18px; border-radius: var(--radius-xl); border: 1px solid var(--border);
+  background: var(--card); color: var(--foreground); text-decoration: none;
+  box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.05); transition: border-color 0.12s ease, transform 0.12s ease;
+}
+.admin-stat-tile:hover { border-color: color-mix(in oklch, var(--primary) 40%, var(--border)); transform: translateY(-1px); }
+.admin-stat-tile .icon { color: var(--primary); margin-bottom: 8px; }
+.admin-stat-num {
+  font-family: "Manrope", var(--font-sans), sans-serif; font-weight: 800; font-size: 34px;
+  letter-spacing: -0.03em; line-height: 1; margin-bottom: 6px; font-variant-numeric: tabular-nums;
+  color: var(--primary);
+}
+.admin-stat-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--foreground);
+}
+.admin-stat-desc { font-size: 11.5px; color: var(--muted-foreground); margin: 3px 0 0; }
+
+.admin-stat-tile-ring { display: flex; align-items: center; gap: 14px; }
+.admin-stat-ring {
+  width: 52px; height: 52px; border-radius: 999px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.admin-stat-ring span {
+  width: 38px; height: 38px; border-radius: 999px; background: var(--card);
+  display: flex; align-items: center; justify-content: center;
+  font-family: "Manrope", var(--font-sans), sans-serif; font-weight: 800; font-size: 11.5px;
+  color: var(--foreground);
+}
+
 .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-2xl); padding: 26px; box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.05); }
 .card p { color: var(--card-foreground); }
 .card-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--primary); display: block; margin-bottom: 8px; }
 .card-text { font-size: 14.5px; line-height: 1.6; }
 
-.panel-link { display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; border-radius: var(--radius-2xl); padding: 30px; position: relative; transition: transform .15s ease; }
-.panel-link:hover { transform: translateY(-2px); }
+.panel-link {
+  display: flex; align-items: center; gap: 16px;
+  text-align: left; text-decoration: none; border-radius: var(--radius-xl);
+  padding: 18px 20px; position: relative; transition: transform .15s ease;
+}
+.panel-link:hover { transform: translateY(-1px); }
 .panel-link.primary { background: var(--primary); color: var(--primary-foreground); border: 1px solid color-mix(in oklch, var(--primary) 80%, black 6%); }
 .panel-link.primary .panel-lede { color: color-mix(in oklch, var(--primary-foreground) 82%, transparent); }
 .panel-link.outline { background: var(--card); color: var(--foreground); border: 1px solid var(--border); }
 .panel-link.outline:hover { border-color: color-mix(in oklch, var(--primary) 45%, var(--border)); box-shadow: 0 6px 20px -10px hsl(var(--shadow-color) / 0.3); }
-.panel-link.outline .icon { color: var(--primary); }
+
+.panel-link-body { min-width: 0; flex: 1; display: flex; align-items: center; gap: 16px; }
+.panel-link-icon {
+  width: 46px; height: 46px; border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: color-mix(in oklch, var(--primary) 14%, transparent); color: var(--primary);
+}
+.panel-link-text { min-width: 0; }
 .panel-eyebrow { font-size: 13px; font-weight: 600; opacity: .85; }
-.panel-link h2 { margin-top: 7px; font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
-.panel-lede { margin-top: 8px; font-size: 14px; color: var(--muted-foreground); max-width: 32ch; }
-.panel-cta { margin-top: 26px; display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 650; }
+.panel-link h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.panel-lede { margin-top: 3px; font-size: 13.5px; color: var(--muted-foreground); max-width: 38ch; }
+.panel-link-art { flex-shrink: 0; width: 56px; height: 56px; color: var(--primary); }
+@media (max-width: 480px) { .panel-link-art { display: none; } }
+
+/*
+ * "Bold & Bouncy" — the cartoony direction picked for Home's two option
+ * cards (mocked up in three variants, user picked this one over "Chunky
+ * Console" and "Sticker Badges"). A soft blob shape sits behind a solid-fill
+ * icon, the heading goes extra-bold, and the action is a chunky navy pill
+ * instead of a plain text link — the whole card tilts and lifts on hover.
+ * Deliberately scoped to .bold-bounce rather than redefining .panel-link,
+ * so a future non-Home use of panel-link stays in the flat "Judgment
+ * Console" style.
+ */
+.panel-link.bold-bounce {
+  overflow: hidden;
+  transition: transform .18s cubic-bezier(.34, 1.56, .64, 1), box-shadow .18s ease;
+}
+.panel-link.bold-bounce:hover { transform: rotate(-0.6deg) translateY(-3px); box-shadow: 0 10px 24px -12px hsl(var(--shadow-color) / 0.35); }
+.panel-link.bold-bounce:active { transform: rotate(0) translateY(0); }
+.panel-link-blob {
+  position: absolute; width: 84px; height: 84px; left: -18px; top: -20px;
+  background: color-mix(in oklch, var(--primary) 16%, transparent);
+  border-radius: 42% 58% 61% 39% / 45% 40% 60% 55%;
+  z-index: 0; pointer-events: none;
+}
+.panel-link.bold-bounce .panel-link-icon,
+.panel-link.bold-bounce .panel-link-text { position: relative; z-index: 1; }
+.panel-link.bold-bounce .panel-link-icon { background: var(--primary); color: #fff; }
+.panel-link.bold-bounce h2 { font-weight: 800; }
+.panel-link-cta-pill {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+  background: var(--accent2); color: #fff;
+  font-family: "Manrope", var(--font-sans), sans-serif; font-weight: 700; font-size: 12.5px;
+  padding: 7px 15px; border-radius: 999px; transition: transform .14s ease;
+}
+.panel-link.bold-bounce:hover .panel-link-cta-pill { transform: scale(1.05); }
+@media (prefers-reduced-motion: reduce) {
+  .panel-link.bold-bounce, .panel-link.bold-bounce:hover, .panel-link-cta-pill { transition: none; transform: none; }
+}
 
 .divider { height: 1px; background: var(--border); margin: 28px 0 0; }
 .row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -293,6 +398,64 @@ h1.display, .display {
 .input:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 20%, transparent); }
 .input-row { display: flex; align-items: flex-start; gap: 9px; }
 
+/*
+ * Cartoony treatment for the Solve intake textarea only, per direct user
+ * request ("the ask away box looks boring") — thick outline + hard offset
+ * shadow + a bounce on focus, same visual family as Settings' admin-shortcut
+ * buttons (.btn-cartoon-*). Scoped to these two classes rather than .input/
+ * .btn-icon so every other field/icon-button in the app keeps the flat
+ * "Judgment Console" style.
+ */
+.ask-away-label {
+  display: inline-flex; align-items: center; gap: 7px;
+  color: var(--primary); font-weight: 700; font-size: 15px;
+}
+.ask-away-input {
+  border: 1px solid var(--border); border-radius: 20px;
+  min-height: 190px; padding: 20px 60px 34px 22px;
+  background: var(--card);
+  box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.05), 0 10px 26px -20px hsl(var(--shadow-color) / 0.3);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.ask-away-input:focus-visible {
+  border-color: var(--primary); outline: none;
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 20%, transparent);
+}
+.ask-away-wrap { position: relative; }
+.ask-away-wrap .ask-away-input { width: 100%; }
+.ask-away-mic {
+  position: absolute; top: 16px; right: 16px; z-index: 1;
+  width: 36px; height: 36px; padding: 0;
+  border: none; border-radius: 10px;
+  background: color-mix(in oklch, var(--primary) 14%, var(--card));
+  color: var(--primary);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.ask-away-mic svg { width: 16px; height: 16px; }
+.ask-away-mic:hover { transform: scale(1.06); background: color-mix(in oklch, var(--primary) 22%, var(--card)); }
+.ask-away-mic:active { transform: scale(0.96); }
+.ask-away-mic[aria-pressed="true"] { background: var(--destructive); color: #fff; }
+.ask-away-counter {
+  position: absolute; bottom: 14px; right: 18px; z-index: 1;
+  font-size: 11.5px; color: var(--muted-foreground); font-variant-numeric: tabular-nums;
+}
+.ask-away-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.ask-away-chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
+  border-radius: 999px; border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--primary) 8%, var(--card));
+  color: var(--primary); font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.ask-away-chip:hover {
+  background: color-mix(in oklch, var(--primary) 16%, var(--card));
+  border-color: color-mix(in oklch, var(--primary) 35%, var(--border));
+}
+@media (prefers-reduced-motion: reduce) {
+  .ask-away-input, .ask-away-mic { transition: none; }
+  .ask-away-mic:hover, .ask-away-mic:active { transform: none; }
+}
+
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 22px;
   border-radius: var(--radius-lg); font-size: 14.5px; font-weight: 650; cursor: pointer; border: 1px solid transparent;
@@ -305,35 +468,111 @@ h1.display, .display {
 .btn-ghost { background: transparent; color: var(--primary); height: auto; padding: 0; }
 .btn-ghost:hover { text-decoration: underline; }
 .btn-icon { width: 46px; height: 46px; padding: 0; flex-shrink: 0; background: var(--secondary); color: var(--foreground); border-color: var(--border); }
+.btn-icon:hover { background: color-mix(in oklch, var(--secondary) 75%, var(--foreground) 6%); }
 
 /*
- * Cartoony variant — thick outline + hard offset shadow + a playful bounce,
- * scoped to Settings' two admin-only shortcut buttons per direct user
- * request. Deliberately not touched: .btn-primary/.btn-secondary, which stay
- * the flat "Judgment Console" style everywhere else in the app.
+ * Settings' two admin-shortcut links — flat icon cards (theme-token based,
+ * so dark mode is automatic), replacing an earlier thick-outline "cartoon"
+ * button treatment per direct user request ("card row" option, picked from
+ * 4 mocked-up layouts).
  */
-.btn-cartoon-primary,
-.btn-cartoon-secondary {
-  border-radius: 999px; border-width: 3px; border-style: solid; font-weight: 800;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+.admin-card-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.admin-card-btn {
+  flex: 1 1 220px; display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+  border-radius: var(--radius-xl); border: 1px solid var(--border); background: var(--card);
+  color: var(--foreground); text-decoration: none; transition: border-color 0.12s ease, transform 0.12s ease;
 }
-.btn-cartoon-primary {
-  background: var(--primary); color: var(--primary-foreground); border-color: var(--foreground);
-  box-shadow: 3px 3px 0 var(--foreground);
+.admin-card-btn:hover { border-color: color-mix(in oklch, var(--primary) 40%, var(--border)); transform: translateY(-1px); }
+.admin-card-btn-icon {
+  width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: #fff;
 }
-.btn-cartoon-secondary {
-  background: #FFD23F; color: #1C1B19; border-color: var(--foreground);
-  box-shadow: 3px 3px 0 var(--foreground);
+.admin-card-btn-title { font-size: 12.5px; font-weight: 700; }
+.admin-card-btn-sub { font-size: 10.5px; color: var(--muted-foreground); margin: 2px 0 0; }
+
+/*
+ * Starter-prompt terminal (Solve intake). Two distinct treatments per direct
+ * user request, sharing one mechanic (monospace + typewriter reveal):
+ *
+ *   LIGHT — a typewriter PAGE: warm paper surface, dark ink, ruled feed lines,
+ *           Signal Blue chevron/caret. A near-black CRT on a light screen read
+ *           as a hole in the page, and the earlier pale-grey attempt read as
+ *           inert; paper keeps the typewriter character while belonging to the
+ *           light theme.
+ *   DARK  — the glowing green-phosphor CRT ("keep it a bit shining").
+ *
+ * The dark greens are the one sanctioned exception to DESIGN.md's One Accent
+ * Rule — the terminal metaphor, not decorative colour. Light theme stays on
+ * Signal Blue and therefore needs no exception.
+ */
+.suggested-prompt-terminal {
+  position: relative; overflow: hidden;
+  background:
+    linear-gradient(180deg, #fffdf7 0%, #fdf8ec 100%);
+  border: 1px solid color-mix(in oklch, var(--primary) 22%, #e8dfc9);
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px hsl(var(--shadow-color) / 0.06);
+  padding: 14px 16px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px; letter-spacing: -0.01em;
+  display: flex; flex-direction: column; gap: 8px;
 }
-.btn-cartoon-primary:hover,
-.btn-cartoon-secondary:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--foreground); }
-.btn-cartoon-primary:active,
-.btn-cartoon-secondary:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--foreground); }
-@media (prefers-reduced-motion: reduce) {
-  .btn-cartoon-primary, .btn-cartoon-secondary { transition: none; }
-  .btn-cartoon-primary:hover, .btn-cartoon-secondary:hover { transform: none; }
+/* Feed lines — the ruled-paper counterpart to the dark theme's scanlines. */
+.suggested-prompt-terminal::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg, transparent 0 25px, color-mix(in oklch, var(--primary) 7%, transparent) 25px 26px
+  );
 }
-.btn-icon:hover { background: color-mix(in oklch, var(--secondary) 75%, var(--foreground) 6%); }
+.suggested-prompt-row {
+  display: flex; align-items: flex-start; gap: 8px; text-align: left;
+  background: transparent; border: 0; padding: 2px 0; line-height: 1.55;
+  position: relative; z-index: 1;
+  font-family: inherit; font-size: inherit;
+  color: #2b2a26;
+  transition: opacity 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;
+}
+.suggested-prompt-row[data-done]:hover { color: var(--primary); }
+.suggested-prompt-chevron {
+  color: var(--primary); font-weight: 700; flex-shrink: 0;
+}
+/* Themed, not inline: a hardcoded phosphor-green caret vanished against the
+   light theme's paper surface. */
+.suggested-prompt-caret {
+  display: inline-block; color: var(--primary);
+  animation: prompt-caret-blink 0.9s steps(1) infinite;
+}
+.dark .suggested-prompt-caret {
+  color: #bbf7d0; text-shadow: 0 0 10px rgba(187, 247, 208, 0.95);
+}
+@keyframes prompt-caret-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .suggested-prompt-caret { animation: none; } }
+
+/* Dark — the glowing green CRT. */
+.dark .suggested-prompt-terminal {
+  background:
+    radial-gradient(120% 100% at 50% 0%, #0d1a14 0%, #05070c 62%),
+    #05070c;
+  border-color: rgba(74, 222, 128, 0.28);
+  box-shadow:
+    inset 0 0 34px rgba(74, 222, 128, 0.10),
+    0 0 0 1px rgba(74, 222, 128, 0.05),
+    0 10px 28px -18px rgba(74, 222, 128, 0.45);
+}
+.dark .suggested-prompt-terminal::after {
+  background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(74, 222, 128, 0.045) 2px 3px);
+}
+.dark .suggested-prompt-row {
+  color: #4ade80; text-shadow: 0 0 7px rgba(74, 222, 128, 0.55);
+}
+.dark .suggested-prompt-row[data-done]:hover {
+  color: #bbf7d0; text-shadow: 0 0 11px rgba(134, 239, 172, 0.85);
+}
+.dark .suggested-prompt-chevron {
+  color: #22c55e; text-shadow: 0 0 9px rgba(34, 197, 94, 0.9);
+}
 .btn-icon[aria-pressed="true"] { background: var(--destructive); color: var(--destructive-foreground, #fff); border-color: var(--destructive); animation: btn-icon-pulse 1.6s ease-in-out infinite; }
 .btn-icon[aria-pressed="true"]:hover { background: var(--destructive); }
 @keyframes btn-icon-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--destructive) 45%, transparent); } 50% { box-shadow: 0 0 0 8px color-mix(in oklch, var(--destructive) 0%, transparent); } }

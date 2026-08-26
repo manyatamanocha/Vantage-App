@@ -325,6 +325,111 @@
         "value": "#1c1b19",
         "createdAt": "2026-08-26T10:36:03.921Z",
         "reason": "user confirmed: dark outline/text for the same cartoony admin-button exception"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#4ade80",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T13:02:23.376Z",
+        "reason": "user confirmed: classic green-terminal accent for the dark-mode starter-prompt terminal, explicitly requested to restore"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#86efac",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T13:02:23.618Z",
+        "reason": "user confirmed: hover shade of the dark-mode terminal green"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#22c55e",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T13:02:23.857Z",
+        "reason": "user confirmed: chevron shade of the dark-mode terminal green"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#bbf7d0",
+        "createdAt": "2026-08-26T13:04:54.203Z",
+        "reason": "user confirmed: green-phosphor CRT terminal for the Solve starter prompts ('keep it a bit shining, typewriter feeling') — sanctioned One Accent Rule exception, the terminal metaphor not decorative colour"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#4ade80",
+        "createdAt": "2026-08-26T13:04:54.466Z",
+        "reason": "user confirmed: green-phosphor CRT terminal for the Solve starter prompts ('keep it a bit shining, typewriter feeling') — sanctioned One Accent Rule exception, the terminal metaphor not decorative colour"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#22c55e",
+        "createdAt": "2026-08-26T13:04:54.735Z",
+        "reason": "user confirmed: green-phosphor CRT terminal for the Solve starter prompts ('keep it a bit shining, typewriter feeling') — sanctioned One Accent Rule exception, the terminal metaphor not decorative colour"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(74, 222, 128, 0.28)",
+        "createdAt": "2026-08-26T13:07:22.312Z",
+        "reason": "user confirmed: glow/border alpha variants of the already-sanctioned phosphor-terminal greens (Solve starter prompts, 'keep it a bit shining')"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(74, 222, 128, 0.55)",
+        "createdAt": "2026-08-26T13:07:22.587Z",
+        "reason": "user confirmed: glow/border alpha variants of the already-sanctioned phosphor-terminal greens (Solve starter prompts, 'keep it a bit shining')"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(134, 239, 172, 0.85)",
+        "createdAt": "2026-08-26T13:07:22.884Z",
+        "reason": "user confirmed: glow/border alpha variants of the already-sanctioned phosphor-terminal greens (Solve starter prompts, 'keep it a bit shining')"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(34, 197, 94, 0.9)",
+        "createdAt": "2026-08-26T13:07:23.147Z",
+        "reason": "user confirmed: glow/border alpha variants of the already-sanctioned phosphor-terminal greens (Solve starter prompts, 'keep it a bit shining')"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fffdf7",
+        "createdAt": "2026-08-26T13:33:56.875Z",
+        "reason": "user confirmed: light-theme typewriter-paper surface/ink for the Solve starter-prompt terminal ('change the font, colour on solve page in light theme') — paired with the sanctioned dark-CRT greens"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fdf8ec",
+        "createdAt": "2026-08-26T13:33:57.156Z",
+        "reason": "user confirmed: light-theme typewriter-paper surface/ink for the Solve starter-prompt terminal ('change the font, colour on solve page in light theme') — paired with the sanctioned dark-CRT greens"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#e8dfc9",
+        "createdAt": "2026-08-26T13:33:57.445Z",
+        "reason": "user confirmed: light-theme typewriter-paper surface/ink for the Solve starter-prompt terminal ('change the font, colour on solve page in light theme') — paired with the sanctioned dark-CRT greens"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#2b2a26",
+        "createdAt": "2026-08-26T13:33:57.756Z",
+        "reason": "user confirmed: light-theme typewriter-paper surface/ink for the Solve starter-prompt terminal ('change the font, colour on solve page in light theme') — paired with the sanctioned dark-CRT greens"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(187, 247, 208, 0.95)",
+        "createdAt": "2026-08-26T13:33:58.033Z",
+        "reason": "user confirmed: caret glow, alpha variant of the already-sanctioned phosphor greens"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.34, 1.56, .64, 1)",
+        "createdAt": "2026-08-26T13:48:35.877Z",
+        "reason": "user confirmed: picked 'Bold & Bouncy' from 3 mocked-up option-card directions specifically for this spring/overshoot hover motion"
       }
     ]
   }

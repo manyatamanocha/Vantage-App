@@ -58,6 +58,10 @@ export async function refineAsk(rawInput: string): Promise<{ goal: string; probl
   if (!parseResult.success) throw new Error(parseResult.error.issues[0].message);
   const { user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
+  // Fires when someone actually submits an ask — the step BEFORE they commit
+  // via "Let's solve" (solve_started). Without both, the intake screen's
+  // drop-off between "typed something" and "went ahead with it" is invisible.
+  track("ask_submitted", user.id, { length: parseResult.data.length });
   return structureProblem(parseResult.data);
 }
 

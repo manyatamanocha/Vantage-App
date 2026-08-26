@@ -44,6 +44,13 @@ function makeBuilder(rows: Row[]) {
   return builder;
 }
 
+// Analytics is fire-and-forget against a real service-role client, and
+// vitest loads .env.local — so without this the tracked actions below make
+// live network calls whose async failure logs after teardown ("Closing rpc
+// while onUserConsoleLog was pending"). Unit tests should never leave the
+// process.
+vi.mock("@/lib/analytics/track", () => ({ track: vi.fn() }));
+
 vi.mock("@/lib/supabase/server", () => {
   const buildClient = () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },

@@ -1,141 +1,174 @@
 import { requireAdmin } from "@/lib/auth/admin";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import {
+  type MetricEvent,
+  ACTIVE_WINDOW_DAYS,
+  WEL_THRESHOLD,
+  activationFunnel,
+  activationRate,
+  practiceCompletionRate,
+  retentionRate,
+  weeklyEngagedLearners,
+} from "@/lib/analytics/metrics";
+import { MetricTile } from "./metric-tile";
 
-type EventRow = {
-  id: string;
-  event_name: string;
-  user_id: string | null;
-  metadata: Record<string, unknown>;
-  created_at: string;
-};
+/**
+ * Four numbers, deliberately. The North Star plus the two rates that can
+ * change a decision, over the funnel that says where people drop.
+ *
+ * The wider stack (D2/D7/D30 retention, 4-week habit retention, practice
+ * conversion, engagement split, per-surface breakdown, solution feedback) is
+ * still defined, computed and unit-tested in lib/analytics/metrics.ts — it is
+ * simply not rendered. Two reasons, both deliberate:
+ *   1. Retention metrics cannot have data in a product this young; a
+ *      permanently-empty tile reads as broken, not as pending.
+ *   2. A dashboard of twenty numbers hides the three that matter. The "So
+ *      What?" test applies: if seeing it wouldn't change a decision today,
+ *      it doesn't earn space today.
+ * Re-surface them here as the data matures — nothing needs rebuilding.
+ *
+ * Also absent, and worth stating: Skill Improvement Rate needs a validated
+ * scoring rubric before it measures skill rather than users learning to game
+ * the quiz, and Referral Rate has no referral system to measure.
+ */
 
-const FUNNEL_STEPS = ["signup", "login", "solve_started", "guess_locked", "solution_generated", "quiz_attempt"] as const;
+// Activation needs each user's original signup, so the fetch is time-bounded
+// rather than "latest N rows", which would silently truncate old signups.
+const LOOKBACK_DAYS = 60;
+const ROW_CAP = 5000;
 
-function utcDayKey(iso: string): string {
-  return iso.slice(0, 10);
+function pct(rate: number | null): string | null {
+  return rate === null ? null : `${Math.round(rate * 100)}%`;
 }
 
 export default async function AnalyticsPage() {
   await requireAdmin();
 
+  const now = new Date();
+  const since = new Date(now.getTime() - LOOKBACK_DAYS * 86_400_000).toISOString();
+
   const admin = getSupabaseAdminClient();
-  // 1000 is well past what a class-project MVP will generate; a real launch
-  // would page this or aggregate in SQL instead of in memory.
   const { data } = await admin
     .from("analytics_events")
-    .select("id, event_name, user_id, metadata, created_at")
+    .select("event_name, user_id, metadata, created_at")
+    .gte("created_at", since)
     .order("created_at", { ascending: false })
-    .limit(1000);
+    .limit(ROW_CAP);
 
-  const events = (data ?? []) as EventRow[];
+  const events = (data ?? []) as MetricEvent[];
+  const truncated = events.length === ROW_CAP;
 
-  const countsByEvent = new Map<string, number>();
-  const usersByEvent = new Map<string, Set<string>>();
-  for (const e of events) {
-    countsByEvent.set(e.event_name, (countsByEvent.get(e.event_name) ?? 0) + 1);
-    if (e.user_id) {
-      if (!usersByEvent.has(e.event_name)) usersByEvent.set(e.event_name, new Set());
-      usersByEvent.get(e.event_name)!.add(e.user_id);
-    }
-  }
+  const wel = weeklyEngagedLearners(events, now);
+  const activation = activationRate(events, now);
+  const completion = practiceCompletionRate(events, now);
+  const d7 = retentionRate(events, 7, now);
+  const funnel = activationFunnel(events, now);
 
-  const totalUsers = new Set(events.filter((e) => e.user_id).map((e) => e.user_id)).size;
-
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() - (6 - i));
-    return d.toISOString().slice(0, 10);
-  });
-  const dailyCounts = last7Days.map((day) => ({
-    day,
-    count: events.filter((e) => utcDayKey(e.created_at) === day).length,
-  }));
-  const maxDaily = Math.max(1, ...dailyCounts.map((d) => d.count));
-
-  const recent = events.slice(0, 25);
+  const funnelTop = Math.max(1, ...funnel.map((s) => s.users));
+  const hasEvents = events.length > 0;
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
         <div className="topline"><span className="datechip">Admin</span></div>
-        <h1 className="display">Analytics</h1>
-        <p className="lede">Real usage events, logged as they happen — no sample data.</p>
+        <h1 className="display">Metrics</h1>
+        <p className="lede">
+          Real usage events only — no sample data. Rates read &ldquo;—&rdquo; until enough users are
+          eligible to measure them.
+        </p>
       </header>
 
+      {!hasEvents ? (
+        <section className="card" style={{ marginTop: 8 }}>
+          <p className="card-text">
+            No events recorded in the last {LOOKBACK_DAYS} days yet. Sign up, solve a problem, or
+            complete a quiz to generate the first ones.
+          </p>
+        </section>
+      ) : null}
+
       <section className="stack">
-        <span className="card-label">Funnel — all-time event counts, distinct users in brackets</span>
+        <span className="card-label">Activation funnel — where people drop before the habit</span>
         <div className="card">
-          {events.length === 0 ? (
-            <p className="card-text">No events recorded yet. Sign up, solve a problem, or take a quiz to generate the first ones.</p>
-          ) : (
-            FUNNEL_STEPS.map((step) => (
-              <div className="history-row" key={step}>
-                <div className="flex-1">
-                  <strong>{step}</strong>
+          <div className="bars">
+            {funnel.map((step, i) => {
+              const previous = i === 0 ? null : funnel[i - 1].users;
+              const dropped = previous !== null && previous > 0 ? previous - step.users : 0;
+              return (
+                <div key={step.step} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 5 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13 }}>
+                    <span>{step.step}</span>
+                    <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--muted-foreground)" }}>
+                      {step.users}
+                      {dropped > 0 ? ` · −${dropped}` : ""}
+                    </span>
+                  </div>
+                  <div className="bar-track" style={{ height: 10 }}>
+                    <div
+                      style={{
+                        width: `${(step.users / funnelTop) * 100}%`,
+                        height: "100%",
+                        background: "var(--primary)",
+                        borderRadius: 99,
+                      }}
+                    />
+                  </div>
                 </div>
-                <span className="badge">
-                  {countsByEvent.get(step) ?? 0} ({usersByEvent.get(step)?.size ?? 0} users)
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section className="stack">
-        <span className="card-label">Last 7 days</span>
-        <div className="card">
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 100 }}>
-            {dailyCounts.map(({ day, count }) => (
-              <div key={day} style={{ flex: 1, textAlign: "center" }}>
-                <div
-                  style={{
-                    height: `${Math.max(4, (count / maxDaily) * 80)}px`,
-                    background: "var(--primary)",
-                    borderRadius: 4,
-                    marginBottom: 6,
-                  }}
-                  title={`${count} events`}
-                />
-                <span className="text-sm text-muted-foreground">{day.slice(5)}</span>
-                <div className="text-sm">{count}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
       <section className="stack">
-        <span className="card-label">Totals</span>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <MetricTile
+            star
+            label="Weekly Engaged Learners"
+            value={String(wel.count)}
+            sub={`Unique users completing ${WEL_THRESHOLD}+ meaningful sessions in a rolling ${ACTIVE_WINDOW_DAYS} days. A weekly-habit metric by design — a single day of testing cannot move it, and that is expected rather than a miss.`}
+          />
+          <MetricTile
+            label="Activation — first value"
+            value={pct(activation.rate)}
+            accent="var(--success)"
+            sub={`${activation.activated} of ${activation.signups} eligible signups practised within 24h. Signups still inside their own 24h window are excluded from both sides, so a burst of fresh signups can't drag this down.`}
+          />
+          <MetricTile
+            label="Practice completion"
+            value={pct(completion.rate)}
+            accent="var(--accent2)"
+            sub={`${completion.completed} of ${completion.started} started loops reached the feedback step this week. If this is low, people are abandoning at the guess — the core mechanic is the friction.`}
+          />
+        </div>
+      </section>
+
+      <section className="stack">
+        <span className="card-label">Lagging — confirms whether the leading signals were real</span>
         <div className="card">
           <div className="history-row">
-            <div className="flex-1"><strong>Distinct users with any tracked event</strong></div>
-            <span className="badge">{totalUsers}</span>
-          </div>
-          <div className="history-row">
-            <div className="flex-1"><strong>Total events logged</strong></div>
-            <span className="badge">{events.length}{events.length === 1000 ? "+" : ""}</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="stack">
-        <span className="card-label">Recent events</span>
-        <div className="card">
-          {recent.length === 0 ? <p className="card-text">Nothing yet.</p> : null}
-          {recent.map((e) => (
-            <div className="history-row" key={e.id}>
-              <div className="flex-1">
-                <strong>{e.event_name}</strong>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {new Date(e.created_at).toLocaleString()} · {e.user_id ? `user ${e.user_id.slice(0, 8)}` : "anonymous"}
-                  {Object.keys(e.metadata ?? {}).length > 0 ? ` · ${JSON.stringify(e.metadata)}` : ""}
-                </p>
-              </div>
+            <div className="flex-1">
+              <strong>D7 retention</strong>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Activated users who practised again around day 7 (days {d7.bracket[0]}–
+                {d7.bracket[1]}). Cohort excludes anyone whose day-7 window hasn&apos;t elapsed —
+                so this stays empty, rather than reading as churn, until users are old enough to
+                measure.
+              </p>
             </div>
-          ))}
+            <span className="badge progress" style={{ fontVariantNumeric: "tabular-nums" }}>
+              {pct(d7.rate) ?? "—"} · {d7.retained}/{d7.cohort}
+            </span>
+          </div>
         </div>
       </section>
+
+      {truncated ? (
+        <p className="hint" style={{ marginTop: 4 }}>
+          Showing the most recent {ROW_CAP.toLocaleString()} events of the last {LOOKBACK_DAYS} days —
+          older events in this window are excluded. Aggregate in SQL before this matters.
+        </p>
+      ) : null}
     </main>
   );
 }

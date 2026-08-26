@@ -95,7 +95,9 @@ Vantage is where a consultant makes a call — not a game, not a toy. The visual
 
 The palette runs in two registers: a light "New Blue" mode (soft blue-white canvas, white cards, navy ink) for daytime work, and a dark "Black & Blue" mode (true black canvas, near-black cards, the same signal blue turned up in luminance) for a genuine console-at-night feel. Both are locked and share the same structural rules — only the values change.
 
-Confirmed anti-reference: **not** a playful, cartoonish consumer app. Vantage has streaks and quizzes, but they're instrumentation for judgment-building, not gamified decoration — no mascots, no candy colors, no bounce for its own sake.
+Confirmed anti-reference: **not** a playful, cartoonish consumer app *as a whole*. Vantage has streaks and quizzes, but they're instrumentation for judgment-building, not gamified decoration — no mascots, no candy colors, no bounce for its own sake, across buttons, inputs, data, and status.
+
+**One deliberate exception — "Bold & Bouncy" option-card links.** The small set of "pick one of two paths" navigation cards (Home's "Let's Solve"/"Quiz time", "Continue where you left off", Practice's two entry cards) run a scoped cartoony treatment: a soft accent-tinted blob behind the icon, an extra-bold heading, a chunky Console Navy pill CTA, and a slight rotate-and-lift on hover. Picked directly by the user from three mocked-up directions (the other two — "Chunky Console" thick-border/hard-shadow, and "Sticker Badges" — were rejected). This lives only on `.panel-link.bold-bounce`; it does not change buttons, inputs, stat tiles, or any other component, and the flat Judgment Console rules below still govern everything else.
 
 **Key Characteristics:**
 - One disciplined accent color (Signal Blue) against a navy/white console structure
@@ -199,6 +201,15 @@ Precise and confident: solid fills, crisp 1px borders, minimal ornament. Nothing
 ### Quiz Ring (signature component)
 A 132px circular SVG timer used on quiz screens: an outer progress ring in Signal Blue over a faint tinted track, a navy clock face at center with live tick/hand rendering, and a large tabular-nums number below it. The one place in the system where a fully custom illustrated component carries real product meaning (elapsed time) rather than decoration.
 
+### Option-card links ("Bold & Bouncy", scoped exception)
+- **Shape:** `.panel-link.outline.bold-bounce` — a horizontal icon+title+description row, `var(--radius-xl)`, 18×20px padding.
+- **Blob:** an absolutely-positioned `.panel-link-blob`, ~84px, `border-radius: 42% 58% 61% 39% / 45% 40% 60% 55%`, Signal Blue at 16% behind the icon, `z-index: 0`, `pointer-events: none`.
+- **Icon:** solid Signal Blue fill, white icon, 46px circle — not the soft-tint circle other icon badges use.
+- **Heading:** 800 weight (heavier than the standard 700 Headline).
+- **CTA:** `.panel-link-cta-pill` — solid Console Navy pill, white 700-weight text, not a plain text link.
+- **Motion:** `rotate(-0.6deg) translateY(-3px)` plus a stronger hover shadow on the whole card; the CTA pill scales up slightly in sync. Respects `prefers-reduced-motion`.
+- **Where it applies:** Home's two option cards and its "Continue where you left off" card, Practice's two entry cards. Nowhere else.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -210,6 +221,6 @@ A 132px circular SVG timer used on quiz screens: an outer progress ring in Signa
 
 ### Don't:
 - **Don't** add a second accent color. If something needs to stand out, use Signal Blue, Console Navy, or a semantic status color — not a new hue.
-- **Don't** design toward a playful/cartoonish consumer-app look, even for streak or quiz features — those are judgment-building instrumentation, not gamified decoration.
+- **Don't** design toward a playful/cartoonish consumer-app look outside the one named "Bold & Bouncy" option-card exception above — streaks, quiz screens, and everything else stay judgment-building instrumentation, not gamified decoration.
 - **Don't** default to generic AI-slop gradient blobs or purple/violet AI branding — this palette is blue/navy on purpose, not a stand-in for "AI product colors."
 - **Don't** add ambient shadow or glow to a static element — motion/glow is reserved for meaningful state (live recording, a correct-answer pop, the pro-tip bulb).

@@ -19,10 +19,14 @@ function currentSectionIndex(pathname: string): number {
 
 /**
  * Forward counterpart to BackButton — steps to the next top-level section.
- * Hidden on Settings, the last section (nowhere to go next).
+ * Hidden on Settings (the last section, nowhere to go next) and on Admin,
+ * which isn't part of this Home→Solve→Practice→Progress→Settings flow at
+ * all — showing "Next" there pointed to Solve, which read as broken.
  */
 export function NextButton() {
   const pathname = usePathname();
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return null;
+
   const index = currentSectionIndex(pathname);
 
   if (index === SECTIONS.length - 1) return null;

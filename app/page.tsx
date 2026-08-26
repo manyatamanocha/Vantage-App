@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { HomeDashboard } from "@/components/home-dashboard";
 import { getSettings } from "@/app/settings/actions";
+import { getLatestUnfinishedSolve } from "@/app/home-actions";
 
 export default async function Home() {
   const { user } = await getVerifiedUser();
@@ -17,5 +18,7 @@ export default async function Home() {
     .then((settings) => (settings.defaultQuestionType === "quiz" ? "/practice/general" : "/practice/today"))
     .catch(() => "/practice/today");
 
-  return <HomeDashboard quizHref={quizHref} />;
+  const continueSolve = await getLatestUnfinishedSolve(user.id);
+
+  return <HomeDashboard quizHref={quizHref} continueSolve={continueSolve} />;
 }

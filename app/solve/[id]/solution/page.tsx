@@ -175,7 +175,7 @@ export default async function SolutionPage({
         </div>
       </section>
 
-      <SolutionFeedback />
+      <SolutionFeedback solveId={id} />
 
       <nav aria-label="What's next" className="actions" style={{ justifyContent: "center" }}>
         <Link href="/solve/new" className="btn btn-primary">

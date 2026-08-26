@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Settings2, Eye } from "lucide-react";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { getSettings } from "./actions";
 import { getProfile } from "./profile-actions";
@@ -32,11 +33,25 @@ export default async function SettingsPage({
             profile={{ ...profile, fullName: profile.fullName || "Manyata Manocha" }}
             extraLine="Role: Administrator"
           />
-          <section className="stack" style={{ marginTop: 26 }}>
-            <div className="actions">
-              <Link href="/admin" className="btn btn-cartoon-primary">Open admin dashboard</Link>
-              <Link href="/settings?view=learner" className="btn btn-cartoon-secondary">Preview learner experience</Link>
-            </div>
+          <section className="admin-card-row" style={{ marginTop: 26 }}>
+            <Link href="/admin" className="admin-card-btn">
+              <span className="admin-card-btn-icon" style={{ background: "var(--primary)" }}>
+                <Settings2 size={16} aria-hidden="true" />
+              </span>
+              <div>
+                <div className="admin-card-btn-title">Admin dashboard</div>
+                <p className="admin-card-btn-sub">Manage content &amp; users</p>
+              </div>
+            </Link>
+            <Link href="/settings?view=learner" className="admin-card-btn">
+              <span className="admin-card-btn-icon" style={{ background: "var(--muted-foreground)" }}>
+                <Eye size={16} aria-hidden="true" />
+              </span>
+              <div>
+                <div className="admin-card-btn-title">Preview learner view</div>
+                <p className="admin-card-btn-sub">See it as a learner would</p>
+              </div>
+            </Link>
           </section>
         </>
       ) : null}

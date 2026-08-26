@@ -61,6 +61,9 @@ export async function getTodaysPracticeCase(): Promise<TodaysPracticeCase> {
   }
 
   const chosen = pool[pickDailyIndex(dailySeed(utcDayKey(), userId), pool.length)];
+  // Start-side counterpart to meaningful_activity_completed — without it the
+  // funnel's "started" step and Practice Completion Rate have no denominator.
+  track("practice_started", userId, { source: "daily_challenge" });
   return {
     id: chosen.id,
     rawInput: chosen.raw_input,

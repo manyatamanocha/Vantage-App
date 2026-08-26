@@ -32,6 +32,9 @@ export async function getGeneralQuizQuestions(difficulty: GeneralQuizQuestion["d
   if (seenIds.length > 0) query = query.not("id", "in", `(${seenIds.join(",")})`);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
+  // Start-side counterpart to meaningful_activity_completed — without it the
+  // funnel's "started" step and Practice Completion Rate have no denominator.
+  track("practice_started", user.id, { source: "quiz_general" });
   return (data ?? []).map((row) => ({
     id: String(row.id),
     difficulty: row.difficulty as GeneralQuizQuestion["difficulty"],

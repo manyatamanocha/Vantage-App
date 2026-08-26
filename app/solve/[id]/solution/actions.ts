@@ -3,6 +3,22 @@ import { getVerifiedUser } from "@/lib/supabase/server";
 import { generateSolution, type SolutionResult } from "@/lib/engine/solution";
 import { track } from "@/lib/analytics/track";
 
+/**
+ * Records the "Was this helpful?" answer on the solution screen.
+ *
+ * The chips previously only set local React state — the user clicked, saw a
+ * confirmation animation, and the answer was discarded. This is the product's
+ * only in-app qualitative signal, so it has to actually persist.
+ */
+export async function recordSolutionFeedback(input: {
+  solveId: string;
+  helpful: boolean;
+}): Promise<void> {
+  const { user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
+  track("solution_feedback", user.id, { solveId: input.solveId, helpful: input.helpful });
+}
+
 export async function runSolutionStep(solveId: string): Promise<SolutionResult> {
   const { supabase, user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");

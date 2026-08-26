@@ -2,8 +2,20 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, Lock, Mic, Sparkles, SpellCheck } from "lucide-react";
+import {
+  ArrowDown,
+  Lock,
+  Mic,
+  MessageCircle,
+  MessageSquare,
+  Sparkles,
+  SpellCheck,
+  TrendingUp,
+  Users,
+  FileText,
+} from "lucide-react";
 import { checkAskGrammar, createDraftSolve, refineAsk } from "./actions";
+import { SuggestedPromptTerminal } from "./suggested-prompt-terminal";
 
 interface SpeechRecognitionResultLike {
   [index: number]: { transcript: string };
@@ -48,10 +60,22 @@ const SUGGESTED_PROMPTS = [
   "How would I use AI to spot patterns across a year of messy sales data?",
 ];
 
+// Short-label quick-pick chips, one per SUGGESTED_PROMPTS entry — same
+// underlying prompts, just a glanceable row above the full typewriter list
+// instead of making someone read five full sentences to find a starting point.
+const SUGGESTED_PROMPT_CHIPS = [
+  { label: "Automate support tickets", icon: MessageSquare, promptIndex: 0 },
+  { label: "Analyze survey data", icon: TrendingUp, promptIndex: 1 },
+  { label: "Predict client churn", icon: Users, promptIndex: 2 },
+  { label: "Summarize reports", icon: FileText, promptIndex: 3 },
+] as const;
+
 export function ProblemIntakeForm() {
   const router = useRouter();
   const [rawInput, setRawInput] = useState("");
-  const [grammarCorrection, setGrammarCorrection] = useState<string | null>(null);
+  // Tagged with the exact input it was computed for, so a stale suggestion is
+  // never rendered against text the user has since changed.
+  const [grammarCorrection, setGrammarCorrection] = useState<{ forInput: string; text: string } | null>(null);
   const [isCheckingGrammar, setIsCheckingGrammar] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -82,15 +106,16 @@ export function ProblemIntakeForm() {
   // to fire on every keystroke, and a pause is when a suggestion is useful.
   useEffect(() => {
     const trimmed = rawInput.trim();
-    if (!trimmed) {
-      setGrammarCorrection(null);
-      return;
-    }
+    // No synchronous clear here: the correction is tagged with the input it
+    // was computed for, and the render below only shows it when that tag
+    // still matches. That also fixes a real bug — the previous version could
+    // briefly show the last correction against freshly-typed text.
+    if (!trimmed) return;
     const timer = setTimeout(() => {
       setIsCheckingGrammar(true);
       checkAskGrammar(trimmed)
         .then((result) => {
-          setGrammarCorrection(result.changed ? result.correctedText : null);
+          setGrammarCorrection(result.changed ? { forInput: trimmed, text: result.correctedText } : null);
         })
         .catch(() => {
           // Grammar checking is a nice-to-have, not a blocker — fail silently.
@@ -275,74 +300,115 @@ export function ProblemIntakeForm() {
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
-        <h1 className="display">What are you solving today?</h1>
+        <h1 className="display">
+          What are you <span style={{ color: "var(--primary)" }}>solving</span> today?
+        </h1>
         <p className="lede">Input what you want to discuss</p>
       </header>
       <form onSubmit={handleRefine} className="stack">
         <label className="field" htmlFor="rawInput">
-          <span>Ask Awayyyy</span>
-          <div className="input-row">
-          <textarea
-            id="rawInput"
-            name="rawInput"
-            required
-            rows={4}
-            maxLength={MAX_ASK_LENGTH}
-            value={rawInput}
-            onChange={(e) => setRawInput(e.target.value)}
-            className="input min-h-32 flex-1"
-          />
-          {speechSupported && (
-            <button
-              type="button"
-              className="btn btn-icon"
-              aria-label={isListening ? "Stop voice input" : "Start voice input"}
-              aria-pressed={isListening}
-              onClick={toggleListening}
-            >
-              <Mic aria-hidden="true" />
-            </button>
-          )}
-          </div>
-          <span className="hint" style={{ display: "block", textAlign: "right", fontSize: 11.5 }}>
-            Type or speak. {rawInput.length.toLocaleString()} / {MAX_ASK_LENGTH.toLocaleString()} characters
+          <span className="ask-away-label">
+            <MessageCircle size={16} aria-hidden="true" /> Ask Awayyyy
           </span>
+          <div className="ask-away-wrap">
+            <textarea
+              id="rawInput"
+              name="rawInput"
+              required
+              rows={4}
+              maxLength={MAX_ASK_LENGTH}
+              value={rawInput}
+              onChange={(e) => setRawInput(e.target.value)}
+              placeholder="Type your question or problem here…"
+              className="input ask-away-input"
+            />
+            {speechSupported ? (
+              <button
+                type="button"
+                className="btn btn-icon ask-away-mic"
+                aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                aria-pressed={isListening}
+                onClick={toggleListening}
+              >
+                <Mic aria-hidden="true" />
+              </button>
+            ) : null}
+            <span className="ask-away-counter">
+              {rawInput.length.toLocaleString()} / {MAX_ASK_LENGTH.toLocaleString()}
+            </span>
+          </div>
 
-          {isCheckingGrammar || grammarCorrection ? (
-            <div
-              className="card"
-              style={{ marginTop: 10, padding: "10px 14px", background: "var(--muted, var(--card))" }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: grammarCorrection ? 6 : 0 }}>
-                <SpellCheck size={13} aria-hidden="true" style={{ color: "var(--muted-foreground)" }} />
-                <span className="hint" style={{ fontSize: 11.5 }}>
-                  {isCheckingGrammar ? "Checking grammar…" : "Suggested wording"}
-                </span>
+          {(() => {
+            // Only show a suggestion still matching what's in the box.
+            const suggestion =
+              grammarCorrection && grammarCorrection.forInput === rawInput.trim()
+                ? grammarCorrection.text
+                : null;
+            if (!rawInput.trim() || (!isCheckingGrammar && !suggestion)) return null;
+            return (
+              <div
+                className="card"
+                style={{ marginTop: 10, padding: "10px 14px", background: "var(--muted, var(--card))" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: suggestion ? 6 : 0 }}>
+                  <SpellCheck size={13} aria-hidden="true" style={{ color: "var(--muted-foreground)" }} />
+                  <span className="hint" style={{ fontSize: 11.5 }}>
+                    {isCheckingGrammar ? "Checking grammar…" : "Suggested wording"}
+                  </span>
+                </div>
+                {suggestion ? <p style={{ fontSize: 13.5, margin: 0 }}>{suggestion}</p> : null}
               </div>
-              {grammarCorrection ? (
-                <p style={{ fontSize: 13.5, margin: 0 }}>{grammarCorrection}</p>
-              ) : null}
+            );
+          })()}
+
+          {!rawInput.trim() ? (
+            <div style={{ marginTop: 14 }}>
+              <span
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginBottom: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--foreground)",
+                }}
+              >
+                <Sparkles size={15} aria-hidden="true" style={{ color: "var(--primary)" }} />
+                Not sure where to start? Try one of these
+              </span>
+              <div className="ask-away-chip-row">
+                {SUGGESTED_PROMPT_CHIPS.map(({ label, icon: Icon, promptIndex }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="ask-away-chip"
+                    onClick={() => applySuggestedPrompt(SUGGESTED_PROMPTS[promptIndex])}
+                  >
+                    <Icon size={14} aria-hidden="true" /> {label}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : null}
 
           {!rawInput.trim() ? (
-            <div style={{ marginTop: 12 }}>
-              <span className="hint" style={{ display: "block", marginBottom: 8, fontSize: 11.5 }}>
-                Not sure where to start? Try one of these:
+            <div style={{ marginTop: 14 }}>
+              <span
+                style={{
+                  display: "block",
+                  marginBottom: 10,
+                  fontFamily: "var(--font-mono, ui-monospace, monospace)",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                  color: "var(--muted-foreground)",
+                }}
+              >
+                Examples
               </span>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {SUGGESTED_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    className="cat-btn"
-                    style={{ padding: "11px 14px", fontSize: 13, fontWeight: 500 }}
-                    onClick={() => applySuggestedPrompt(prompt)}
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
+              <SuggestedPromptTerminal prompts={SUGGESTED_PROMPTS} onSelect={applySuggestedPrompt} />
             </div>
           ) : null}
       </label>
@@ -365,8 +431,8 @@ export function ProblemIntakeForm() {
           <section
             className="card"
             style={{
-              borderColor: "var(--success)",
-              boxShadow: "0 0 0 1px var(--success)",
+              borderColor: "var(--primary)",
+              boxShadow: "0 0 0 1px var(--primary)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
@@ -378,27 +444,19 @@ export function ProblemIntakeForm() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: "color-mix(in oklch, var(--success) 18%, transparent)",
-                  color: "var(--success)",
+                  background: "color-mix(in oklch, var(--primary) 18%, transparent)",
+                  color: "var(--primary)",
                   flexShrink: 0,
                 }}
               >
                 <Sparkles size={13} aria-hidden="true" />
               </div>
-              <span style={{ color: "var(--success)", fontWeight: 650, fontSize: 14 }}>
+              <span style={{ color: "var(--primary)", fontWeight: 650, fontSize: 14 }}>
                 Here&apos;s a refined version:
               </span>
             </div>
 
-            <p
-              className="card-text"
-              style={{
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-lg)",
-                padding: "12px 14px",
-                fontStyle: "italic",
-              }}
-            >
+            <p className="quote-card card-text" style={{ fontStyle: "italic", margin: 0 }}>
               &ldquo;{refinedGoal}&rdquo;
             </p>
           </section>
