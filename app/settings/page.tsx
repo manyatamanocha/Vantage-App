@@ -27,22 +27,22 @@ export default async function SettingsPage({
       <header><h1 className="display">Settings</h1></header>
 
       {isAdmin && !previewLearner ? (
-        <section className="stack">
-          <span className="card-label">Account</span>
-          <div className="card">
-            <div className="history-row">
-              <div className="flex-1">
-                <strong>{profile.fullName || profile.email}</strong>
-                <p className="mt-1 text-sm text-muted-foreground">{profile.email}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Role: Administrator</p>
+        <>
+          <ProfileCard profile={{ ...profile, fullName: profile.fullName || "Manyata Manocha" }} />
+          <section className="stack">
+            <div className="card">
+              <div className="history-row">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Role: Administrator</p>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="actions">
-            <Link href="/admin" className="btn btn-primary">Open admin dashboard</Link>
-            <Link href="/settings?view=learner" className="btn btn-secondary">Preview learner experience</Link>
-          </div>
-        </section>
+            <div className="actions">
+              <Link href="/admin" className="btn btn-primary">Open admin dashboard</Link>
+              <Link href="/settings?view=learner" className="btn btn-secondary">Preview learner experience</Link>
+            </div>
+          </section>
+        </>
       ) : null}
 
       {isAdmin && previewLearner ? (

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, Lock, Mic, Sparkles } from "lucide-react";
-import { createDraftSolve, refineAsk } from "./actions";
+import { ArrowDown, Lock, Mic, Sparkles, SpellCheck } from "lucide-react";
+import { checkAskGrammar, createDraftSolve, refineAsk } from "./actions";
 
 interface SpeechRecognitionResultLike {
   [index: number]: { transcript: string };
@@ -39,6 +39,8 @@ const MAX_ASK_LENGTH = 10000;
 export function ProblemIntakeForm() {
   const router = useRouter();
   const [rawInput, setRawInput] = useState("");
+  const [grammarCorrection, setGrammarCorrection] = useState<string | null>(null);
+  const [isCheckingGrammar, setIsCheckingGrammar] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -61,6 +63,30 @@ export function ProblemIntakeForm() {
 
   useEffect(() => {
     rawInputRef.current = rawInput;
+  }, [rawInput]);
+
+  // Live grammar/spelling check, debounced to fire ~900ms after typing
+  // pauses rather than on every keystroke — an LLM call is too slow/costly
+  // to fire on every keystroke, and a pause is when a suggestion is useful.
+  useEffect(() => {
+    const trimmed = rawInput.trim();
+    if (!trimmed) {
+      setGrammarCorrection(null);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setIsCheckingGrammar(true);
+      checkAskGrammar(trimmed)
+        .then((result) => {
+          setGrammarCorrection(result.changed ? result.correctedText : null);
+        })
+        .catch(() => {
+          // Grammar checking is a nice-to-have, not a blocker — fail silently.
+          setGrammarCorrection(null);
+        })
+        .finally(() => setIsCheckingGrammar(false));
+    }, 900);
+    return () => clearTimeout(timer);
   }, [rawInput]);
 
   function releaseMicStream() {
@@ -264,6 +290,23 @@ export function ProblemIntakeForm() {
           <span className="hint" style={{ display: "block", textAlign: "right", fontSize: 11.5 }}>
             Type or speak. {rawInput.length.toLocaleString()} / {MAX_ASK_LENGTH.toLocaleString()} characters
           </span>
+
+          {isCheckingGrammar || grammarCorrection ? (
+            <div
+              className="card"
+              style={{ marginTop: 10, padding: "10px 14px", background: "var(--muted, var(--card))" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: grammarCorrection ? 6 : 0 }}>
+                <SpellCheck size={13} aria-hidden="true" style={{ color: "var(--muted-foreground)" }} />
+                <span className="hint" style={{ fontSize: 11.5 }}>
+                  {isCheckingGrammar ? "Checking grammar…" : "Suggested wording"}
+                </span>
+              </div>
+              {grammarCorrection ? (
+                <p style={{ fontSize: 13.5, margin: 0 }}>{grammarCorrection}</p>
+              ) : null}
+            </div>
+          ) : null}
       </label>
 
         <div className="actions" style={{ justifyContent: "center" }}>

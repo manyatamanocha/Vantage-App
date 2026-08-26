@@ -9,13 +9,16 @@ export async function runSolutionStep(solveId: string): Promise<SolutionResult> 
 
   const { data: solve, error: fetchErr } = await supabase
     .from("solves")
-    .select("raw_input")
+    .select("raw_input, goal")
     .eq("id", solveId)
     .single();
   if (fetchErr) throw new Error(fetchErr.message);
   if (!solve.raw_input) throw new Error("This solve has no problem statement yet");
 
-  const solution = await generateSolution(solve.raw_input);
+  // Prefer the Groq-refined goal from the confirm step (typos/grammar fixed,
+  // vague phrasing tightened) over the raw typed/dictated input — falls back
+  // to raw_input for solves that skipped that step (e.g. practice-sourced).
+  const solution = await generateSolution(solve.goal || solve.raw_input);
 
   const { error: updateErr } = await supabase
     .from("solves")

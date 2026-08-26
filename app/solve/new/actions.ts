@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { getVerifiedUser } from "@/lib/supabase/server";
 import { structureProblem } from "@/lib/engine/structure";
+import { checkGrammar, type GrammarCheckResult } from "@/lib/engine/grammar";
 import { track } from "@/lib/analytics/track";
 
 const createDraftSolveSchema = z.object({
@@ -58,4 +59,16 @@ export async function refineAsk(rawInput: string): Promise<{ goal: string; probl
   const { user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
   return structureProblem(parseResult.data);
+}
+
+// Live grammar/spelling check for the intake textarea — debounced on the
+// client, called on pauses in typing rather than every keystroke. Separate
+// from refineAsk: this only fixes wording as you type, it does not extract
+// goal/problemType (that still happens once, on Submit).
+export async function checkAskGrammar(rawInput: string): Promise<GrammarCheckResult> {
+  const parseResult = rawInputSchema.safeParse(rawInput);
+  if (!parseResult.success) throw new Error(parseResult.error.issues[0].message);
+  const { user } = await getVerifiedUser();
+  if (!user?.id) throw new Error("Not authenticated");
+  return checkGrammar(parseResult.data);
 }
