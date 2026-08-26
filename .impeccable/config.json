@@ -277,6 +277,54 @@
         ],
         "createdAt": "2026-08-26T09:19:58.591Z",
         "reason": "user confirmed: poppy multi-color chip text palette (blue/yellow/pink/lavender/teal), approved live via the orbit-chips artifact mockup 2026-08-26"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#7fb0ff",
+        "createdAt": "2026-08-26T09:45:02.139Z",
+        "reason": "dark-mode counterpart of the already-accepted light .auth-chip decorative hues (globals.css:490 comment: confirmed with user via orbit-chips mockup 2026-08-25); DESIGN.md predates the Sky Blue Glass auth redesign entirely"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#f5c463",
+        "createdAt": "2026-08-26T09:45:02.313Z",
+        "reason": "dark-mode counterpart of the already-accepted light .auth-chip decorative hues (globals.css:490 comment: confirmed with user via orbit-chips mockup 2026-08-25); DESIGN.md predates the Sky Blue Glass auth redesign entirely"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#b49bef",
+        "createdAt": "2026-08-26T09:45:02.493Z",
+        "reason": "dark-mode counterpart of the already-accepted light .auth-chip decorative hues (globals.css:490 comment: confirmed with user via orbit-chips mockup 2026-08-25); DESIGN.md predates the Sky Blue Glass auth redesign entirely"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#4fe0cc",
+        "createdAt": "2026-08-26T09:45:02.675Z",
+        "reason": "dark-mode counterpart of the already-accepted light .auth-chip decorative hues (globals.css:490 comment: confirmed with user via orbit-chips mockup 2026-08-25); DESIGN.md predates the Sky Blue Glass auth redesign entirely"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#ffa0ce",
+        "createdAt": "2026-08-26T09:45:02.844Z",
+        "reason": "dark-mode counterpart of the already-accepted light .auth-chip decorative hues (globals.css:490 comment: confirmed with user via orbit-chips mockup 2026-08-25); DESIGN.md predates the Sky Blue Glass auth redesign entirely"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#5cb0ff",
+        "createdAt": "2026-08-26T09:45:03.057Z",
+        "reason": "dark-mode counterpart of the already-accepted light .auth-chip decorative hues (globals.css:490 comment: confirmed with user via orbit-chips mockup 2026-08-25); DESIGN.md predates the Sky Blue Glass auth redesign entirely"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#ffd23f",
+        "createdAt": "2026-08-26T10:36:03.705Z",
+        "reason": "user confirmed: deliberate cartoony one-off for Settings' two admin shortcut buttons, not app-wide"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#1c1b19",
+        "createdAt": "2026-08-26T10:36:03.921Z",
+        "reason": "user confirmed: dark outline/text for the same cartoony admin-button exception"
       }
     ]
   }

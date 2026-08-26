@@ -36,6 +36,18 @@ declare global {
 
 const MAX_ASK_LENGTH = 10000;
 
+// Starter prompts modeling the real translation gap this form exists for
+// (see Persona.md) — a specific client-services problem, not a generic
+// "ask me anything" example. Shown only while the field is empty so they
+// read as inspiration, not clutter once someone's actually typing.
+const SUGGESTED_PROMPTS = [
+  "My client's support team is drowning in repetitive tickets — where could AI actually help?",
+  "I have 5,000 survey responses to make sense of before Friday's client readout.",
+  "The client wants a churn-prediction model but we have no data science team.",
+  "I need to summarize a 60-page due diligence report by tomorrow morning.",
+  "How would I use AI to spot patterns across a year of messy sales data?",
+];
+
 export function ProblemIntakeForm() {
   const router = useRouter();
   const [rawInput, setRawInput] = useState("");
@@ -224,6 +236,11 @@ export function ProblemIntakeForm() {
     }
   }
 
+  function applySuggestedPrompt(prompt: string) {
+    setRawInput(prompt);
+    setGrammarCorrection(null);
+  }
+
   function handleRefine(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -305,6 +322,27 @@ export function ProblemIntakeForm() {
               {grammarCorrection ? (
                 <p style={{ fontSize: 13.5, margin: 0 }}>{grammarCorrection}</p>
               ) : null}
+            </div>
+          ) : null}
+
+          {!rawInput.trim() ? (
+            <div style={{ marginTop: 12 }}>
+              <span className="hint" style={{ display: "block", marginBottom: 8, fontSize: 11.5 }}>
+                Not sure where to start? Try one of these:
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {SUGGESTED_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    className="cat-btn"
+                    style={{ padding: "11px 14px", fontSize: 13, fontWeight: 500 }}
+                    onClick={() => applySuggestedPrompt(prompt)}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : null}
       </label>

@@ -46,7 +46,7 @@ export async function SiteNav() {
         <BackButton />
         <div className="ml-auto flex items-center gap-[18px]">
           <NextButton />
-          <ThemeToggle />
+          <ThemeToggle size={30} />
         </div>
       </div>
     </header>

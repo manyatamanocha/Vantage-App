@@ -15,7 +15,7 @@ import { updateProfile, type Profile } from "./profile-actions";
 // here) would avoid entirely.
 const MAX_AVATAR_BYTES = 500 * 1024;
 
-export function ProfileCard({ profile }: { profile: Profile }) {
+export function ProfileCard({ profile, extraLine }: { profile: Profile; extraLine?: string }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile.fullName);
@@ -113,10 +113,10 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             <span
               style={{
                 position: "absolute",
-                bottom: -2,
-                right: -2,
-                width: 22,
-                height: 22,
+                bottom: -4,
+                right: -4,
+                width: 30,
+                height: 30,
                 borderRadius: 999,
                 background: "var(--primary)",
                 color: "var(--primary-foreground)",
@@ -126,7 +126,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
                 border: "2px solid var(--background)",
               }}
             >
-              <Camera size={12} aria-hidden="true" />
+              <Camera size={16} aria-hidden="true" />
             </span>
           </button>
           <input
@@ -144,6 +144,11 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             <div className="card-text" style={{ fontSize: 12.5, color: "var(--muted-foreground)", marginTop: 1 }}>
               {profile.email || "Add your email"}
             </div>
+            {extraLine ? (
+              <div className="card-text" style={{ fontSize: 12.5, color: "var(--muted-foreground)", marginTop: 1 }}>
+                {extraLine}
+              </div>
+            ) : null}
             {avatarError ? (
               <div style={{ fontSize: 12, color: "var(--destructive)", marginTop: 3 }}>{avatarError}</div>
             ) : null}

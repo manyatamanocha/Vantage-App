@@ -15,28 +15,36 @@ function applyTheme(dark: boolean) {
   }
 }
 
-// Two small circle buttons (light / dark) in the nav, below Sign out — a
-// compact swap for the old full-width "Theme" card, which took up a whole
-// row on Home for something this small.
-export function ThemeToggle() {
+// Two small circle buttons (light / dark) — a compact swap for the old
+// full-width "Theme" card, which took up a whole row on Home for something
+// this small. `size` defaults to the login page's toggle (40px); the
+// post-login nav passes a smaller one so it doesn't compete with the rest
+// of the header for attention the way it does as the single control on the
+// login page.
+export function ThemeToggle({ size = 40 }: { size?: number }) {
   const [isDark, setIsDark] = useState(false);
+  const iconSize = Math.round(size * 0.45);
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"));
   }, []);
 
-  const circle = (dark: boolean) => ({
-    width: 24,
-    height: 24,
-    borderRadius: 999,
-    border: "1px solid var(--border)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    background: (dark ? isDark : !isDark) ? "var(--accent2)" : "var(--card)",
-    color: (dark ? isDark : !isDark) ? "var(--accent2-foreground)" : "var(--muted-foreground)",
-  } as const);
+  const circle = (dark: boolean) => {
+    const active = dark ? isDark : !isDark;
+    return {
+      width: size,
+      height: size,
+      borderRadius: 999,
+      border: active ? "2.5px solid var(--primary)" : "2.5px solid var(--border)",
+      boxShadow: active ? "0 0 0 3px color-mix(in oklch, var(--primary) 18%, transparent)" : "none",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      background: "var(--card)",
+      color: active ? "var(--primary)" : "var(--muted-foreground)",
+    } as const;
+  };
 
   return (
     <div style={{ display: "flex", gap: 6 }}>
@@ -50,7 +58,7 @@ export function ThemeToggle() {
           applyTheme(false);
         }}
       >
-        <Sun size={13} aria-hidden="true" />
+        <Sun size={iconSize} aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -62,7 +70,7 @@ export function ThemeToggle() {
           applyTheme(true);
         }}
       >
-        <Moon size={13} aria-hidden="true" />
+        <Moon size={iconSize} aria-hidden="true" />
       </button>
     </div>
   );

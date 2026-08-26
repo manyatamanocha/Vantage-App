@@ -298,6 +298,34 @@ h1.display, .display {
 .btn-ghost { background: transparent; color: var(--primary); height: auto; padding: 0; }
 .btn-ghost:hover { text-decoration: underline; }
 .btn-icon { width: 46px; height: 46px; padding: 0; flex-shrink: 0; background: var(--secondary); color: var(--foreground); border-color: var(--border); }
+
+/*
+ * Cartoony variant — thick outline + hard offset shadow + a playful bounce,
+ * scoped to Settings' two admin-only shortcut buttons per direct user
+ * request. Deliberately not touched: .btn-primary/.btn-secondary, which stay
+ * the flat "Judgment Console" style everywhere else in the app.
+ */
+.btn-cartoon-primary,
+.btn-cartoon-secondary {
+  border-radius: 999px; border-width: 3px; border-style: solid; font-weight: 800;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.btn-cartoon-primary {
+  background: var(--primary); color: var(--primary-foreground); border-color: var(--foreground);
+  box-shadow: 3px 3px 0 var(--foreground);
+}
+.btn-cartoon-secondary {
+  background: #FFD23F; color: #1C1B19; border-color: var(--foreground);
+  box-shadow: 3px 3px 0 var(--foreground);
+}
+.btn-cartoon-primary:hover,
+.btn-cartoon-secondary:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--foreground); }
+.btn-cartoon-primary:active,
+.btn-cartoon-secondary:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--foreground); }
+@media (prefers-reduced-motion: reduce) {
+  .btn-cartoon-primary, .btn-cartoon-secondary { transition: none; }
+  .btn-cartoon-primary:hover, .btn-cartoon-secondary:hover { transform: none; }
+}
 .btn-icon:hover { background: color-mix(in oklch, var(--secondary) 75%, var(--foreground) 6%); }
 .btn-icon[aria-pressed="true"] { background: var(--destructive); color: var(--destructive-foreground, #fff); border-color: var(--destructive); animation: btn-icon-pulse 1.6s ease-in-out infinite; }
 .btn-icon[aria-pressed="true"]:hover { background: var(--destructive); }
@@ -492,20 +520,32 @@ h1.display, .display {
 .auth-chip {
   position: absolute; z-index: 1; display: flex; align-items: center; justify-content: center;
   text-align: center; border-radius: 999px; padding: 0 8px;
-  background: rgba(255, 255, 255, 0.58); border: 1px solid rgba(255, 255, 255, 0.85);
+  /* Glossy-sphere shading: a specular highlight near the top-left plus an
+     inset rim shadow at the bottom, layered over the same frosted-glass
+     base color — reads as a 3D ball rather than a flat tag while staying
+     inside the existing hues/blur (confirmed with user, "glossy spheres"
+     direction over a full cartoon-ball treatment). */
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.16) 38%, transparent 56%),
+    rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%);
-  box-shadow: 0 10px 24px -14px color-mix(in oklch, var(--primary) 40%, transparent);
+  box-shadow:
+    inset 0 -7px 11px -5px rgba(10, 30, 60, 0.22),
+    0 10px 24px -14px color-mix(in oklch, var(--primary) 40%, transparent);
   font-family: var(--font-fredoka), "Manrope", var(--font-sans), sans-serif;
   font-weight: 600; font-size: 12px; letter-spacing: 0.01em; line-height: 1.25;
+  color: #0a4fb0;
   pointer-events: none;
 }
-.auth-chip-1 { width: 116px; height: 116px; top: 58.1%; left: 24.5%; font-size: 13.5px; color: #0a4fb0; animation: auth-drift-a 9s ease-in-out infinite; }
-.auth-chip-2 { width: 90px; height: 90px; top: 65.2%; right: 22.9%; font-size: 12px; color: #f0b441; animation: auth-drift-b 11s ease-in-out infinite; }
-.auth-chip-4 { width: 126px; height: 126px; bottom: 22.5%; right: 34.3%; font-size: 13.5px; color: #9a7be0; animation: auth-drift-a 12s ease-in-out infinite reverse; }
-.auth-chip-5 { width: 88px; height: 88px; top: 31.7%; left: 24.6%; font-size: 12.5px; color: #0a4fb0; animation: auth-drift-b 7s ease-in-out infinite; }
-.auth-chip-6 { width: 100px; height: 100px; top: 27.7%; right: 31%; font-size: 12.5px; color: #2fd6c0; animation: auth-drift-c 10s ease-in-out infinite reverse; }
-.auth-chip-7 { width: 70px; height: 70px; top: 45.9%; right: 30.8%; font-size: 11px; color: #ff8fc2; animation: auth-drift-b 9.5s ease-in-out infinite; }
-.auth-chip-8 { width: 76px; height: 76px; bottom: 42.1%; left: 30.6%; font-size: 11px; color: #3b9eff; animation: auth-drift-a 10.5s ease-in-out infinite reverse; }
+.auth-chip-0 { width: 82px; height: 82px; top: 20%; left: 20%; font-size: 11.5px; animation: auth-drift-c 9.8s ease-in-out infinite; }
+.auth-chip-1 { width: 116px; height: 116px; top: 58.1%; left: 24.5%; font-size: 13.5px; animation: auth-drift-a 9s ease-in-out infinite; }
+.auth-chip-2 { width: 90px; height: 90px; top: 58%; right: 22.9%; font-size: 12px; animation: auth-drift-b 11s ease-in-out infinite; }
+.auth-chip-4 { width: 126px; height: 126px; bottom: 11%; right: 28%; font-size: 13.5px; animation: auth-drift-a 12s ease-in-out infinite reverse; }
+.auth-chip-5 { width: 88px; height: 88px; top: 31.7%; left: 24.6%; font-size: 12.5px; animation: auth-drift-b 7s ease-in-out infinite; }
+.auth-chip-6 { width: 100px; height: 100px; top: 27.7%; right: 31%; font-size: 12.5px; animation: auth-drift-c 10s ease-in-out infinite reverse; }
+.auth-chip-7 { width: 70px; height: 70px; top: 45.9%; right: 25%; font-size: 11px; animation: auth-drift-b 9.5s ease-in-out infinite; }
+.auth-chip-8 { width: 76px; height: 76px; bottom: 42.1%; left: 20%; font-size: 11px; animation: auth-drift-a 10.5s ease-in-out infinite reverse; }
 
 @keyframes auth-drift-a { 0% { transform: translate(0, 0); } 25% { transform: translate(10px, -8px); } 50% { transform: translate(2px, -16px); } 75% { transform: translate(-9px, -6px); } 100% { transform: translate(0, 0); } }
 @keyframes auth-drift-b { 0% { transform: translate(0, 0); } 25% { transform: translate(-9px, 7px); } 50% { transform: translate(-3px, 14px); } 75% { transform: translate(8px, 5px); } 100% { transform: translate(0, 0); } }
@@ -581,3 +621,70 @@ h1.display, .display {
 }
 
 .auth-switch { margin-top: 18px; text-align: center; font-size: 13.5px; color: #3e5a78; }
+
+.auth-theme-toggle { position: absolute; top: 20px; right: 20px; z-index: 4; }
+
+/*
+ * Dark variant — "Black & Blue" (see DESIGN.md), the same near-black canvas
+ * and lifted Signal Blue used by the rest of the app in dark mode. Several
+ * light rules above already read var(--primary) via color-mix and adapt on
+ * their own once .dark is applied (auth-shell's base gradient hue, the
+ * eyebrow/wordmark/title-hl accent, the primary button). What needs an
+ * explicit override here is everything that hardcodes a *literal* white/navy
+ * value instead of a token — the frosted-glass rgba(255,255,255,...) surfaces
+ * (which would stay bright-white glass on a black page if left alone) and the
+ * ink/muted text colors (#0b2545 / #3e5a78), plus the individual chip hues,
+ * several of which are too dark to read on a black background as-is.
+ */
+.dark .auth-shell {
+  background:
+    radial-gradient(circle at 15% 8%, color-mix(in oklch, var(--primary) 38%, black) 0%, transparent 46%),
+    radial-gradient(circle at 86% 14%, color-mix(in oklch, var(--primary) 55%, black) 0%, transparent 52%),
+    radial-gradient(circle at 26% 92%, color-mix(in oklch, var(--primary) 42%, black) 0%, transparent 50%),
+    radial-gradient(circle at 90% 88%, color-mix(in oklch, var(--primary) 65%, black 10%) 0%, transparent 48%),
+    linear-gradient(165deg, #050608, #060a14 55%, #050608);
+}
+.dark .auth-shine,
+.dark .auth-shine2 { opacity: 0.4; }
+.dark .auth-seam { background: linear-gradient(180deg, rgba(240, 243, 250, 0.28), rgba(240, 243, 250, 0) 70%); }
+
+.dark .auth-chip {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0.05) 38%, transparent 56%),
+    rgba(19, 20, 24, 0.6);
+  border-color: rgba(240, 243, 250, 0.16);
+  box-shadow:
+    inset 0 -7px 11px -5px rgba(0, 0, 0, 0.55),
+    0 10px 24px -14px color-mix(in oklch, var(--primary) 55%, transparent);
+}
+.dark .auth-chip-1 { color: #7fb0ff; }
+.dark .auth-chip-2 { color: #f5c463; }
+.dark .auth-chip-4 { color: #b49bef; }
+.dark .auth-chip-5 { color: #7fb0ff; }
+.dark .auth-chip-6 { color: #4fe0cc; }
+.dark .auth-chip-7 { color: #ffa0ce; }
+.dark .auth-chip-8 { color: #5cb0ff; }
+
+.dark .auth-eyebrow { color: color-mix(in oklch, var(--primary) 65%, white 25%); }
+.dark .auth-wordmark { color: color-mix(in oklch, var(--primary) 65%, white 20%); }
+.dark .auth-wordmark-sub { color: var(--muted-foreground); }
+.dark .auth-title { color: var(--foreground); }
+.dark .auth-tagline { color: var(--muted-foreground); }
+
+.dark .auth-card {
+  background: rgba(19, 20, 24, 0.6); border-color: rgba(240, 243, 250, 0.14);
+  box-shadow: 0 30px 70px -22px color-mix(in oklch, var(--primary) 45%, transparent), 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.dark .auth-card::before { background: linear-gradient(115deg, rgba(240, 243, 250, 0.14), rgba(240, 243, 250, 0) 60%); }
+
+.dark .auth-seg { background: rgba(240, 243, 250, 0.07); }
+.dark .auth-seg a { color: var(--muted-foreground); }
+.dark .auth-seg a[aria-current="page"] {
+  background: color-mix(in oklch, var(--primary) 85%, black 6%); color: #ffffff;
+  box-shadow: 0 4px 14px -6px color-mix(in oklch, var(--primary) 55%, transparent);
+}
+
+.dark .auth-card .field label { color: var(--muted-foreground); }
+.dark .auth-card .input { border-color: rgba(240, 243, 250, 0.16); background: rgba(240, 243, 250, 0.06); }
+
+.dark .auth-switch { color: var(--muted-foreground); }

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Bot, BriefcaseBusiness } from "lucide-react";
-import { LiveClock } from "@/components/live-clock";
 import { Greeting } from "@/components/greeting";
 
 export function HomeDashboard({ quizHref }: { quizHref: string }) {
@@ -13,7 +12,6 @@ export function HomeDashboard({ quizHref }: { quizHref: string }) {
           </h1>
           <p className="lede">Build sharper instincts for matching client problems to the right AI approach.</p>
         </div>
-        <LiveClock />
       </section>
       <section className="stack">
         <Link href="/solve/new" className="panel-link outline group">

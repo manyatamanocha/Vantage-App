@@ -28,18 +28,14 @@ export default async function SettingsPage({
 
       {isAdmin && !previewLearner ? (
         <>
-          <ProfileCard profile={{ ...profile, fullName: profile.fullName || "Manyata Manocha" }} />
-          <section className="stack">
-            <div className="card">
-              <div className="history-row">
-                <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Role: Administrator</p>
-                </div>
-              </div>
-            </div>
+          <ProfileCard
+            profile={{ ...profile, fullName: profile.fullName || "Manyata Manocha" }}
+            extraLine="Role: Administrator"
+          />
+          <section className="stack" style={{ marginTop: 26 }}>
             <div className="actions">
-              <Link href="/admin" className="btn btn-primary">Open admin dashboard</Link>
-              <Link href="/settings?view=learner" className="btn btn-secondary">Preview learner experience</Link>
+              <Link href="/admin" className="btn btn-cartoon-primary">Open admin dashboard</Link>
+              <Link href="/settings?view=learner" className="btn btn-cartoon-secondary">Preview learner experience</Link>
             </div>
           </section>
         </>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * Sky Blue Glass auth shell (/login, /signup) — a centered frosted-glass
@@ -17,6 +18,9 @@ export function AuthShell({
 }) {
   return (
     <main className="auth-shell">
+      <div className="auth-theme-toggle">
+        <ThemeToggle />
+      </div>
       <div className="auth-shine" aria-hidden="true" />
       <div className="auth-shine2" aria-hidden="true" />
       <div className="auth-seam" aria-hidden="true" />
@@ -27,6 +31,11 @@ export function AuthShell({
         <path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z" fill="var(--primary)" opacity="0.5" />
       </svg>
 
+      <div className="auth-chip auth-chip-0" aria-hidden="true">
+        Smarter
+        <br />
+        Everyday
+      </div>
       <div className="auth-chip auth-chip-1" aria-hidden="true">
         Daily
         <br />
