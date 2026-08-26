@@ -139,7 +139,7 @@
      value) is nearly indistinguishable from --card/--background here, which
      made the segmented control's active pill (Settings' difficulty/frequency
      toggles) look unselected/broken in dark theme. */
-  --accent2: #1E3A66;
+  --accent2: #1B2A42;
   --accent2-foreground: #FFFFFF;
   --accent2-soft: rgba(59, 130, 246, 0.14);
   --destructive: #F17C86;
@@ -342,7 +342,7 @@ h1.display, .display {
 .actions.between { justify-content: space-between; }
 
 .segmented { display: inline-flex; padding: 3px; background: var(--secondary); border-radius: 999px; gap: 2px; }
-.segmented button, .segmented a { border: 0; background: transparent; padding: 8px 15px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--muted-foreground); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+.segmented button, .segmented a { border: 0; background: transparent; padding: 9px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted-foreground); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
 .segmented button[aria-pressed="true"], .segmented a[aria-pressed="true"] { background: var(--accent2); color: var(--accent2-foreground); box-shadow: 0 1px 2px hsl(var(--shadow-color) / 0.12); }
 
 .cat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 14px; }
@@ -388,8 +388,8 @@ h1.display, .display {
 
 .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 19px 0; }
 .toggle-row + .toggle-row { border-top: 1px solid var(--border); }
-.toggle-row .label { font-size: 14px; font-weight: 600; }
-.toggle-row .desc { font-size: 12.5px; color: var(--muted-foreground); margin-top: 2px; }
+.toggle-row .label { font-size: 15.5px; font-weight: 600; }
+.toggle-row .desc { font-size: 13.5px; color: var(--muted-foreground); margin-top: 2px; }
 
 .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .tag { font-size: 12.5px; font-weight: 650; padding: 6px 11px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; }
