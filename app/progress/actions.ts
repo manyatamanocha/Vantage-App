@@ -43,13 +43,21 @@ export async function getQuizStats(userId: string): Promise<{
   const { supabase, user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
 
-  const { data, error } = await supabase
-    .from("jargon_attempts")
-    .select("correct")
-    .eq("user_id", userId);
-  if (error) throw new Error(error.message);
+  // Quiz-taking now happens through Quiz Time and Scenario Quiz (the
+  // practice-nav restructure dropped the old Term Quiz), so those two
+  // tables are the real source of attempts — jargon_attempts stays empty.
+  const [general, scenario] = await Promise.all([
+    supabase.from("general_quiz_attempts").select("correct").eq("user_id", userId),
+    supabase.from("scenario_quiz_attempts").select("correct").eq("user_id", userId),
+  ]);
+  if (general.error) throw new Error(general.error.message);
+  if (scenario.error) throw new Error(scenario.error.message);
 
-  const rows = data as { correct: boolean }[];
+  // A handful of scenario attempts predate the migration that added
+  // `correct` (0013_scenario_quiz_mcq.sql) and are null — not gradeable.
+  const rows = [...general.data, ...scenario.data].filter(
+    (r): r is { correct: boolean } => r.correct !== null
+  );
   const accuracy = rows.length ? rows.filter((r) => r.correct).length / rows.length : 0;
 
   return { accuracy, attemptCount: rows.length };

@@ -3,15 +3,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const state = vi.hoisted(() => ({
   user: null as { id: string } | null,
   data: [] as unknown[],
+  byTable: {} as Record<string, unknown[]>,
 }));
 
 vi.mock("@/lib/supabase/server", () => {
   const buildClient = () => ({
     auth: { getUser: async () => ({ data: { user: state.user } }) },
-    from: () => ({
+    from: (table: string) => ({
       select: () => ({
         eq: async () => ({
-          data: state.data,
+          data: state.byTable[table] ?? state.data,
           error: null,
         }),
       }),
@@ -23,7 +24,7 @@ vi.mock("@/lib/supabase/server", () => {
   };
 });
 
-import { getProgressStats } from "../actions";
+import { getProgressStats, getQuizStats } from "../actions";
 
 beforeEach(() => {
   state.user = { id: "u1" };
@@ -34,6 +35,7 @@ beforeEach(() => {
     // Abandoned solve with null values - should be excluded
     { revealed_category: null, correct: null },
   ];
+  state.byTable = {};
   vi.clearAllMocks();
 });
 
@@ -98,5 +100,38 @@ describe("getProgressStats", () => {
     expect(result.byCategory["Classification"]).toBe(0);
     expect(result.byCategory["RAG"]).toBe(0);
     expect(result.byCategory["Chemistry"]).toBe(0);
+  });
+});
+
+describe("getQuizStats", () => {
+  it("combines general and scenario quiz attempts, not jargon_attempts", async () => {
+    state.byTable = {
+      general_quiz_attempts: [{ correct: true }, { correct: false }],
+      scenario_quiz_attempts: [{ correct: true }],
+    };
+
+    const result = await getQuizStats("u1");
+    // 2 correct out of 3 attempts across both tables
+    expect(result.accuracy).toBeCloseTo(2 / 3);
+    expect(result.attemptCount).toBe(3);
+  });
+
+  it("excludes scenario attempts recorded before the correct column existed", async () => {
+    state.byTable = {
+      general_quiz_attempts: [{ correct: true }],
+      scenario_quiz_attempts: [{ correct: null }, { correct: null }],
+    };
+
+    const result = await getQuizStats("u1");
+    expect(result.attemptCount).toBe(1);
+    expect(result.accuracy).toBe(1);
+  });
+
+  it("returns 0 accuracy and 0 attempts when nothing has been attempted", async () => {
+    state.byTable = { general_quiz_attempts: [], scenario_quiz_attempts: [] };
+
+    const result = await getQuizStats("u1");
+    expect(result.accuracy).toBe(0);
+    expect(result.attemptCount).toBe(0);
   });
 });
