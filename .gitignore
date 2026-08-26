@@ -40,6 +40,9 @@ yarn-error.log*
 # claude worktrees (full duplicate checkouts, not source)
 /.claude/worktrees/
 
+# superpowers brainstorming visual-companion scratch mockups
+/.superpowers/
+
 # supabase
 /supabase/.temp
 
