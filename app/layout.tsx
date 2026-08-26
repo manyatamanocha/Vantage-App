@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Manrope, Geist_Mono } from "next/font/google";
+import { Inter, Manrope, Geist_Mono, Fredoka } from "next/font/google";
 import "./globals.css";
 import { SiteNav } from "@/components/site-nav";
 
@@ -24,6 +24,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Only used for the playful word-chips on the auth pages (see
+// AuthShell) — everything else in the app stays on Manrope/Inter.
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  weight: ["600"],
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "Vantage",
   description:
@@ -34,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${manrope.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${manrope.variable} ${geistMono.variable} ${fredoka.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

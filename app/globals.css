@@ -436,3 +436,148 @@ h1.display, .display {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 14px 28px -14px hsl(var(--shadow-color) / 0.25);
 }
+
+/*
+ * Sky Blue Glass auth shell (/login, /signup) — a centered frosted-glass
+ * card floating on a soft blue gradient-mesh background. Every accent color
+ * derives from --primary (Signal Blue) via color-mix, so this stays the
+ * app's one accent rather than introducing a second hue.
+ */
+.auth-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 24px;
+  background:
+    radial-gradient(circle at 15% 8%, color-mix(in oklch, var(--primary) 45%, white) 0%, transparent 46%),
+    radial-gradient(circle at 86% 14%, color-mix(in oklch, var(--primary) 65%, white) 0%, transparent 52%),
+    radial-gradient(circle at 26% 92%, color-mix(in oklch, var(--primary) 50%, white) 0%, transparent 50%),
+    radial-gradient(circle at 90% 88%, color-mix(in oklch, var(--primary) 80%, black 6%) 0%, transparent 48%),
+    linear-gradient(165deg, color-mix(in oklch, var(--primary) 9%, white), color-mix(in oklch, var(--primary) 15%, white) 55%, color-mix(in oklch, var(--primary) 7%, white));
+}
+
+.auth-shine {
+  position: absolute; top: -14%; left: -12%; width: 80%; height: 65%;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 58%);
+  transform: rotate(-8deg); pointer-events: none;
+}
+.auth-shine2 {
+  position: absolute; bottom: -20%; right: -10%; width: 55%; height: 60%;
+  background: linear-gradient(-60deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 55%);
+  transform: rotate(6deg); pointer-events: none;
+}
+.auth-seam {
+  position: absolute; top: 0; left: 38%; width: 1px; height: 100%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 70%);
+  transform: skewX(-8deg); pointer-events: none;
+}
+
+.auth-gem { position: absolute; opacity: 0.7; pointer-events: none; }
+.auth-gem-float { width: 26px; top: 18%; right: 14%; animation: auth-gem-float 6.5s ease-in-out infinite; }
+.auth-gem-sparkle { width: 20px; top: 14%; left: 9%; animation: auth-gem-float2 5.5s ease-in-out infinite; }
+@keyframes auth-gem-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+@keyframes auth-gem-float2 { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .auth-gem-float, .auth-gem-sparkle { animation: none; } }
+
+/*
+ * Floating word chips — ambient texture behind the auth card, not content
+ * meant to be read carefully. Each drifts along its own small circular path
+ * at a different speed so they never move in sync (see DESIGN.md — this is
+ * the one place motion is decorative rather than meaningful-state feedback,
+ * confirmed with the user via the orbit-chips mockup, 2026-08-26).
+ */
+.auth-chip {
+  position: absolute; z-index: 1; display: flex; align-items: center; justify-content: center;
+  text-align: center; border-radius: 999px; padding: 0 8px;
+  background: rgba(255, 255, 255, 0.58); border: 1px solid rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px) saturate(160%); -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: 0 10px 24px -14px color-mix(in oklch, var(--primary) 40%, transparent);
+  font-family: var(--font-fredoka), "Manrope", var(--font-sans), sans-serif;
+  font-weight: 600; font-size: 12px; letter-spacing: 0.01em; line-height: 1.25;
+  pointer-events: none;
+}
+.auth-chip-1 { width: 116px; height: 116px; top: 58.1%; left: 24.5%; font-size: 13.5px; color: #0a4fb0; animation: auth-drift-a 9s ease-in-out infinite; }
+.auth-chip-2 { width: 90px; height: 90px; top: 65.2%; right: 22.9%; font-size: 12px; color: #f0b441; animation: auth-drift-b 11s ease-in-out infinite; }
+.auth-chip-4 { width: 126px; height: 126px; bottom: 22.5%; right: 34.3%; font-size: 13.5px; color: #9a7be0; animation: auth-drift-a 12s ease-in-out infinite reverse; }
+.auth-chip-5 { width: 88px; height: 88px; top: 31.7%; left: 24.6%; font-size: 12.5px; color: #0a4fb0; animation: auth-drift-b 7s ease-in-out infinite; }
+.auth-chip-6 { width: 100px; height: 100px; top: 27.7%; right: 31%; font-size: 12.5px; color: #2fd6c0; animation: auth-drift-c 10s ease-in-out infinite reverse; }
+.auth-chip-7 { width: 70px; height: 70px; top: 45.9%; right: 30.8%; font-size: 11px; color: #ff8fc2; animation: auth-drift-b 9.5s ease-in-out infinite; }
+.auth-chip-8 { width: 76px; height: 76px; bottom: 42.1%; left: 30.6%; font-size: 11px; color: #3b9eff; animation: auth-drift-a 10.5s ease-in-out infinite reverse; }
+
+@keyframes auth-drift-a { 0% { transform: translate(0, 0); } 25% { transform: translate(10px, -8px); } 50% { transform: translate(2px, -16px); } 75% { transform: translate(-9px, -6px); } 100% { transform: translate(0, 0); } }
+@keyframes auth-drift-b { 0% { transform: translate(0, 0); } 25% { transform: translate(-9px, 7px); } 50% { transform: translate(-3px, 14px); } 75% { transform: translate(8px, 5px); } 100% { transform: translate(0, 0); } }
+@keyframes auth-drift-c { 0% { transform: translate(0, 0); } 33% { transform: translate(8px, 9px); } 66% { transform: translate(-8px, 6px); } 100% { transform: translate(0, 0); } }
+@media (prefers-reduced-motion: reduce) { .auth-chip { animation: none; } }
+@media (max-width: 640px) { .auth-chip { display: none; } }
+
+.auth-content {
+  position: relative; z-index: 2; width: 100%; max-width: 420px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.auth-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700;
+  padding: 7px 15px; border-radius: 999px; margin-bottom: 18px;
+  background: color-mix(in oklch, var(--primary) 16%, transparent);
+  color: color-mix(in oklch, var(--primary) 65%, black 20%);
+}
+.auth-wordmark {
+  font-family: "Manrope", var(--font-sans), sans-serif; font-weight: 800; letter-spacing: -0.015em;
+  font-size: 26px; color: color-mix(in oklch, var(--primary) 70%, black 15%); margin: 10px 0 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.auth-wordmark-sub {
+  font-family: var(--font-sans), sans-serif; font-weight: 500; letter-spacing: 0.01em;
+  font-size: 13px; color: #3e5a78;
+}
+.auth-title {
+  font-family: "Manrope", var(--font-sans), sans-serif; font-weight: 800; letter-spacing: -0.02em;
+  font-size: 34px; line-height: 1.15; color: #0b2545; margin: 0;
+}
+.auth-title-hl { color: var(--primary); }
+.auth-tagline { font-size: 14px; margin: 12px 0 0; max-width: 40ch; line-height: 1.65; color: #3e5a78; }
+
+.auth-card {
+  margin-top: 28px; width: 100%; border-radius: 26px; padding: 28px 28px 30px;
+  background: rgba(255, 255, 255, 0.5); border: 1px solid rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(28px) saturate(170%); -webkit-backdrop-filter: blur(28px) saturate(170%);
+  box-shadow: 0 30px 70px -22px color-mix(in oklch, var(--primary) 40%, transparent), 0 2px 8px rgba(10, 30, 60, 0.08);
+  text-align: left; position: relative; overflow: hidden;
+  animation: auth-card-in 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+.auth-card::before {
+  content: ""; position: absolute; top: -40%; left: -20%; width: 70%; height: 180%;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 60%);
+  transform: rotate(-12deg); pointer-events: none;
+}
+@keyframes auth-card-in { from { opacity: 0; transform: scale(0.88); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .auth-card { animation: none; } }
+
+.auth-seg-wrap { text-align: center; margin-bottom: 20px; }
+.auth-seg {
+  display: inline-flex; background: rgba(255, 255, 255, 0.5); border-radius: 999px; padding: 3px;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); position: relative;
+}
+.auth-seg a {
+  font-size: 11.5px; font-weight: 700; padding: 7px 16px; border-radius: 999px; color: #3e5a78; text-decoration: none;
+}
+.auth-seg a[aria-current="page"] {
+  background: rgba(255, 255, 255, 0.92); color: #0b2545;
+  box-shadow: 0 2px 8px color-mix(in oklch, var(--primary) 25%, transparent);
+}
+
+.auth-card .field label {
+  color: #3e5a78; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;
+}
+.auth-card .input {
+  border: 1px solid rgba(255, 255, 255, 0.7); background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.auth-card .btn-primary {
+  background: linear-gradient(135deg, color-mix(in oklch, var(--primary) 55%, white), var(--primary));
+  box-shadow: 0 14px 28px -10px color-mix(in oklch, var(--primary) 55%, transparent);
+}
+
+.auth-switch { margin-top: 18px; text-align: center; font-size: 13.5px; color: #3e5a78; }

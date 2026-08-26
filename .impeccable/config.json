@@ -142,6 +142,141 @@
         "value": "#f59e0b",
         "createdAt": "2026-08-25T23:38:52.252Z",
         "reason": "pre-existing 'hard' difficulty tier color already used in jargon-session.tsx and whats-inside.tsx before DESIGN.md existed; mirrored for consistency in the two new quiz sessions, not new drift"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#f59e0b",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-25T23:48:03.181Z",
+        "reason": "pro-tip bulb glow — pre-existing, user-iterated component from 2026-08-24 session, and the one sanctioned glow exception DESIGN.md's own Do's/Don'ts names explicitly"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fde047",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-25T23:48:03.464Z",
+        "reason": "pro-tip bulb glow — pre-existing, user-iterated component from 2026-08-24 session, and the one sanctioned glow exception DESIGN.md's own Do's/Don'ts names explicitly"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fb923c",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-25T23:48:03.773Z",
+        "reason": "pro-tip bulb glow — pre-existing, user-iterated component from 2026-08-24 session, and the one sanctioned glow exception DESIGN.md's own Do's/Don'ts names explicitly"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#7c2d12",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-25T23:48:04.018Z",
+        "reason": "pro-tip bulb glow — pre-existing, user-iterated component from 2026-08-24 session, and the one sanctioned glow exception DESIGN.md's own Do's/Don'ts names explicitly"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fef08a",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-25T23:48:04.271Z",
+        "reason": "pro-tip bulb glow — pre-existing, user-iterated component from 2026-08-24 session, and the one sanctioned glow exception DESIGN.md's own Do's/Don'ts names explicitly"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#0b2545",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T08:08:58.613Z",
+        "reason": "user confirmed: ink color for the new Sky Blue Glass auth redesign, iterated live this session"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#3e5a78",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T08:08:58.808Z",
+        "reason": "user confirmed: muted text color for the new Sky Blue Glass auth redesign, iterated live this session"
+      },
+      {
+        "rule": "design-system-radius",
+        "value": "26px",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T08:08:59.029Z",
+        "reason": "user confirmed: glass card corner radius for the new Sky Blue Glass auth redesign, iterated live this session"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(0.34, 1.4, 0.64, 1)",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T08:16:48.421Z",
+        "reason": "user confirmed: picked 'Scale In' entrance animation live via the artifact mockup this session — a one-time card entrance, not a persistent/looping bounce"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#0a4fb0",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T09:19:57.620Z",
+        "reason": "user confirmed: poppy multi-color chip text palette (blue/yellow/pink/lavender/teal), approved live via the orbit-chips artifact mockup 2026-08-26"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#f0b441",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T09:19:57.822Z",
+        "reason": "user confirmed: poppy multi-color chip text palette (blue/yellow/pink/lavender/teal), approved live via the orbit-chips artifact mockup 2026-08-26"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#ff8fc2",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T09:19:58.044Z",
+        "reason": "user confirmed: poppy multi-color chip text palette (blue/yellow/pink/lavender/teal), approved live via the orbit-chips artifact mockup 2026-08-26"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#9a7be0",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T09:19:58.219Z",
+        "reason": "user confirmed: poppy multi-color chip text palette (blue/yellow/pink/lavender/teal), approved live via the orbit-chips artifact mockup 2026-08-26"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#3b9eff",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T09:19:58.400Z",
+        "reason": "user confirmed: poppy multi-color chip text palette (blue/yellow/pink/lavender/teal), approved live via the orbit-chips artifact mockup 2026-08-26"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#2fd6c0",
+        "files": [
+          "app/globals.css"
+        ],
+        "createdAt": "2026-08-26T09:19:58.591Z",
+        "reason": "user confirmed: poppy multi-color chip text palette (blue/yellow/pink/lavender/teal), approved live via the orbit-chips artifact mockup 2026-08-26"
       }
     ]
   }

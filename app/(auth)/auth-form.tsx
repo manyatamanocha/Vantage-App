@@ -13,6 +13,8 @@ export function AuthForm({
   action,
   submitLabel,
   next,
+  passwordAutoComplete,
+  passwordPlaceholder,
 }: {
   action: (
     prevState: AuthResult | null,
@@ -20,6 +22,8 @@ export function AuthForm({
   ) => Promise<AuthResult>;
   submitLabel: string;
   next: string;
+  passwordAutoComplete: "current-password" | "new-password";
+  passwordPlaceholder?: string;
 }) {
   const [state, formAction, isPending] = useActionState<AuthResult | null, FormData>(
     action,
@@ -31,7 +35,7 @@ export function AuthForm({
       <input type="hidden" name="next" value={next} />
 
       <div className="field">
-        <label htmlFor="email">Work email</label>
+        <label htmlFor="email">Email</label>
         <input
           id="email"
           name="email"
@@ -51,8 +55,8 @@ export function AuthForm({
           type="password"
           required
           minLength={8}
-          autoComplete="current-password"
-          placeholder="At least 8 characters"
+          autoComplete={passwordAutoComplete}
+          placeholder={passwordPlaceholder}
           className="input"
         />
       </div>
