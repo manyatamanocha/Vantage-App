@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowDown,
@@ -47,6 +47,19 @@ declare global {
 }
 
 const MAX_ASK_LENGTH = 10000;
+
+// Browser speech-recognition support never changes after mount, so
+// subscribe is a no-op — see the getServerSpeechSupportSnapshot comment
+// at the call site for why this needs the server/client snapshot split.
+function subscribeSpeechSupport() {
+  return () => {};
+}
+function getSpeechSupportSnapshot() {
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+function getServerSpeechSupportSnapshot() {
+  return false;
+}
 
 // Starter prompts modeling the real translation gap this form exists for
 // (see Persona.md) — a specific client-services problem, not a generic
@@ -131,19 +144,19 @@ export function ProblemIntakeForm() {
     micStreamRef.current = null;
   }
 
-  // Server-safe: starts false on both server and the client's first render
-  // (matching what the server rendered), then flips true after mount if the
-  // browser actually supports it. Gating the mic button's very presence on a
-  // `typeof window !== "undefined"` check computed inline caused it to
-  // render on the client but not the server — a real hydration mismatch that
-  // made React discard and rebuild the whole form right as someone might be
-  // interacting with it, which is what made the mic look like it "broke" on
-  // click.
-  const [speechSupported, setSpeechSupported] = useState(false);
-
-  useEffect(() => {
-    setSpeechSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition));
-  }, []);
+  // Server-safe: getServerSnapshot() returns false, matching what the server
+  // renders, then React re-renders with the real getSpeechSupportSnapshot()
+  // value right after hydration if the browser actually supports it. Gating
+  // the mic button's very presence on a `typeof window !== "undefined"`
+  // check computed inline caused it to render on the client but not the
+  // server — a real hydration mismatch that made React discard and rebuild
+  // the whole form right as someone might be interacting with it, which is
+  // what made the mic look like it "broke" on click.
+  const speechSupported = useSyncExternalStore(
+    subscribeSpeechSupport,
+    getSpeechSupportSnapshot,
+    getServerSpeechSupportSnapshot
+  );
 
   useEffect(() => {
     return () => {

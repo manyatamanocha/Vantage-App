@@ -1,8 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { Lightbulb } from "lucide-react";
+
+// The popover's portal target never changes after mount, so subscribe is a
+// no-op — useSyncExternalStore is used only for its server/client snapshot
+// split (getServerSnapshot's null matches SSR, where the anchor element
+// can't exist yet), replacing a mount-only useEffect+setState.
+function subscribeAnchor() {
+  return () => {};
+}
+function getAnchorSnapshot() {
+  return document.getElementById("pro-tip-anchor");
+}
+function getServerAnchorSnapshot() {
+  return null;
+}
 
 /**
  * Was a full "Pro tips" section at the bottom of the page — moved up next to
@@ -14,13 +28,9 @@ import { Lightbulb } from "lucide-react";
  */
 export function ProTipBadge({ tips }: { tips: string[] }) {
   const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const anchor = useSyncExternalStore(subscribeAnchor, getAnchorSnapshot, getServerAnchorSnapshot);
   const containerRef = useRef<HTMLSpanElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setAnchor(document.getElementById("pro-tip-anchor"));
-  }, []);
 
   // Click anywhere outside the bulb or the (portaled) popover closes it.
   useEffect(() => {

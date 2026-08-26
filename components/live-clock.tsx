@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 function formatNow() {
   const d = new Date();
@@ -13,19 +13,27 @@ function formatNow() {
   return `${datePart} · ${timePart}`;
 }
 
+// The ticking interval doubles as the store's subscription: it calls back
+// once a second so useSyncExternalStore re-checks getSnapshot() and
+// re-renders when the formatted string changes — same effective behavior as
+// the setInterval+setState this replaced, without setState firing directly
+// inside an effect body.
+function subscribe(callback: () => void) {
+  const id = setInterval(callback, 1000);
+  return () => clearInterval(id);
+}
+
+function getServerSnapshot(): string | null {
+  return null;
+}
+
 /**
  * Real date/time, ticks every second. Lives in SiteNav's header (below the
  * theme toggle) so it shows on every signed-in screen — previously it only
  * appeared on the Home dashboard. `compact` shrinks it to fit that spot.
  */
 export function LiveClock({ compact = false }: { compact?: boolean } = {}) {
-  const [now, setNow] = useState<string | null>(null);
-
-  useEffect(() => {
-    setNow(formatNow());
-    const id = setInterval(() => setNow(formatNow()), 1000);
-    return () => clearInterval(id);
-  }, []);
+  const now = useSyncExternalStore(subscribe, formatNow, getServerSnapshot);
 
   return (
     <span

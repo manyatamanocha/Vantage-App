@@ -18,6 +18,10 @@ function todayRange() {
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
+function activeCutoffIsoFor(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export default async function AdminHubPage() {
   await requireAdmin();
   const admin = getSupabaseAdminClient();
@@ -26,7 +30,7 @@ export default async function AdminHubPage() {
   // Same 7-day "active" definition as /admin/users, so this ring matches
   // that page's numbers rather than inventing a second definition of active.
   const ACTIVE_WINDOW_DAYS = 7;
-  const activeCutoffIso = new Date(Date.now() - ACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const activeCutoffIso = activeCutoffIsoFor(ACTIVE_WINDOW_DAYS);
 
   const [
     pendingQuestions,
