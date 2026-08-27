@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from
 import { useRouter } from "next/navigation";
 import {
   ArrowDown,
+  Info,
   Lock,
   Mic,
   MessageCircle,
@@ -92,6 +93,9 @@ export function ProblemIntakeForm() {
   const [isCheckingGrammar, setIsCheckingGrammar] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Held apart from `error` on purpose: a declined ask is not a malfunction,
+  // so it must not render in the destructive error style or offer a retry.
+  const [refusal, setRefusal] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const baseTextRef = useRef("");
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -282,9 +286,19 @@ export function ProblemIntakeForm() {
   function handleRefine(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setRefusal(null);
     startRefining(async () => {
       try {
         const result = await refineAsk(rawInput);
+        if (result.refused) {
+          // Clear any earlier refinement before showing the notice: leaving one
+          // on screen would keep "Let's solve" live and let a stale goal from a
+          // previous ask be confirmed against the one just declined.
+          setRefinedGoal(null);
+          setProblemType("");
+          setRefusal(result.message);
+          return;
+        }
         setRefinedGoal(result.goal);
         setProblemType(result.problemType);
       } catch (err) {
@@ -321,7 +335,7 @@ export function ProblemIntakeForm() {
       <form onSubmit={handleRefine} className="stack">
         <label className="field" htmlFor="rawInput">
           <span className="ask-away-label">
-            <MessageCircle size={16} aria-hidden="true" /> Ask Awayyyy
+            <MessageCircle size={16} aria-hidden="true" /> Ask Away
           </span>
           <div className="ask-away-wrap">
             <textarea
@@ -474,6 +488,28 @@ export function ProblemIntakeForm() {
             </p>
           </section>
         </>
+      ) : null}
+
+      {/* Deliberately not the destructive error style and deliberately no retry
+          button: the ask was understood and declined, so a red alarm would read
+          as "the app broke" and a retry would fail identically every time. */}
+      {refusal ? (
+        <p
+          role="status"
+          className="card"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            margin: 0,
+            padding: "10px 14px",
+            fontSize: 13.5,
+            color: "var(--muted-foreground)",
+          }}
+        >
+          <Info size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
+          {refusal}
+        </p>
       ) : null}
 
       {error ? (

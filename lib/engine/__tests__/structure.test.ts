@@ -25,7 +25,24 @@ vi.mock("@/lib/groq", () => ({
   })),
 }));
 
-import { structureProblem } from "../structure";
+import { structureProblem, AskRefusedError } from "../structure";
+
+/** Builds the shape groq-sdk throws when the model's refusal breaks JSON mode. */
+function jsonModeFailure(failedGeneration: string) {
+  const body = {
+    error: {
+      message:
+        "Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.",
+      type: "invalid_request_error",
+      code: "json_validate_failed",
+      failed_generation: failedGeneration,
+    },
+  };
+  return Object.assign(new Error(`400 ${JSON.stringify(body)}`), {
+    status: 400,
+    error: body.error,
+  });
+}
 
 describe("structureProblem", () => {
   it("parses goal and problemType from the model response", async () => {
@@ -132,5 +149,65 @@ describe("structureProblem", () => {
 
     await expect(structureProblem("x")).rejects.toThrow(/groq is down/);
     expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  // A harmful or abusive ask must come back as a refusal the intake screen can
+  // show calmly — never as a parse crash. The model declines in three
+  // different shapes in practice (verified against the live endpoint), so all
+  // three have to land on AskRefusedError.
+  describe("when the model declines the ask", () => {
+    async function respondWith(content: string) {
+      const { getGroqClient } = await import("@/lib/groq");
+      vi.mocked(getGroqClient).mockReturnValueOnce({
+        chat: {
+          completions: { create: async () => ({ choices: [{ message: { content } }] }) },
+        },
+      } as never);
+    }
+
+    it("raises AskRefusedError when the model uses the refusal field we asked for", async () => {
+      await respondWith(JSON.stringify({ refusal: "This ask seeks to harm someone." }));
+      await expect(structureProblem("x")).rejects.toBeInstanceOf(AskRefusedError);
+    });
+
+    it("raises AskRefusedError when the model declines in its own {error} shape", async () => {
+      await respondWith(JSON.stringify({ error: "I'm sorry, but I can't help with that." }));
+      await expect(structureProblem("x")).rejects.toBeInstanceOf(AskRefusedError);
+    });
+
+    it("raises AskRefusedError when the refusal breaks JSON mode entirely", async () => {
+      const { getGroqClient } = await import("@/lib/groq");
+      vi.mocked(getGroqClient).mockReturnValue({
+        chat: {
+          completions: {
+            // Curly apostrophe — that is what the model actually returns.
+            create: vi.fn().mockRejectedValue(jsonModeFailure("I’m sorry, but I can’t help with that.")),
+          },
+        },
+      } as never);
+      await expect(structureProblem("x")).rejects.toBeInstanceOf(AskRefusedError);
+      vi.mocked(getGroqClient).mockReset();
+    });
+
+    it("carries a message safe to show the user, not the model's own wording", async () => {
+      await respondWith(JSON.stringify({ error: "Refused" }));
+      await expect(structureProblem("x")).rejects.toThrow(/can't help with that/i);
+    });
+  });
+
+  // The opposite risk: telling someone with a perfectly good question that we
+  // won't answer it. A JSON-mode failure with no refusal language in it is an
+  // ordinary model failure and must stay an ordinary error.
+  it("does not treat a non-refusal JSON-mode failure as a refusal", async () => {
+    const { getGroqClient } = await import("@/lib/groq");
+    vi.mocked(getGroqClient).mockReturnValue({
+      chat: {
+        completions: {
+          create: vi.fn().mockRejectedValue(jsonModeFailure("{\"goal\": \"Reduce chu")),
+        },
+      },
+    } as never);
+    await expect(structureProblem("x")).rejects.not.toBeInstanceOf(AskRefusedError);
+    vi.mocked(getGroqClient).mockReset();
   });
 });
