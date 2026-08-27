@@ -223,10 +223,10 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
             // yet, it says why and when instead of restating the definition.
             sub={
               activation.signups === 0
-                ? `Nobody has finished their first day yet — first results ${
+                ? `Everyone joined less than a day ago — check back ${
                     activationWait === null ? "soon" : waitPhrase(activationWait)
                   }`
-                : `of ${activation.signups} who joined, practised on day one (${pct(activation.rate) ?? "—"})`
+                : `out of ${activation.signups} who joined (${pct(activation.rate) ?? "—"})`
             }
             why="How many people who signed up actually practised on the day they joined — the first test of whether joining leads to any value at all, and the number to watch if signups climb while usage doesn't. Anyone who joined less than 24 hours ago is left out of both the top and the bottom of the figure, so a fresh burst of signups can't drag it down; that's why it reads blank until the earliest signups pass their first day. Known formally as Activation, or First Value Rate."
             breakdown={activationBreakdown}
