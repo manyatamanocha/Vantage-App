@@ -11,9 +11,15 @@ const state = vi.hoisted(() => ({
 vi.mock("@/lib/supabase/server", () => ({
   getSupabaseServerClient: async () => ({
     auth: {
-      signInWithPassword: async () => ({ data: {}, error: state.signInError }),
+      signInWithPassword: async () => ({
+        data: { user: state.signInError ? undefined : { id: "u1" } },
+        error: state.signInError,
+      }),
       signUp: async () => ({
-        data: { session: state.signUpSession },
+        data: {
+          user: state.signUpError ? undefined : { id: "u1" },
+          session: state.signUpSession,
+        },
         error: state.signUpError,
       }),
       signOut: async () => {
@@ -34,6 +40,13 @@ vi.mock("next/navigation", () => ({
     throw new Error("NEXT_REDIRECT");
   },
 }));
+
+// Unmocked, this action calls the REAL track(), which calls the REAL
+// getSupabaseAdminClient() and inserts into the live analytics_events table —
+// this file's mocked auth client has no `user` field, so every insert landed
+// with a null user_id. That is how this suite spent a day writing null rows
+// into production every time it ran (see analytics-events-null-user-id memory).
+vi.mock("@/lib/analytics/track", () => ({ track: vi.fn() }));
 
 import {
   signUpWithEmail,
@@ -72,6 +85,12 @@ describe("signUpWithEmail", () => {
     const result = await signUpWithEmail(credentials());
     expect(result).toEqual({ needsConfirmation: true });
   });
+
+  it("records signup with the new user's id, not null", async () => {
+    const { track } = await import("@/lib/analytics/track");
+    await signUpWithEmail(credentials());
+    expect(track).toHaveBeenCalledWith("signup", "u1");
+  });
 });
 
 describe("signInWithEmail", () => {
@@ -79,6 +98,17 @@ describe("signInWithEmail", () => {
     state.signInError = { message: "Invalid login credentials" };
     const result = await signInWithEmail(credentials());
     expect(result.error).toBe("Invalid login credentials");
+  });
+
+  // Regression test for a real incident: this file didn't mock track() until
+  // now, so every test run called the REAL track(), which inserted into the
+  // LIVE analytics_events table with user_id null (this mock's data has no
+  // `user` field). Asserting the id reaches track() is what would have
+  // caught it — a mock that merely exists doesn't prove the argument is right.
+  it("records login with the signed-in user's id, not null", async () => {
+    const { track } = await import("@/lib/analytics/track");
+    await signInWithEmail(credentials());
+    expect(track).toHaveBeenCalledWith("login", "u1");
   });
 });
 
