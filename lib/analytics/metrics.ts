@@ -106,6 +106,26 @@ function firstEventTimes(events: MetricEvent[], predicate: (e: MetricEvent) => b
 }
 
 /**
+ * The population every metric on the dashboard is computed over: users with a
+ * real `signup` row in the fetched window.
+ *
+ * Without this, two figures on one screen disagree about the same thing. The
+ * funnel intersects each step with the signup cohort (so its steps are true
+ * subsets), while the North Star counted anyone with activity — and the admin
+ * account has practice events but no signup row, because its signup predates
+ * the analytics table. One screen, "3+ sessions in 7 days" twice, 9 and 8.
+ *
+ * Excluding accounts that cannot be placed in a cohort is the honest reading
+ * rather than a cosmetic reconciliation: a user with no signup has no
+ * activation clock, no retention bracket, and no cohort to belong to, so every
+ * rate here was already ignoring them on the denominator side.
+ */
+export function restrictToSignupCohort(events: MetricEvent[]): MetricEvent[] {
+  const cohort = distinctUsers(events.filter((e) => e.event_name === SIGNUP_EVENT));
+  return events.filter((e) => e.user_id !== null && cohort.has(e.user_id));
+}
+
+/**
  * ⭐ NORTH STAR — Weekly Engaged Learners.
  * Unique users completing >= WEL_THRESHOLD meaningful sessions in a rolling
  * 7-day window. Captures both value delivered and the repetition the product
@@ -392,6 +412,57 @@ export function surfaceBreakdown(
       return { source, started: starters.size, completed, rate: ratio(completed, starters.size) };
     })
     .sort((a, b) => b.started - a.started);
+}
+
+/**
+ * DRILL-DOWN — the Sessions headline split by where the sessions happened.
+ *
+ * Counts SESSIONS, not users, unlike surfaceBreakdown: this exists to answer
+ * "the 98 came from where?", so the parts must sum back to the headline. Not
+ * windowed, for the same reason — it decomposes exactly the set the tile
+ * counted, and a mismatch between a number and its own breakdown reads as a
+ * bug even when both figures are right.
+ */
+export function sessionsBySurface(events: MetricEvent[]): { source: string; sessions: number }[] {
+  const counts = new Map<string, number>();
+  for (const event of events) {
+    if (!isMeaningful(event)) continue;
+    // Never dropped: a session with no surface tag is still a session, and
+    // silently discarding it would break the sum against the headline.
+    const source = typeof event.metadata?.source === "string" ? event.metadata.source : "unknown";
+    counts.set(source, (counts.get(source) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([source, sessions]) => ({ source, sessions }))
+    .sort((a, b) => b.sessions - a.sessions);
+}
+
+/**
+ * DRILL-DOWN — how many sessions each engaged learner actually completed, as
+ * buckets straddling the North Star's >= 3 threshold.
+ *
+ * The threshold is a hypothesis, not a finding (see WEL_THRESHOLD). Showing 1
+ * and 2 next to 3–4 and 5+ is what makes it falsifiable: a pile of users at 2
+ * says the bar is drawn in the wrong place, which the headline count alone can
+ * never reveal. Empty buckets are omitted rather than rendered as zeroes.
+ */
+export function sessionDistribution(
+  events: MetricEvent[],
+  now: Date
+): { bucket: string; users: number }[] {
+  const { sessionsByUser } = weeklyEngagedLearners(events, now);
+  const buckets = [
+    { bucket: "1 session", match: (n: number) => n === 1 },
+    { bucket: "2 sessions", match: (n: number) => n === 2 },
+    { bucket: "3–4 sessions", match: (n: number) => n === 3 || n === 4 },
+    { bucket: "5+ sessions", match: (n: number) => n >= 5 },
+  ];
+  return buckets
+    .map(({ bucket, match }) => ({
+      bucket,
+      users: [...sessionsByUser.values()].filter(match).length,
+    }))
+    .filter((b) => b.users > 0);
 }
 
 /**

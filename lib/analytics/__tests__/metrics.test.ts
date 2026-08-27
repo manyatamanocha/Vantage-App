@@ -8,7 +8,10 @@ import {
   practiceStartRate,
   practiceCompletionRate,
   practiceConversionRate,
+  restrictToSignupCohort,
   retentionRate,
+  sessionDistribution,
+  sessionsBySurface,
   solutionFeedback,
   surfaceBreakdown,
   weeklyEngagedLearners,
@@ -369,5 +372,113 @@ describe("surfaceBreakdown", () => {
     ];
     const quiz = surfaceBreakdown(events, NOW).find((s) => s.source === "quiz_general");
     expect(quiz).toMatchObject({ started: 1, completed: 1, rate: 1 });
+  });
+});
+
+describe("sessionsBySurface", () => {
+  it("groups completed sessions by surface, busiest first", () => {
+    const events = [
+      meaningful("u1", 1, "quiz_general"),
+      meaningful("u2", 1, "quiz_general"),
+      meaningful("u1", 2, "solve"),
+    ];
+    expect(sessionsBySurface(events)).toEqual([
+      { source: "quiz_general", sessions: 2 },
+      { source: "solve", sessions: 1 },
+    ]);
+  });
+
+  it("counts every session, not distinct users, so the parts sum to the headline count", () => {
+    const events = [
+      meaningful("u1", 1, "quiz_general"),
+      meaningful("u1", 1, "quiz_general"),
+      meaningful("u1", 1, "quiz_general"),
+    ];
+    expect(sessionsBySurface(events)).toEqual([{ source: "quiz_general", sessions: 3 }]);
+  });
+
+  it("ignores events that are not completed sessions", () => {
+    const events = [
+      meaningful("u1", 1, "solve"),
+      ev("practice_started", "u1", 1, { source: "quiz_general" }),
+      ev("login", "u1", 1),
+    ];
+    expect(sessionsBySurface(events)).toEqual([{ source: "solve", sessions: 1 }]);
+  });
+
+  it("buckets sessions with no recorded surface under 'unknown' rather than dropping them", () => {
+    const events = [ev("meaningful_activity_completed", "u1", 1)];
+    expect(sessionsBySurface(events)).toEqual([{ source: "unknown", sessions: 1 }]);
+  });
+});
+
+describe("sessionDistribution", () => {
+  it("places each user in the bucket matching their weekly session count", () => {
+    const events = [
+      meaningful("u1", 1),
+      meaningful("u2", 1), meaningful("u2", 2),
+      meaningful("u3", 1), meaningful("u3", 2), meaningful("u3", 3),
+      meaningful("u4", 1), meaningful("u4", 2), meaningful("u4", 3),
+      meaningful("u4", 4), meaningful("u4", 5),
+    ];
+    expect(sessionDistribution(events, NOW)).toEqual([
+      { bucket: "1 session", users: 1 },
+      { bucket: "2 sessions", users: 1 },
+      { bucket: "3–4 sessions", users: 1 },
+      { bucket: "5+ sessions", users: 1 },
+    ]);
+  });
+
+  it("omits users with no sessions in the window entirely", () => {
+    const events = [meaningful("u1", 1), ev("login", "u2", 1), meaningful("u3", 9)];
+    expect(sessionDistribution(events, NOW)).toEqual([{ bucket: "1 session", users: 1 }]);
+  });
+
+  it("splits the North Star threshold so 3+ can be read against 1 and 2", () => {
+    // The >=3 threshold is a hypothesis; the point of this breakdown is seeing
+    // how many users sit just below it.
+    const events = [
+      meaningful("u1", 1), meaningful("u1", 2),
+      meaningful("u2", 1), meaningful("u2", 2), meaningful("u2", 3),
+    ];
+    const atOrAbove = sessionDistribution(events, NOW)
+      .filter((b) => b.bucket.startsWith("3") || b.bucket.startsWith("5"))
+      .reduce((sum, b) => sum + b.users, 0);
+    expect(atOrAbove).toBe(weeklyEngagedLearners(events, NOW).count);
+  });
+
+  it("returns no buckets at all when nobody has practised", () => {
+    expect(sessionDistribution([ev("login", "u1", 1)], NOW)).toEqual([]);
+  });
+});
+
+describe("restrictToSignupCohort", () => {
+  it("keeps every event belonging to a user who has a signup row", () => {
+    const events = [ev("signup", "u1", 5), meaningful("u1", 1), ev("login", "u1", 2)];
+    expect(restrictToSignupCohort(events)).toHaveLength(3);
+  });
+
+  it("drops users with activity but no signup row", () => {
+    // The admin account: real practice events, but its signup predates the
+    // analytics table, so it belongs to no cohort and inflates headline counts.
+    const events = [ev("signup", "u1", 5), meaningful("u1", 1), meaningful("admin", 1)];
+    expect(restrictToSignupCohort(events).map((e) => e.user_id)).toEqual(["u1", "u1"]);
+  });
+
+  it("drops anonymous events entirely", () => {
+    const events = [ev("signup", "u1", 5), ev("signup", null, 5), meaningful("u1", 1)];
+    expect(restrictToSignupCohort(events).every((e) => e.user_id === "u1")).toBe(true);
+  });
+
+  it("makes the North Star agree with the funnel's last step", () => {
+    // The regression this exists to prevent: one dashboard showing 9 on the
+    // Engaged tile and 8 on the funnel step that measures the same thing.
+    const events = [
+      ev("signup", "u1", 9), meaningful("u1", 1), meaningful("u1", 2), meaningful("u1", 3),
+      meaningful("admin", 1), meaningful("admin", 2), meaningful("admin", 3),
+    ];
+    const cohort = restrictToSignupCohort(events);
+    const funnelTail = activationFunnel(cohort, NOW).at(-1);
+    expect(weeklyEngagedLearners(cohort, NOW).count).toBe(funnelTail?.users);
   });
 });

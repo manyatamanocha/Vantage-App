@@ -50,7 +50,14 @@ export function InfoPopover({ label, children }: { label: string; children: stri
         type="button"
         aria-label={`Why ${label} is measured this way`}
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={(event) => {
+          // This button now lives inside a <summary> on the metric tiles, and
+          // a click anywhere in a summary toggles its <details>. Reading why a
+          // number is defined that way must not also expand the drill-down.
+          event.preventDefault();
+          event.stopPropagation();
+          setOpen((v) => !v);
+        }}
         style={{
           display: "inline-flex",
           border: 0,

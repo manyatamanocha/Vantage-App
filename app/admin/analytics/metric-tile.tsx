@@ -1,8 +1,9 @@
-import type { LucideIcon } from "lucide-react";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 import { InfoPopover } from "@/components/info-popover";
 
 /**
- * One number, scannable in about a second.
+ * One number, scannable in about a second — and openable for the numbers it is
+ * made of.
  *
  * Was a wide card carrying two or three sentences of rationale under every
  * figure. The prose was correct and worth keeping, but it competed with the
@@ -14,6 +15,10 @@ import { InfoPopover } from "@/components/info-popover";
  * `value === null` renders "—" in muted, never 0%. An empty denominator means
  * "not measurable yet", and showing that as zero reads as failure.
  */
+
+/** One row of a tile's drill-down: a part of the headline, with its share. */
+export type BreakdownRow = { label: string; value: number };
+
 export function MetricTile({
   icon: Icon,
   label,
@@ -22,6 +27,7 @@ export function MetricTile({
   accent = "var(--primary)",
   why,
   star = false,
+  breakdown,
 }: {
   icon: LucideIcon;
   label: string;
@@ -30,22 +36,15 @@ export function MetricTile({
   accent?: string;
   why?: string;
   star?: boolean;
+  breakdown?: BreakdownRow[];
 }) {
   const measured = value !== null;
+  // No rows means no chevron and no <details> at all. An affordance that opens
+  // onto an empty panel is worse than no affordance: it reads as broken.
+  const openable = breakdown !== undefined && breakdown.length > 0;
 
-  return (
-    <div
-      className="card"
-      style={{
-        padding: 16,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-        // The North Star gets a tinted edge rather than a bigger tile, so the
-        // grid keeps its rhythm.
-        borderColor: star ? `color-mix(in oklch, ${accent} 45%, var(--border))` : undefined,
-      }}
-    >
+  const body = (
+    <>
       <span
         aria-hidden="true"
         style={{
@@ -83,9 +82,64 @@ export function MetricTile({
           {label}
         </span>
         {why ? <InfoPopover label={label}>{why}</InfoPopover> : null}
+        {openable ? (
+          <ChevronDown className="metric-chevron" size={14} aria-hidden="true" style={{ marginLeft: "auto" }} />
+        ) : null}
       </div>
 
       <p style={{ fontSize: 11.5, lineHeight: 1.4, color: "var(--muted-foreground)", margin: 0 }}>{sub}</p>
+    </>
+  );
+
+  const tileStyle = {
+    padding: 16,
+    // The North Star gets a tinted edge rather than a bigger tile, so the
+    // grid keeps its rhythm.
+    borderColor: star ? `color-mix(in oklch, ${accent} 45%, var(--border))` : undefined,
+  };
+
+  if (openable) {
+    const top = Math.max(...breakdown.map((row) => row.value), 1);
+    return (
+      <details className="card metric-tile" style={tileStyle}>
+        <summary className="metric-summary">{body}</summary>
+        <div className="metric-breakdown">
+          {breakdown.map((row) => (
+            <div key={row.label} style={{ display: "grid", gap: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11.5 }}>
+                <span style={{ color: "var(--foreground)" }}>{row.label}</span>
+                <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--muted-foreground)" }}>
+                  {row.value}
+                </span>
+              </div>
+              <div className="bar-track" style={{ height: 6 }}>
+                <div
+                  style={{
+                    width: `${(row.value / top) * 100}%`,
+                    height: "100%",
+                    background: accent,
+                    borderRadius: 99,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </details>
+    );
+  }
+
+  return (
+    <div
+      className="card"
+      style={{
+        ...tileStyle,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+      }}
+    >
+      {body}
     </div>
   );
 }

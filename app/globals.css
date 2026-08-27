@@ -647,6 +647,20 @@ h1.display, .display {
 .bar-fill { height: 100%; background: var(--primary); border-radius: inherit; }
 .bar-row strong { font-family: "Manrope", var(--font-sans), sans-serif; text-align: right; font-variant-numeric: tabular-nums; }
 
+/* Metric tiles that open to the numbers behind the number. Built on native
+   <details> so the tile stays a server component and keyboard/AT support is
+   free — the cost is hiding the default marker in two places. */
+.metric-summary { display: flex; flex-direction: column; gap: 8px; cursor: pointer; list-style: none; }
+.metric-summary::-webkit-details-marker { display: none; }
+.metric-tile { transition: border-color .18s ease; }
+.metric-tile:hover { border-color: color-mix(in oklch, var(--primary) 35%, var(--border)); }
+.metric-chevron { color: var(--muted-foreground); opacity: 0.75; transition: transform .18s ease; }
+.metric-tile[open] .metric-chevron { transform: rotate(180deg); }
+.metric-breakdown {
+  display: flex; flex-direction: column; gap: 9px;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border);
+}
+
 .quote-card { background: color-mix(in oklch, var(--primary) 7%, var(--card)); border: 1px solid color-mix(in oklch, var(--primary) 22%, var(--border)); border-radius: var(--radius-2xl); padding: 28px; }
 .quote-card p { font-size: 15.5px; line-height: 1.65; }
 

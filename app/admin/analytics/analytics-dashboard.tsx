@@ -10,8 +10,12 @@ import {
   activationRate,
   engagementStatus,
   practiceCompletionRate,
+  restrictToSignupCohort,
   retentionRate,
+  sessionDistribution,
+  sessionsBySurface,
   solutionFeedback,
+  surfaceBreakdown,
   weeklyEngagedLearners,
 } from "@/lib/analytics/metrics";
 import { MetricTile } from "./metric-tile";
@@ -54,6 +58,40 @@ function pct(rate: number | null): string | null {
   return rate === null ? null : `${Math.round(rate * 100)}%`;
 }
 
+// Event metadata carries slugs; a dashboard shouldn't. These are the four
+// surfaces that actually appear in the table, plus a fallback for anything a
+// future surface fires before it's named here.
+const SURFACE_LABELS: Record<string, string> = {
+  solve: "Solve",
+  daily_challenge: "Daily challenge",
+  quiz_general: "Quiz Time",
+  quiz_scenario: "Scenario quiz",
+  unknown: "Unrecorded",
+};
+
+function surfaceLabel(source: string): string {
+  return SURFACE_LABELS[source] ?? source.replace(/_/g, " ");
+}
+
+/** Day-by-day counts, oldest first, for the drill-down under a total. */
+function countByDay(events: MetricEvent[]): { label: string; value: number }[] {
+  const counts = new Map<string, number>();
+  for (const event of events) {
+    const day = event.created_at.slice(0, 10);
+    counts.set(day, (counts.get(day) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([day, value]) => ({
+      label: new Date(`${day}T00:00:00Z`).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        timeZone: "UTC",
+      }),
+      value,
+    }));
+}
+
 export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: string }) {
   const now = new Date();
   const since = new Date(now.getTime() - LOOKBACK_DAYS * 86_400_000).toISOString();
@@ -66,8 +104,15 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
     .order("created_at", { ascending: false })
     .limit(ROW_CAP);
 
-  const events = (data ?? []) as MetricEvent[];
-  const truncated = events.length === ROW_CAP;
+  const fetched = (data ?? []) as MetricEvent[];
+  const truncated = fetched.length === ROW_CAP;
+
+  // Every figure below is computed over the signup cohort, so the tiles and the
+  // funnel can never disagree about the same measure. See restrictToSignupCohort.
+  const events = restrictToSignupCohort(fetched);
+  const excluded = new Set(
+    fetched.filter((e) => e.user_id).map((e) => e.user_id as string)
+  ).size - new Set(events.map((e) => e.user_id as string)).size;
 
   const wel = weeklyEngagedLearners(events, now);
   const activation = activationRate(events, now);
@@ -80,6 +125,41 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
 
   const funnelTop = Math.max(1, ...funnel.map((s) => s.users));
   const hasEvents = events.length > 0;
+
+  // Drill-downs. Each is the decomposition of the tile directly above it, so a
+  // reader who doubts a number can open it rather than take it on faith — the
+  // headline says what happened, the breakdown says where it came from.
+  const bySurface = sessionsBySurface(events);
+  const distribution = sessionDistribution(events, now);
+  const perSurface = surfaceBreakdown(events, now);
+  const pending = funnel[0].users - activation.signups;
+
+  const signupBreakdown = countByDay(events.filter((e) => e.event_name === "signup" && e.user_id));
+  const activationBreakdown = [
+    { label: "Practised within 24h", value: activation.activated },
+    { label: "Didn't", value: activation.signups - activation.activated },
+    { label: "Still inside their 24h", value: pending },
+  ].filter((row) => row.value > 0);
+  const sessionBreakdown = bySurface.map((s) => ({ label: surfaceLabel(s.source), value: s.sessions }));
+  const engagedBreakdown = distribution.map((b) => ({ label: b.bucket, value: b.users }));
+  const feedbackBreakdown = [
+    { label: "Helpful", value: feedback.helpful },
+    { label: "Not helpful", value: feedback.notHelpful },
+  ].filter((row) => row.value > 0);
+  const completionBreakdown = perSurface.map((s) => ({
+    label: `${surfaceLabel(s.source)} — ${s.completed}/${s.started}`,
+    value: s.completed,
+  }));
+  const d7Breakdown = [
+    { label: "Came back", value: d7.retained },
+    { label: "Didn't", value: d7.cohort - d7.retained },
+    { label: "Week not elapsed", value: funnel[2].users - d7.cohort },
+  ].filter((row) => row.value > 0);
+  const engagementBreakdown = [
+    { label: `Active (${ACTIVE_WINDOW_DAYS}d)`, value: engagement.active },
+    { label: "Quiet this week", value: engagement.inactive },
+    { label: `Dormant (${DORMANT_WINDOW_DAYS}d)`, value: engagement.dormant },
+  ].filter((row) => row.value > 0);
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
@@ -108,6 +188,7 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
             label="Signups"
             value={String(funnel[0].users)}
             sub="People who joined"
+            breakdown={signupBreakdown}
           />
           <MetricTile
             icon={CircleCheck}
@@ -117,12 +198,17 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
             // when the truth is "nobody is old enough to say yet".
             value={activation.signups === 0 ? null : String(activation.activated)}
             accent="var(--success)"
+            // Every sub-line leads with WHAT is measured, then the count or the
+            // reason it can't be measured yet. A tile showing only "— / D7
+            // RETURN / nobody old enough" tells a reader neither what the
+            // metric is nor why it's blank without opening the ⓘ.
             sub={
               activation.signups === 0
-                ? "No signups past their 24h window yet"
-                : `${pct(activation.rate) ?? "—"} of ${activation.signups} eligible`
+                ? "Practised within 24h of signing up · nobody eligible yet"
+                : `Practised within 24h of signing up · ${pct(activation.rate) ?? "—"} of ${activation.signups}`
             }
             why="Practised within 24h of signing up. Signups still inside their own 24h window are excluded from both sides, so a burst of fresh signups can't drag this down."
+            breakdown={activationBreakdown}
           />
           <MetricTile
             icon={Repeat2}
@@ -130,6 +216,7 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
             value={String(sessions)}
             accent={AMBER}
             sub="Practice loops completed"
+            breakdown={sessionBreakdown}
             why="Counts completed loops, not logins or page views — the learner submitted their own reasoning and reached the feedback step."
           />
           <MetricTile
@@ -138,6 +225,7 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
             label="Engaged"
             value={String(wel.count)}
             sub={`${WEL_THRESHOLD}+ sessions in ${ACTIVE_WINDOW_DAYS} days`}
+            breakdown={engagedBreakdown}
             why="The North Star. A weekly-habit metric by design — a single day of testing cannot move it, and that is expected rather than a miss. Kept as an absolute count, never a ratio, so it can't improve just because casual users left."
           />
 
@@ -146,31 +234,44 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
             label="Helpful"
             value={pct(feedback.rate)}
             accent="var(--success)"
-            sub={`of ${feedback.total} rated`}
+            sub={`Rated the solution useful · of ${feedback.total} rated`}
             why="The only in-app qualitative signal — “Was this helpful?” on the solution screen. Read the count alongside it: 100% off two answers is not the same claim as off fifty."
+            breakdown={feedbackBreakdown}
           />
           <MetricTile
             icon={Target}
             label="Completion"
             value={pct(completion.rate)}
             accent={AMBER}
-            sub={`${completion.completed} of ${completion.started} finished`}
+            sub={`Began a loop and reached feedback · ${completion.completed} of ${completion.started}`}
             why="Of the people who begin loops, how many reach the feedback step. If this is low, people are abandoning at the guess — the core mechanic is the friction. Counted per user, not per event, since quiz surfaces fire one completion per question but one start per session."
+            breakdown={completionBreakdown}
           />
           <MetricTile
             icon={CalendarCheck}
-            label="D7 return"
+            // Plain on the face, precise in the popover. "D7" was unreadable
+            // to the person this dashboard is for, and Metrics.md keeps D2
+            // RETURN (leading) separate from D7 RETENTION (lagging) — so the
+            // ⓘ names it "D7 retention" exactly, and the tile says what that
+            // means in English. The PRD row still maps one-to-one.
+            label="Back after a week"
             value={pct(d7.rate)}
             accent="var(--destructive)"
-            sub={d7.cohort === 0 ? "Nobody old enough to measure yet" : `${d7.retained} of ${d7.cohort} eligible`}
-            why={`Activated users who practised again around day 7 (days ${d7.bracket[0]}–${d7.bracket[1]}). The cohort excludes anyone whose day-7 window hasn't elapsed, so this stays empty rather than reading as churn until users are old enough to measure.`}
+            sub={
+              d7.cohort === 0
+                ? `Practised again around day ${d7.bracket[0]}–${d7.bracket[1]} · nobody eligible yet`
+                : `Practised again around day ${d7.bracket[0]}–${d7.bracket[1]} · ${d7.retained} of ${d7.cohort}`
+            }
+            why={`D7 retention. Activated users who practised again around day 7 (days ${d7.bracket[0]}–${d7.bracket[1]}). The cohort excludes anyone whose day-7 window hasn't elapsed, so this stays empty rather than reading as churn until users are old enough to measure.`}
+            breakdown={d7Breakdown}
           />
           <MetricTile
             icon={Activity}
             label="Active now"
             value={String(engagement.active)}
-            sub={`${engagement.inactive} quiet · ${engagement.dormant} dormant`}
+            sub={`Practised in the last ${ACTIVE_WINDOW_DAYS} days · ${engagement.inactive} quiet · ${engagement.dormant} dormant`}
             why={`Active = practised in the last ${ACTIVE_WINDOW_DAYS} days. Dormant = nothing in ${DORMANT_WINDOW_DAYS}. The middle bucket is quiet-this-week, kept separate so a normal weekly gap isn't misread as churn.`}
+            breakdown={engagementBreakdown}
           />
         </div>
       </section>
@@ -207,6 +308,15 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
           </div>
         </div>
       </section>
+
+      {excluded > 0 ? (
+        <p className="hint" style={{ marginTop: 4 }}>
+          {excluded} account{excluded === 1 ? "" : "s"} with activity but no signup record
+          {excluded === 1 ? " is" : " are"} excluded from every figure above — accounts predating
+          this table can&rsquo;t be placed in an activation or retention cohort. Separated out rather
+          than folded into the headline numbers.
+        </p>
+      ) : null}
 
       {truncated ? (
         <p className="hint" style={{ marginTop: 4 }}>
