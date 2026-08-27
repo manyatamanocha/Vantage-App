@@ -202,9 +202,12 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
           <MetricTile
             icon={CircleCheck}
             // "Activated" and "24h" both read as jargon to the person this is
-            // for — "24h" was misread as the 24th of the month. Plain words on
-            // the face, the precise definition in the ⓘ.
-            label="Got started"
+            // for — "24h" was misread as the 24th of the month. The name comes
+            // from the vocabulary already on this screen: the funnel step below
+            // measuring the same thing says "Completed first session", so the
+            // tile says the same words rather than making a reader translate.
+            // The precise name (Activation / First Value Rate) is in the ⓘ.
+            label="First session"
             // Not `activation.activated` directly: with an empty eligible
             // cohort that renders a hard 0, which reads as "nobody activated"
             // when the truth is "nobody is old enough to say yet".
