@@ -133,6 +133,13 @@ export function ProblemIntakeForm() {
   // "Refining…" indicator stuck if it resolves after the box was cleared).
   // Each debounce fire stamps its own id; only the still-current one applies.
   const refineRequestIdRef = useRef(0);
+  // Next.js runs server actions one at a time, so a refine/grammar call still
+  // in flight when "Let's solve" is clicked delays createDraftSolve until it
+  // finishes — and clicking within the debounce window would otherwise fire a
+  // whole new refine ahead of the confirm. Once the user has committed, the
+  // wording is settled and neither call can change the outcome, so stop
+  // firing them and leave the queue clear for the confirm.
+  const isConfirmingRef = useRef(false);
 
   useEffect(() => {
     rawInputRef.current = rawInput;
@@ -149,6 +156,7 @@ export function ProblemIntakeForm() {
     // briefly show the last correction against freshly-typed text.
     if (!trimmed) return;
     const timer = setTimeout(() => {
+      if (isConfirmingRef.current) return;
       setIsCheckingGrammar(true);
       checkAskGrammar(trimmed)
         .then((result) => {
@@ -181,6 +189,7 @@ export function ProblemIntakeForm() {
     }
     setError(null);
     const timer = setTimeout(() => {
+      if (isConfirmingRef.current) return;
       const requestId = ++refineRequestIdRef.current;
       startRefining(async () => {
         try {
@@ -357,6 +366,11 @@ export function ProblemIntakeForm() {
 
   function handleConfirm() {
     setError(null);
+    isConfirmingRef.current = true;
+    // Discard any refine already in flight — its result can only arrive after
+    // the wording was committed, so applying it would swap the cards out from
+    // under a user who has already clicked.
+    refineRequestIdRef.current += 1;
     startConfirming(async () => {
       try {
         const goal = selectedGoal === "original" ? rawInput.trim() : (refinedGoal ?? "").trim();
@@ -368,6 +382,9 @@ export function ProblemIntakeForm() {
         });
         router.push(`/solve/${solveId}/solution`);
       } catch (err) {
+        // Confirm failed, so the user stays here and keeps editing — live
+        // refinement has to come back on or the form silently goes dead.
+        isConfirmingRef.current = false;
         setError(err instanceof Error ? err.message : "Something went wrong");
       }
     });
