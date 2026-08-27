@@ -113,6 +113,26 @@ export function ProblemIntakeForm() {
   const [problemType, setProblemType] = useState("");
   const [isRefining, startRefining] = useTransition();
   const [isConfirming, startConfirming] = useTransition();
+  // Which wording actually becomes the goal — AI refinement can quietly
+  // change what was asked (e.g. "how to make a PRD" -> "Create a PRD"), so
+  // the refined text is only a suggestion, not an automatic substitution.
+  // Defaults to "refined" to match prior behavior when the user has no
+  // preference.
+  const [selectedGoal, setSelectedGoal] = useState<"refined" | "original">("refined");
+  // ask_submitted/ask_refused must fire once per ask, not once per pause —
+  // refinement itself now runs on every pause. Flips true on the first
+  // refine call for a given ask, resets when the box is cleared.
+  const hasTrackedAskRef = useRef(false);
+  // Keeps "AI refined" as the default pick only for the FIRST successful
+  // refine of an ask — later re-refines (as the user keeps editing) must not
+  // silently yank the selection back after they've picked "Your original".
+  const hasRefinedOnceRef = useRef(false);
+  // Refining now fires on every pause, so a slow call for an earlier pause
+  // can resolve AFTER a faster call for a later pause — without this, the
+  // stale response would win and overwrite the fresher one (and leave the
+  // "Refining…" indicator stuck if it resolves after the box was cleared).
+  // Each debounce fire stamps its own id; only the still-current one applies.
+  const refineRequestIdRef = useRef(0);
 
   useEffect(() => {
     rawInputRef.current = rawInput;
@@ -139,6 +159,58 @@ export function ProblemIntakeForm() {
           setGrammarCorrection(null);
         })
         .finally(() => setIsCheckingGrammar(false));
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [rawInput]);
+
+  // Live refinement: same debounce pattern as the grammar check above, fired
+  // ~900ms after typing pauses so the "which one should we solve?" choice
+  // appears while drafting instead of waiting for a separate Submit click.
+  useEffect(() => {
+    const trimmed = rawInput.trim();
+    if (!trimmed) {
+      // Clearing the box starts a new ask — reset both the tracking guard
+      // and the stale refinement/refusal from whatever was typed before.
+      refineRequestIdRef.current += 1;
+      hasTrackedAskRef.current = false;
+      hasRefinedOnceRef.current = false;
+      setRefinedGoal(null);
+      setProblemType("");
+      setRefusal(null);
+      return;
+    }
+    setError(null);
+    const timer = setTimeout(() => {
+      const requestId = ++refineRequestIdRef.current;
+      startRefining(async () => {
+        try {
+          const shouldTrack = !hasTrackedAskRef.current;
+          const result = await refineAsk(trimmed, shouldTrack);
+          // A newer pause has since fired its own request — drop this one
+          // rather than let a slow, stale response overwrite fresher state.
+          if (requestId !== refineRequestIdRef.current) return;
+          hasTrackedAskRef.current = true;
+          if (result.refused) {
+            // Clear any earlier refinement before showing the notice: leaving one
+            // on screen would keep "Let's solve" live and let a stale goal from a
+            // previous ask be confirmed against the one just declined.
+            setRefinedGoal(null);
+            setProblemType("");
+            setRefusal(result.message);
+            return;
+          }
+          setRefusal(null);
+          setRefinedGoal(result.goal);
+          setProblemType(result.problemType);
+          if (!hasRefinedOnceRef.current) {
+            hasRefinedOnceRef.current = true;
+            setSelectedGoal("refined");
+          }
+        } catch (err) {
+          if (requestId !== refineRequestIdRef.current) return;
+          setError(err instanceof Error ? err.message : "Something went wrong");
+        }
+      });
     }, 900);
     return () => clearTimeout(timer);
   }, [rawInput]);
@@ -283,38 +355,15 @@ export function ProblemIntakeForm() {
     setGrammarCorrection(null);
   }
 
-  function handleRefine(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setRefusal(null);
-    startRefining(async () => {
-      try {
-        const result = await refineAsk(rawInput);
-        if (result.refused) {
-          // Clear any earlier refinement before showing the notice: leaving one
-          // on screen would keep "Let's solve" live and let a stale goal from a
-          // previous ask be confirmed against the one just declined.
-          setRefinedGoal(null);
-          setProblemType("");
-          setRefusal(result.message);
-          return;
-        }
-        setRefinedGoal(result.goal);
-        setProblemType(result.problemType);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong");
-      }
-    });
-  }
-
   function handleConfirm() {
     setError(null);
     startConfirming(async () => {
       try {
+        const goal = selectedGoal === "original" ? rawInput.trim() : (refinedGoal ?? "").trim();
         const { solveId } = await createDraftSolve({
           rawInput,
           source: "live",
-          goal: (refinedGoal ?? "").trim(),
+          goal,
           problemType,
         });
         router.push(`/solve/${solveId}/solution`);
@@ -332,7 +381,7 @@ export function ProblemIntakeForm() {
         </h1>
         <p className="lede">Input what you want to discuss</p>
       </header>
-      <form onSubmit={handleRefine} className="stack">
+      <div className="stack">
         <label className="field" htmlFor="rawInput">
           <span className="ask-away-label">
             <MessageCircle size={16} aria-hidden="true" /> Ask Away
@@ -440,12 +489,16 @@ export function ProblemIntakeForm() {
           ) : null}
       </label>
 
-        <div className="actions" style={{ justifyContent: "center" }}>
-          <button className="btn btn-primary" type="submit" disabled={isRefining || !rawInput.trim()}>
-            {isRefining ? "Checking…" : "Submit"}
-          </button>
-        </div>
-      </form>
+        {isRefining ? (
+          <p
+            className="hint"
+            style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginTop: 4 }}
+          >
+            <Sparkles size={12} aria-hidden="true" style={{ color: "var(--primary)" }} />
+            Refining…
+          </p>
+        ) : null}
+      </div>
 
       {refinedGoal ? (
         <>
@@ -453,40 +506,84 @@ export function ProblemIntakeForm() {
             <ArrowDown size={18} style={{ color: "var(--muted-foreground)" }} aria-hidden="true" />
           </div>
 
-          <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>Is that what you mean?</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 10 }}>Which one should we solve?</h2>
+          <p className="hint" style={{ marginBottom: 12 }}>
+            AI can reshape what you meant — pick whichever wording is right.
+          </p>
 
-          <section
-            className="card"
-            style={{
-              borderColor: "var(--primary)",
-              boxShadow: "0 0 0 1px var(--primary)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <div
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 999,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "color-mix(in oklch, var(--primary) 18%, transparent)",
-                  color: "var(--primary)",
-                  flexShrink: 0,
-                }}
-              >
-                <Sparkles size={13} aria-hidden="true" />
-              </div>
-              <span style={{ color: "var(--primary)", fontWeight: 650, fontSize: 14 }}>
-                Here&apos;s a refined version:
-              </span>
-            </div>
-
-            <p className="quote-card card-text" style={{ fontStyle: "italic", margin: 0 }}>
-              &ldquo;{refinedGoal}&rdquo;
-            </p>
-          </section>
+          <div role="radiogroup" aria-label="Which wording to use as your goal">
+            {(
+              [
+                { key: "refined" as const, label: "AI refined", text: refinedGoal ?? "" },
+                { key: "original" as const, label: "Your original", text: rawInput.trim() },
+              ]
+            ).map(({ key, label, text }) => {
+              const selected = selectedGoal === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setSelectedGoal(key)}
+                  className="card"
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    textAlign: "left",
+                    marginTop: key === "original" ? 12 : 0,
+                    padding: "16px 16px 16px 44px",
+                    position: "relative",
+                    cursor: "pointer",
+                    borderColor: selected ? "var(--primary)" : "var(--border)",
+                    boxShadow: selected ? "0 0 0 1px var(--primary)" : "none",
+                    background: selected ? "color-mix(in oklch, var(--primary) 6%, var(--card))" : "var(--card)",
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      position: "absolute",
+                      left: 16,
+                      top: 18,
+                      width: 18,
+                      height: 18,
+                      borderRadius: 999,
+                      border: `1.5px solid ${selected ? "var(--primary)" : "var(--muted-foreground)"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {selected ? (
+                      <span
+                        style={{ width: 8, height: 8, borderRadius: 999, background: "var(--primary)" }}
+                      />
+                    ) : null}
+                  </span>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 5,
+                      fontSize: 10.5,
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                      textTransform: "uppercase",
+                      color: selected ? "var(--primary)" : "var(--muted-foreground)",
+                      marginBottom: 5,
+                    }}
+                  >
+                    {key === "refined" ? <Sparkles size={12} aria-hidden="true" /> : null}
+                    {label}
+                  </span>
+                  <p className="card-text" style={{ fontStyle: "italic", margin: 0 }}>
+                    &ldquo;{text}&rdquo;
+                  </p>
+                </button>
+              );
+            })}
+          </div>
         </>
       ) : null}
 
@@ -524,7 +621,9 @@ export function ProblemIntakeForm() {
             type="button"
             className="btn btn-primary"
             onClick={handleConfirm}
-            disabled={isConfirming || !refinedGoal?.trim()}
+            disabled={
+              isConfirming || !(selectedGoal === "original" ? rawInput.trim() : refinedGoal?.trim())
+            }
           >
             {isConfirming ? "Loading…" : "Let's solve →"}
           </button>

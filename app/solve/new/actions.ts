@@ -63,15 +63,18 @@ export type RefineAskResult =
   | { refused: false; goal: string; problemType: string }
   | { refused: true; message: string };
 
-export async function refineAsk(rawInput: string): Promise<RefineAskResult> {
+export async function refineAsk(rawInput: string, shouldTrack = true): Promise<RefineAskResult> {
   const parseResult = rawInputSchema.safeParse(rawInput);
   if (!parseResult.success) throw new Error(parseResult.error.issues[0].message);
   const { user } = await getVerifiedUser();
   if (!user?.id) throw new Error("Not authenticated");
-  // Fires when someone actually submits an ask — the step BEFORE they commit
-  // via "Let's solve" (solve_started). Without both, the intake screen's
-  // drop-off between "typed something" and "went ahead with it" is invisible.
-  track("ask_submitted", user.id, { length: parseResult.data.length });
+  // Refinement now fires automatically as the user pauses typing (not on a
+  // deliberate Submit click), so this runs once per keystroke pause during
+  // drafting. `shouldTrack` lets the caller fire ask_submitted/ask_refused
+  // only for the FIRST refine of a given ask — the step BEFORE they commit
+  // via "Let's solve" (solve_started) — so the funnel still counts one
+  // event per ask instead of one per pause.
+  if (shouldTrack) track("ask_submitted", user.id, { length: parseResult.data.length });
 
   try {
     const { goal, problemType } = await structureProblem(parseResult.data);
@@ -83,7 +86,7 @@ export async function refineAsk(rawInput: string): Promise<RefineAskResult> {
     // would see a generic message and could not tell a refusal from a crash.
     // Everything else still throws, so real breakage stays visible.
     if (!(err instanceof AskRefusedError)) throw err;
-    track("ask_refused", user.id, { length: parseResult.data.length });
+    if (shouldTrack) track("ask_refused", user.id, { length: parseResult.data.length });
     return { refused: true, message: err.message };
   }
 }
