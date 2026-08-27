@@ -217,14 +217,18 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
             // reason it can't be measured yet. A tile showing only "— / D7
             // RETURN / nobody old enough" tells a reader neither what the
             // metric is nor why it's blank without opening the ⓘ.
+            // The sub-line has to finish the sentence the big number starts,
+            // naming both sides: "9" alone says nothing, "of 16 who joined,
+            // practised on day one" says what 9 is. When there's no number
+            // yet, it says why and when instead of restating the definition.
             sub={
               activation.signups === 0
-                ? `Practised within a day of joining · too early, first results ${
+                ? `Nobody has finished their first day yet — first results ${
                     activationWait === null ? "soon" : waitPhrase(activationWait)
                   }`
-                : `Practised within a day of joining · ${pct(activation.rate) ?? "—"} of ${activation.signups}`
+                : `of ${activation.signups} who joined, practised on day one (${pct(activation.rate) ?? "—"})`
             }
-            why="Activation, or First Value Rate: practised within 24 hours of signing up. Signups still inside their own 24h window are excluded from both sides, so a burst of fresh signups can't drag this down."
+            why="How many people who signed up actually practised on the day they joined — the first test of whether joining leads to any value at all, and the number to watch if signups climb while usage doesn't. Anyone who joined less than 24 hours ago is left out of both the top and the bottom of the figure, so a fresh burst of signups can't drag it down; that's why it reads blank until the earliest signups pass their first day. Known formally as Activation, or First Value Rate."
             breakdown={activationBreakdown}
           />
           <MetricTile
