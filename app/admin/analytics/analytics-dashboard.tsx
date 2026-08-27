@@ -300,17 +300,28 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
       <section className="stack">
         <span className="card-label">Activation funnel — where people drop</span>
         <div className="card">
+          {/* The percentage is always of the TOP step, never of the step above.
+              Reading each step against its predecessor makes a late 4-person
+              drop look worse than an early one and stops the numbers matching
+              the PRD's 94 / 75 / 50. */}
+          <p className="hint" style={{ margin: "0 0 12px" }}>
+            How far the {funnel[0].users} people who signed up got. Each percentage is
+            out of those {funnel[0].users}.
+          </p>
           <div className="bars">
             {funnel.map((step, i) => {
               const previous = i === 0 ? null : funnel[i - 1].users;
               const dropped = previous !== null && previous > 0 ? previous - step.users : 0;
+              const share = funnel[0].users > 0 ? Math.round((step.users / funnel[0].users) * 100) : null;
               return (
                 <div key={step.step} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 5 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13 }}>
                     <span>{step.step}</span>
-                    <span style={{ fontVariantNumeric: "tabular-nums", color: "var(--muted-foreground)" }}>
+                    <span style={{ fontVariantNumeric: "tabular-nums" }}>
                       {step.users}
-                      {dropped > 0 ? ` · −${dropped}` : ""}
+                      {share !== null ? (
+                        <span style={{ color: "var(--muted-foreground)" }}> · {share}%</span>
+                      ) : null}
                     </span>
                   </div>
                   <div className="bar-track" style={{ height: 10 }}>
@@ -323,6 +334,14 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
                       }}
                     />
                   </div>
+                  {/* Spelled out rather than "· −3": a bare minus sign next to a
+                      count reads as a change over time, and collided with the
+                      unrelated "1 excluded account" note below. */}
+                  {dropped > 0 ? (
+                    <span className="hint" style={{ fontSize: 11 }}>
+                      {dropped} {dropped === 1 ? "person" : "people"} stopped here
+                    </span>
+                  ) : null}
                 </div>
               );
             })}
@@ -332,10 +351,10 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
 
       {excluded > 0 ? (
         <p className="hint" style={{ marginTop: 4 }}>
-          {excluded} account{excluded === 1 ? "" : "s"} with activity but no signup record
-          {excluded === 1 ? " is" : " are"} excluded from every figure above — accounts predating
-          this table can&rsquo;t be placed in an activation or retention cohort. Separated out rather
-          than folded into the headline numbers.
+          Not counted anywhere on this page: {excluded} older account
+          {excluded === 1 ? "" : "s"} that {excluded === 1 ? "has" : "have"} activity but no signup
+          record, so {excluded === 1 ? "it" : "they"} can&rsquo;t be placed in a cohort. This is
+          separate from the drop-offs above.
         </p>
       ) : null}
 

@@ -314,8 +314,17 @@ export function practiceCompletionRate(
 }
 
 /**
- * LEADING — D2 return: activated users practising again the next day. The
- * earliest signal that the loop is habit-forming, long before D7/D30 land.
+ * LEADING — D2 return: activated users practising again 36–60h after their
+ * first value (day 2 ± 12h). The earliest signal that the loop is
+ * habit-forming, long before D7/D30 land.
+ *
+ * Not "the next day", and the difference is not cosmetic. Like every retention
+ * figure here the anchor is ACTIVATION, not signup, and the bracket must have
+ * fully elapsed before a user joins the cohort — so someone who activates
+ * Monday 10am and practises Tuesday 2pm is genuinely back the next day but
+ * lands outside 36–60h and counts as not returned. The tolerance is tightened
+ * to ±12h rather than the retentionRate default (±2 days), which at dayOffset
+ * 2 would overlap activation itself and score the first session as a return.
  */
 export function d2ReturnRate(events: MetricEvent[], now: Date): Rate & { cohort: number; returned: number } {
   const result = retentionRate(events, 2, now, 0.5);

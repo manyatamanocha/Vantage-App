@@ -5,6 +5,7 @@ import {
   engagementStatus,
   hoursUntilActivationMeasurable,
   activationFunnel,
+  d2ReturnRate,
   habitRetention,
   practiceStartRate,
   practiceCompletionRate,
@@ -133,6 +134,55 @@ describe("retentionRate", () => {
       meaningful("u1", 18), // ~day 1.5 — real, but not D7 retention
     ];
     expect(retentionRate(events, 7, NOW)).toMatchObject({ retained: 0 });
+  });
+});
+
+describe("d2ReturnRate", () => {
+  // These pin the DEFINITION, not just the arithmetic. The docs called D2
+  // "practising again the next day" for a while; it is not that, and the
+  // second case below is the one that proves the difference.
+  it("counts a return inside the 36-60h bracket after activation", () => {
+    const events = [
+      ev("signup", "u1", 5), meaningful("u1", 4.5), // activated ~day 0.5
+      meaningful("u1", 2.5),                        // 2 days after activation
+    ];
+    expect(d2ReturnRate(events, NOW)).toMatchObject({ cohort: 1, returned: 1, rate: 1 });
+  });
+
+  it("does NOT count a user who came back the literal next day", () => {
+    // Activated, then practised ~24h later. Genuinely "the next day", but the
+    // bracket opens at 36h, so this is not a D2 return. If this ever flips,
+    // the metric has quietly become D1 and Metrics.md is wrong again.
+    const events = [
+      ev("signup", "u1", 5), meaningful("u1", 4.5),
+      meaningful("u1", 3.5),
+    ];
+    expect(d2ReturnRate(events, NOW)).toMatchObject({ cohort: 1, returned: 0, rate: 0 });
+  });
+
+  it("does not count a return after the bracket closes at 60h", () => {
+    const events = [
+      ev("signup", "u1", 5), meaningful("u1", 4.5),
+      meaningful("u1", 1.5), // 3 days after activation — real, but not D2
+    ];
+    expect(d2ReturnRate(events, NOW)).toMatchObject({ cohort: 1, returned: 0 });
+  });
+
+  it("excludes users whose 60h bracket has not fully elapsed", () => {
+    // Activated 2 days ago: still has 12h of chance left. Counting them now
+    // would report a churn that has not happened — the eligibility trap.
+    const events = [ev("signup", "u1", 2.1), meaningful("u1", 2)];
+    expect(d2ReturnRate(events, NOW)).toMatchObject({ cohort: 0, rate: null });
+  });
+
+  it("anchors on activation, not signup", () => {
+    // Signed up on day 0 but did not reach value until day 3. The return two
+    // days after THAT counts; a signup-anchored reading would have missed it.
+    const events = [
+      ev("signup", "u1", 10), meaningful("u1", 7), // activated 3 days after signup
+      meaningful("u1", 5),                          // 2 days after activation
+    ];
+    expect(d2ReturnRate(events, NOW)).toMatchObject({ cohort: 1, returned: 1, rate: 1 });
   });
 });
 
