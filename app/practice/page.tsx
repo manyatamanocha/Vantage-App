@@ -47,7 +47,7 @@ export default async function PracticeLauncherPage() {
             <Sparkles className="size-5" aria-hidden="true" />
           </div>
           <div className="panel-link-text">
-            <h2>Quiz Time</h2>
+            <h2>Quiz</h2>
             <p className="panel-lede">
               Test your understanding of concepts with quick questions.
               {generalCount > 0 ? ` ${generalCount} attempt${generalCount === 1 ? "" : "s"} so far.` : ""}
