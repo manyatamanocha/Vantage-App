@@ -9,6 +9,7 @@ import {
   activationFunnel,
   activationRate,
   engagementStatus,
+  hoursUntilActivationMeasurable,
   practiceCompletionRate,
   restrictToSignupCohort,
   retentionRate,
@@ -69,6 +70,13 @@ const SURFACE_LABELS: Record<string, string> = {
   unknown: "Unrecorded",
 };
 
+/** "in about 3 hours" / "in under an hour" — never a clock time. */
+function waitPhrase(hours: number): string {
+  if (hours < 1) return "in under an hour";
+  const rounded = Math.round(hours);
+  return `in about ${rounded} hour${rounded === 1 ? "" : "s"}`;
+}
+
 function surfaceLabel(source: string): string {
   return SURFACE_LABELS[source] ?? source.replace(/_/g, " ");
 }
@@ -121,6 +129,7 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
   const feedback = solutionFeedback(events);
   const d7 = retentionRate(events, 7, now);
   const funnel = activationFunnel(events, now);
+  const activationWait = hoursUntilActivationMeasurable(events, now);
   const sessions = events.filter((e) => e.event_name === MEANINGFUL_EVENT).length;
 
   const funnelTop = Math.max(1, ...funnel.map((s) => s.users));
@@ -136,9 +145,9 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
 
   const signupBreakdown = countByDay(events.filter((e) => e.event_name === "signup" && e.user_id));
   const activationBreakdown = [
-    { label: "Practised within 24h", value: activation.activated },
+    { label: "Practised on day one", value: activation.activated },
     { label: "Didn't", value: activation.signups - activation.activated },
-    { label: "Still inside their 24h", value: pending },
+    { label: "Still in their first day", value: pending },
   ].filter((row) => row.value > 0);
   const sessionBreakdown = bySurface.map((s) => ({ label: surfaceLabel(s.source), value: s.sessions }));
   const engagedBreakdown = distribution.map((b) => ({ label: b.bucket, value: b.users }));
@@ -192,7 +201,10 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
           />
           <MetricTile
             icon={CircleCheck}
-            label="Activated"
+            // "Activated" and "24h" both read as jargon to the person this is
+            // for — "24h" was misread as the 24th of the month. Plain words on
+            // the face, the precise definition in the ⓘ.
+            label="Got started"
             // Not `activation.activated` directly: with an empty eligible
             // cohort that renders a hard 0, which reads as "nobody activated"
             // when the truth is "nobody is old enough to say yet".
@@ -204,10 +216,12 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
             // metric is nor why it's blank without opening the ⓘ.
             sub={
               activation.signups === 0
-                ? "Practised within 24h of signing up · nobody eligible yet"
-                : `Practised within 24h of signing up · ${pct(activation.rate) ?? "—"} of ${activation.signups}`
+                ? `Practised within a day of joining · too early, first results ${
+                    activationWait === null ? "soon" : waitPhrase(activationWait)
+                  }`
+                : `Practised within a day of joining · ${pct(activation.rate) ?? "—"} of ${activation.signups}`
             }
-            why="Practised within 24h of signing up. Signups still inside their own 24h window are excluded from both sides, so a burst of fresh signups can't drag this down."
+            why="Activation, or First Value Rate: practised within 24 hours of signing up. Signups still inside their own 24h window are excluded from both sides, so a burst of fresh signups can't drag this down."
             breakdown={activationBreakdown}
           />
           <MetricTile

@@ -3,6 +3,7 @@ import {
   type MetricEvent,
   activationRate,
   engagementStatus,
+  hoursUntilActivationMeasurable,
   activationFunnel,
   habitRetention,
   practiceStartRate,
@@ -480,5 +481,28 @@ describe("restrictToSignupCohort", () => {
     const cohort = restrictToSignupCohort(events);
     const funnelTail = activationFunnel(cohort, NOW).at(-1);
     expect(weeklyEngagedLearners(cohort, NOW).count).toBe(funnelTail?.users);
+  });
+});
+
+describe("hoursUntilActivationMeasurable", () => {
+  it("reports the wait for the earliest signup still inside its window", () => {
+    // Signed up 20h ago, so its 24h window closes in 4h.
+    const events = [ev("signup", "u1", 20 / 24)];
+    expect(hoursUntilActivationMeasurable(events, NOW)).toBeCloseTo(4, 5);
+  });
+
+  it("reports the earliest signup's wait, not the latest", () => {
+    const events = [ev("signup", "u1", 20 / 24), ev("signup", "u2", 2 / 24)];
+    expect(hoursUntilActivationMeasurable(events, NOW)).toBeCloseTo(4, 5);
+  });
+
+  it("returns null once at least one signup is already measurable", () => {
+    // A tile with a real number to show doesn't need a countdown.
+    const events = [ev("signup", "u1", 2), ev("signup", "u2", 2 / 24)];
+    expect(hoursUntilActivationMeasurable(events, NOW)).toBeNull();
+  });
+
+  it("returns null when nobody has signed up at all", () => {
+    expect(hoursUntilActivationMeasurable([ev("login", "u1", 1)], NOW)).toBeNull();
   });
 });

@@ -176,6 +176,28 @@ export function activationRate(
 }
 
 /**
+ * How long until the activation tile can show a real number: the earliest
+ * signup still inside its own 24h window, plus that window.
+ *
+ * Returns null once anyone is measurable, or when nobody has signed up —
+ * in both cases there is no countdown worth showing.
+ *
+ * Reported as a DURATION, never a clock time. This renders on the server,
+ * whose timezone is not the reader's, so "10:35pm" would be a lie in
+ * production while "in about 3 hours" is true everywhere. An empty tile that
+ * says when it will fill is pending; one that just says "—" looks broken.
+ */
+export function hoursUntilActivationMeasurable(events: MetricEvent[], now: Date): number | null {
+  const windowMs = ACTIVATION_WINDOW_HOURS * 3_600_000;
+  const signups = [...firstEventTimes(events, (e) => e.event_name === SIGNUP_EVENT).values()];
+  if (signups.length === 0) return null;
+  const pending = signups.filter((at) => now.getTime() - at < windowMs);
+  // Somebody is already past their window, so the tile has a number to show.
+  if (pending.length < signups.length) return null;
+  return (Math.min(...pending) + windowMs - now.getTime()) / 3_600_000;
+}
+
+/**
  * LAGGING — D-N retention over the ACTIVATED cohort (not all signups: someone
  * who never reached value cannot be "retained").
  *
