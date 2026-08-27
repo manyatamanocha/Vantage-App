@@ -1,12 +1,17 @@
+import { Users, CircleCheck, Repeat2, Star, ThumbsUp, Target, CalendarCheck, Activity } from "lucide-react";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   type MetricEvent,
+  MEANINGFUL_EVENT,
   ACTIVE_WINDOW_DAYS,
+  DORMANT_WINDOW_DAYS,
   WEL_THRESHOLD,
   activationFunnel,
   activationRate,
+  engagementStatus,
   practiceCompletionRate,
   retentionRate,
+  solutionFeedback,
   weeklyEngagedLearners,
 } from "@/lib/analytics/metrics";
 import { MetricTile } from "./metric-tile";
@@ -18,19 +23,17 @@ import { MetricTile } from "./metric-tile";
  * emails) is queried or rendered here, which is what makes the public copy
  * safe to link without authentication.
  *
- * Four numbers, deliberately. The North Star plus the two rates that can
- * change a decision, over the funnel that says where people drop.
+ * Eight tiles and a funnel, in that order: the counts that say what happened,
+ * then the rates that say how well, then the one chart that says where people
+ * left. Every figure is a real computation from lib/analytics/metrics.ts —
+ * there is no sample data anywhere in this file, and rates render "—" rather
+ * than 0% when nobody is eligible to be measured yet.
  *
- * The wider stack (D2/D7/D30 retention, 4-week habit retention, practice
- * conversion, engagement split, per-surface breakdown, solution feedback) is
- * still defined, computed and unit-tested in lib/analytics/metrics.ts — it is
- * simply not rendered. Two reasons, both deliberate:
- *   1. Retention metrics cannot have data in a product this young; a
- *      permanently-empty tile reads as broken, not as pending.
- *   2. A dashboard of twenty numbers hides the three that matter. The "So
- *      What?" test applies: if seeing it wouldn't change a decision today,
- *      it doesn't earn space today.
- * Re-surface them here as the data matures — nothing needs rebuilding.
+ * Still computed and unit-tested in metrics.ts but not rendered: 4-week habit
+ * retention, D2 return, practice conversion, practice start rate, per-surface
+ * breakdown. Not an oversight — a permanently-empty tile reads as broken
+ * rather than as pending, and twenty numbers hide the three that matter.
+ * Promote them into the grid as the data matures; nothing needs rebuilding.
  *
  * Also absent, and worth stating: Skill Improvement Rate needs a validated
  * scoring rubric before it measures skill rather than users learning to game
@@ -41,6 +44,11 @@ import { MetricTile } from "./metric-tile";
 // rather than "latest N rows", which would silently truncate old signups.
 const LOOKBACK_DAYS = 60;
 const ROW_CAP = 5000;
+
+// The palette has no amber token, but /admin/users already uses this exact
+// hex for its "Inactive" bar — reusing it keeps the two admin surfaces
+// consistent rather than introducing a fifth accent.
+const AMBER = "#F59E0B";
 
 function pct(rate: number | null): string | null {
   return rate === null ? null : `${Math.round(rate * 100)}%`;
@@ -64,8 +72,11 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
   const wel = weeklyEngagedLearners(events, now);
   const activation = activationRate(events, now);
   const completion = practiceCompletionRate(events, now);
+  const engagement = engagementStatus(events, now);
+  const feedback = solutionFeedback(events);
   const d7 = retentionRate(events, 7, now);
   const funnel = activationFunnel(events, now);
+  const sessions = events.filter((e) => e.event_name === MEANINGFUL_EVENT).length;
 
   const funnelTop = Math.max(1, ...funnel.map((s) => s.users));
   const hasEvents = events.length > 0;
@@ -76,7 +87,7 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
         <div className="topline"><span className="datechip">{eyebrow}</span></div>
         <h1 className="display">Metrics</h1>
         <p className="lede">
-          Real usage events only — no sample data. Rates read &ldquo;—&rdquo; until enough users are
+          Real usage events, last {LOOKBACK_DAYS} days. Rates read &ldquo;—&rdquo; until enough users are
           eligible to measure them.
         </p>
       </header>
@@ -91,7 +102,81 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
       ) : null}
 
       <section className="stack">
-        <span className="card-label">Activation funnel — where people drop before the habit</span>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <MetricTile
+            icon={Users}
+            label="Signups"
+            value={String(funnel[0].users)}
+            sub="People who joined"
+          />
+          <MetricTile
+            icon={CircleCheck}
+            label="Activated"
+            // Not `activation.activated` directly: with an empty eligible
+            // cohort that renders a hard 0, which reads as "nobody activated"
+            // when the truth is "nobody is old enough to say yet".
+            value={activation.signups === 0 ? null : String(activation.activated)}
+            accent="var(--success)"
+            sub={
+              activation.signups === 0
+                ? "No signups past their 24h window yet"
+                : `${pct(activation.rate) ?? "—"} of ${activation.signups} eligible`
+            }
+            why="Practised within 24h of signing up. Signups still inside their own 24h window are excluded from both sides, so a burst of fresh signups can't drag this down."
+          />
+          <MetricTile
+            icon={Repeat2}
+            label="Sessions"
+            value={String(sessions)}
+            accent={AMBER}
+            sub="Practice loops completed"
+            why="Counts completed loops, not logins or page views — the learner submitted their own reasoning and reached the feedback step."
+          />
+          <MetricTile
+            star
+            icon={Star}
+            label="Engaged"
+            value={String(wel.count)}
+            sub={`${WEL_THRESHOLD}+ sessions in ${ACTIVE_WINDOW_DAYS} days`}
+            why="The North Star. A weekly-habit metric by design — a single day of testing cannot move it, and that is expected rather than a miss. Kept as an absolute count, never a ratio, so it can't improve just because casual users left."
+          />
+
+          <MetricTile
+            icon={ThumbsUp}
+            label="Helpful"
+            value={pct(feedback.rate)}
+            accent="var(--success)"
+            sub={`of ${feedback.total} rated`}
+            why="The only in-app qualitative signal — “Was this helpful?” on the solution screen. Read the count alongside it: 100% off two answers is not the same claim as off fifty."
+          />
+          <MetricTile
+            icon={Target}
+            label="Completion"
+            value={pct(completion.rate)}
+            accent={AMBER}
+            sub={`${completion.completed} of ${completion.started} finished`}
+            why="Of the people who begin loops, how many reach the feedback step. If this is low, people are abandoning at the guess — the core mechanic is the friction. Counted per user, not per event, since quiz surfaces fire one completion per question but one start per session."
+          />
+          <MetricTile
+            icon={CalendarCheck}
+            label="D7 return"
+            value={pct(d7.rate)}
+            accent="var(--destructive)"
+            sub={d7.cohort === 0 ? "Nobody old enough to measure yet" : `${d7.retained} of ${d7.cohort} eligible`}
+            why={`Activated users who practised again around day 7 (days ${d7.bracket[0]}–${d7.bracket[1]}). The cohort excludes anyone whose day-7 window hasn't elapsed, so this stays empty rather than reading as churn until users are old enough to measure.`}
+          />
+          <MetricTile
+            icon={Activity}
+            label="Active now"
+            value={String(engagement.active)}
+            sub={`${engagement.inactive} quiet · ${engagement.dormant} dormant`}
+            why={`Active = practised in the last ${ACTIVE_WINDOW_DAYS} days. Dormant = nothing in ${DORMANT_WINDOW_DAYS}. The middle bucket is quiet-this-week, kept separate so a normal weekly gap isn't misread as churn.`}
+          />
+        </div>
+      </section>
+
+      <section className="stack">
+        <span className="card-label">Activation funnel — where people drop</span>
         <div className="card">
           <div className="bars">
             {funnel.map((step, i) => {
@@ -119,49 +204,6 @@ export async function AnalyticsDashboard({ eyebrow = "Admin" }: { eyebrow?: stri
                 </div>
               );
             })}
-          </div>
-        </div>
-      </section>
-
-      <section className="stack">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <MetricTile
-            star
-            label="Weekly Engaged Learners"
-            value={String(wel.count)}
-            sub={`Unique users completing ${WEL_THRESHOLD}+ meaningful sessions in a rolling ${ACTIVE_WINDOW_DAYS} days. A weekly-habit metric by design — a single day of testing cannot move it, and that is expected rather than a miss.`}
-          />
-          <MetricTile
-            label="Activation — first value"
-            value={pct(activation.rate)}
-            accent="var(--success)"
-            sub={`${activation.activated} of ${activation.signups} eligible signups practised within 24h. Signups still inside their own 24h window are excluded from both sides, so a burst of fresh signups can't drag this down.`}
-          />
-          <MetricTile
-            label="Practice completion"
-            value={pct(completion.rate)}
-            accent="var(--accent2)"
-            sub={`${completion.completed} of ${completion.started} started loops reached the feedback step this week. If this is low, people are abandoning at the guess — the core mechanic is the friction.`}
-          />
-        </div>
-      </section>
-
-      <section className="stack">
-        <span className="card-label">Lagging — confirms whether the leading signals were real</span>
-        <div className="card">
-          <div className="history-row">
-            <div className="flex-1">
-              <strong>D7 retention</strong>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Activated users who practised again around day 7 (days {d7.bracket[0]}–
-                {d7.bracket[1]}). Cohort excludes anyone whose day-7 window hasn&apos;t elapsed —
-                so this stays empty, rather than reading as churn, until users are old enough to
-                measure.
-              </p>
-            </div>
-            <span className="badge progress" style={{ fontVariantNumeric: "tabular-nums" }}>
-              {pct(d7.rate) ?? "—"} · {d7.retained}/{d7.cohort}
-            </span>
           </div>
         </div>
       </section>

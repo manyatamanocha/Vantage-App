@@ -10,6 +10,7 @@ import {
   practiceConversionRate,
   retentionRate,
   solutionFeedback,
+  surfaceBreakdown,
   weeklyEngagedLearners,
 } from "../metrics";
 
@@ -274,6 +275,27 @@ describe("activationFunnel", () => {
     const started = activationFunnel(events, NOW).find((s) => s.step === "Started a practice");
     expect(started?.users).toBe(1);
   });
+
+  it("excludes a user with activity but no signup row, keeping every step a subset", () => {
+    // The real case: the admin account practised before admin events were
+    // excluded, so it has starts and completions but no `signup`. Left in, it
+    // makes "Started a practice" taller than "Signed up" and the rendered
+    // drop-offs subtract a user the funnel never counted.
+    const events = [
+      ev("signup", "u1", 3),
+      ev("solve_started", "u1", 2),
+      meaningful("u1", 2),
+      ev("solve_started", "ghost", 2),
+      meaningful("ghost", 2),
+      meaningful("ghost", 1),
+      meaningful("ghost", 1),
+    ];
+    const funnel = activationFunnel(events, NOW);
+    expect(funnel.map((s) => s.users)).toEqual([1, 1, 1, 0, 0]);
+    for (let i = 1; i < funnel.length; i++) {
+      expect(funnel[i].users).toBeLessThanOrEqual(funnel[i - 1].users);
+    }
+  });
 });
 
 describe("practiceCompletionRate", () => {
@@ -286,16 +308,66 @@ describe("practiceCompletionRate", () => {
     expect(practiceCompletionRate(events, NOW)).toMatchObject({ started: 1, completed: 1, rate: 1 });
   });
 
-  it("divides completed sessions by started sessions", () => {
+  it("counts learners, not sessions, so repeat starts don't deflate the rate", () => {
     const events = [
       ev("practice_started", "u1", 1), meaningful("u1", 1),
-      ev("practice_started", "u1", 2),
+      ev("practice_started", "u1", 2), // same learner, second loop
       ev("solve_started", "u2", 1), meaningful("u2", 1),
     ];
-    expect(practiceCompletionRate(events, NOW)).toMatchObject({ started: 3, completed: 2 });
+    expect(practiceCompletionRate(events, NOW)).toMatchObject({ started: 2, completed: 2, rate: 1 });
+  });
+
+  it("never exceeds 100% when a quiz logs many completions against one start", () => {
+    // The real-data bug: quiz surfaces fire one meaningful_activity_completed
+    // per QUESTION but one practice_started per SESSION, which made the raw
+    // event ratio read 148%.
+    const events = [
+      ev("practice_started", "u1", 1, { source: "quiz_general" }),
+      meaningful("u1", 1, "quiz_general"),
+      meaningful("u1", 1, "quiz_general"),
+      meaningful("u1", 1, "quiz_general"),
+      meaningful("u1", 1, "quiz_general"),
+    ];
+    expect(practiceCompletionRate(events, NOW)).toMatchObject({ started: 1, completed: 1, rate: 1 });
+  });
+
+  it("excludes a learner who completed without a recorded start", () => {
+    const events = [
+      ev("practice_started", "u1", 1), meaningful("u1", 1),
+      meaningful("u2", 1), // no start event — must not inflate the numerator
+    ];
+    expect(practiceCompletionRate(events, NOW)).toMatchObject({ started: 1, completed: 1, rate: 1 });
   });
 
   it("returns a null rate rather than dividing by zero", () => {
     expect(practiceCompletionRate([], NOW).rate).toBeNull();
+  });
+});
+
+describe("surfaceBreakdown", () => {
+  it("attributes solve_started to the Solve surface whatever its source tag says", () => {
+    // `solves.source` is a domain value ("live" client problem vs "practice"
+    // case), not a surface name. It used to be passed straight through as the
+    // analytics `source`, which split Solve into a phantom "live" surface with
+    // no completions and a "solve" surface with no starts.
+    const events = [
+      ev("solve_started", "u1", 1, { source: "live" }),
+      meaningful("u1", 1, "solve"),
+      ev("solve_started", "u2", 1, { source: "practice" }),
+    ];
+    const solve = surfaceBreakdown(events, NOW).find((s) => s.source === "solve");
+    expect(solve).toMatchObject({ started: 2, completed: 1, rate: 0.5 });
+    expect(surfaceBreakdown(events, NOW).map((s) => s.source)).not.toContain("live");
+  });
+
+  it("counts learners per surface so per-question quiz completions can't exceed starts", () => {
+    const events = [
+      ev("practice_started", "u1", 1, { source: "quiz_general" }),
+      meaningful("u1", 1, "quiz_general"),
+      meaningful("u1", 1, "quiz_general"),
+      meaningful("u1", 1, "quiz_general"),
+    ];
+    const quiz = surfaceBreakdown(events, NOW).find((s) => s.source === "quiz_general");
+    expect(quiz).toMatchObject({ started: 1, completed: 1, rate: 1 });
   });
 });

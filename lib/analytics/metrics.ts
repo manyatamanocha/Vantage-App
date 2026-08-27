@@ -244,15 +244,31 @@ export function practiceConversionRate(
   return { sessioned: sessioned.size, practised: practised.size, rate: ratio(practised.size, sessioned.size) };
 }
 
-/** LEADING — of the loops people begin, how many reach the feedback/reveal. */
+/**
+ * LEADING — of the people who begin loops, how many reach the feedback/reveal.
+ *
+ * Counted per USER, not per event, and that is deliberate. The quiz surfaces
+ * fire one `meaningful_activity_completed` per QUESTION answered but only one
+ * `practice_started` per SESSION, so a raw event ratio is not a rate at all —
+ * on real data it read 148%. Distinct users who started, versus how many of
+ * those reached the feedback step, is bounded by construction and answers the
+ * question the tile actually asks: are people abandoning at the guess?
+ *
+ * Fixing this in the events instead (a session id threaded through both quiz
+ * flows) would allow a true per-session rate. Until then, user-level is the
+ * honest reading rather than a number that cannot be a percentage.
+ */
 export function practiceCompletionRate(
   events: MetricEvent[],
   now: Date
 ): Rate & { started: number; completed: number } {
   const windowed = withinWindow(events, ACTIVE_WINDOW_DAYS, now);
-  const started = windowed.filter(isStart).length;
-  const completed = windowed.filter(isMeaningful).length;
-  return { started, completed, rate: ratio(completed, started) };
+  const started = distinctUsers(windowed.filter(isStart));
+  // The numerator is intersected with the denominator on purpose: a user with
+  // a completion but no recorded start (legacy rows, or a loop begun before
+  // the window opened) must not push the rate above 100%.
+  const completed = [...distinctUsers(windowed.filter(isMeaningful))].filter((u) => started.has(u)).length;
+  return { started: started.size, completed, rate: ratio(completed, started.size) };
 }
 
 /**
@@ -343,26 +359,39 @@ export function habitRetention(
 /**
  * DIAGNOSTIC — the same start/complete pair split by surface, so a drop in the
  * North Star can be traced to WHERE the loop broke rather than just observed.
+ *
+ * Per USER within each surface, for the same reason as practiceCompletionRate:
+ * quiz completions are per-question while starts are per-session, so counting
+ * events would make the quiz surfaces uncomparable with Solve.
  */
 export function surfaceBreakdown(
   events: MetricEvent[],
   now: Date
 ): { source: string; started: number; completed: number; rate: number | null }[] {
   const windowed = withinWindow(events, ACTIVE_WINDOW_DAYS, now);
-  const sources = new Map<string, { started: number; completed: number }>();
-  const bump = (source: string, key: "started" | "completed") => {
-    const entry = sources.get(source) ?? { started: 0, completed: 0 };
-    entry[key]++;
-    sources.set(source, entry);
+  const startedBy = new Map<string, Set<string>>();
+  const completedBy = new Map<string, Set<string>>();
+  const add = (map: Map<string, Set<string>>, source: string, userId: string) => {
+    const entry = map.get(source) ?? new Set<string>();
+    entry.add(userId);
+    map.set(source, entry);
   };
   for (const event of windowed) {
-    const source = typeof event.metadata?.source === "string" ? event.metadata.source : "unknown";
-    if (isStart(event)) bump(source === "unknown" && event.event_name === "solve_started" ? "solve" : source, "started");
-    else if (isMeaningful(event)) bump(source, "completed");
+    if (!event.user_id) continue;
+    const tagged = typeof event.metadata?.source === "string" ? event.metadata.source : "unknown";
+    // `solve_started` carries the domain value ("live" / "practice") in
+    // `source`, not a surface name — always attribute it to the Solve surface
+    // rather than trusting the tag, so old rows group correctly too.
+    if (isStart(event)) add(startedBy, event.event_name === "solve_started" ? "solve" : tagged, event.user_id);
+    else if (isMeaningful(event)) add(completedBy, tagged, event.user_id);
   }
-  return [...sources.entries()]
-    .map(([source, { started, completed }]) => ({ source, started, completed, rate: ratio(completed, started) }))
-    .sort((a, b) => b.completed - a.completed);
+  return [...startedBy.entries()]
+    .map(([source, starters]) => {
+      const finishers = completedBy.get(source) ?? new Set<string>();
+      const completed = [...finishers].filter((u) => starters.has(u)).length;
+      return { source, started: starters.size, completed, rate: ratio(completed, starters.size) };
+    })
+    .sort((a, b) => b.started - a.started);
 }
 
 /**
@@ -387,6 +416,13 @@ export function solutionFeedback(
 /**
  * The activation funnel, as user counts per step. Each step is a strict subset
  * of the one before it, so the drop-off between any two steps is real.
+ *
+ * That subset property is enforced, not assumed: every step is intersected with
+ * the signup cohort. Accounts that appear in the table without a `signup` row —
+ * the admin account, whose activity predates admin exclusion, and anyone who
+ * registered before this instrumentation existed — otherwise enter at step 2
+ * and make it taller than step 1, turning the rendered drop-offs into
+ * arithmetic on a user the funnel never counted.
  */
 export function activationFunnel(
   events: MetricEvent[],
@@ -396,13 +432,15 @@ export function activationFunnel(
   const started = new Set<string>();
   const meaningfulCounts = new Map<string, number>();
   for (const event of events) {
-    if (!event.user_id) continue;
+    if (!event.user_id || !signedUp.has(event.user_id)) continue;
     if ((ACTIVITY_START_EVENTS as readonly string[]).includes(event.event_name)) started.add(event.user_id);
     if (isMeaningful(event)) meaningfulCounts.set(event.user_id, (meaningfulCounts.get(event.user_id) ?? 0) + 1);
   }
   const atLeast = (n: number) => [...meaningfulCounts.values()].filter((c) => c >= n).length;
   const { sessionsByUser } = weeklyEngagedLearners(events, now);
-  const threeInAWeek = [...sessionsByUser.values()].filter((c) => c >= WEL_THRESHOLD).length;
+  const threeInAWeek = [...sessionsByUser.entries()].filter(
+    ([userId, count]) => count >= WEL_THRESHOLD && signedUp.has(userId)
+  ).length;
 
   return [
     { step: "Signed up", users: signedUp.size },

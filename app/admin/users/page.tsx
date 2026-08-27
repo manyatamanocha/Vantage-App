@@ -54,7 +54,6 @@ export default async function AdminUsersPage() {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
-        <div className="topline"><span className="datechip">Admin</span></div>
         <h1 className="display">Users</h1>
         <p className="lede">Signups and activity, at a glance. No passwords or auth secrets shown.</p>
       </header>

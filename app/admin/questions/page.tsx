@@ -11,9 +11,8 @@ export default async function AdminQuestionsPage() {
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
-        <div className="topline"><span className="datechip">Admin</span></div>
         <h1 className="display">Questions</h1>
         <p className="lede">Add, edit, or delete questions directly. Written here go live immediately.</p>
       </header>

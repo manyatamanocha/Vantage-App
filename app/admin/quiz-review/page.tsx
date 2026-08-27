@@ -76,7 +76,6 @@ export default async function QuizReviewPage() {
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
-        <div className="topline"><span className="datechip">Admin</span></div>
         <h1 className="display">Quiz review</h1>
         <p className="lede">Newly generated content starts Pending and is not served until Approved. Anything already live can still be Flagged to pull it.</p>
       </header>

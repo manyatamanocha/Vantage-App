@@ -60,9 +60,8 @@ export default async function AdminHubPage() {
   const activePercent = usersCount > 0 ? Math.round((activeUserIds.size / usersCount) * 100) : 0;
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
-        <div className="topline"><span className="datechip">Admin</span></div>
         <h1 className="display">Admin dashboard</h1>
         <p className="lede">Visible only to the administrator account.</p>
       </header>

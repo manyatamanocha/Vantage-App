@@ -41,9 +41,8 @@ export default async function DailyContentPage() {
   ];
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 py-8 sm:px-8 sm:py-12">
       <header>
-        <div className="topline"><span className="datechip">Admin</span></div>
         <h1 className="display">Daily content</h1>
         <p className="lede">Questions created today (UTC), by quiz type and tier. Read-only — no auto-generation is running yet.</p>
       </header>
